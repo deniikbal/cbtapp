@@ -61,7 +61,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "#", label: "Ujian", icon: BookOpenCheck, active: false },
-  { href: "#", label: "Pengaturan", icon: Settings, active: false },
+  { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
 type ClassRow = { id: string; name: string; grade: string; majorName: string; majorCode: string; studentCount: number }

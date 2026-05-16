@@ -8,7 +8,7 @@ import {
   GraduationCap,
   UserRound,
 } from "lucide-react"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { StudentLogoutButton } from "@/components/student-logout-button"
@@ -17,11 +17,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/lib/db"
 import { classrooms, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
+import { canAccessStudentArea } from "@/lib/exam-browser"
 import { cn } from "@/lib/utils"
 
 export default async function SiswaDashboardPage() {
   const cookieStore = await cookies()
+  const headerStore = await headers()
   const studentId = cookieStore.get("student_id")?.value
+
+  if (!(await canAccessStudentArea(headerStore.get("user-agent") ?? ""))) {
+    redirect("/blocked")
+  }
 
   if (!studentId) redirect("/")
 

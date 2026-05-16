@@ -31,7 +31,7 @@ const menuItems = [
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: true },
-  { href: "#", label: "Pengaturan", icon: Settings, active: false },
+  { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
 type ScheduleRow = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string; code: string; className: string; majorCode: string; subjectCode: string }

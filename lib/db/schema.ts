@@ -152,6 +152,18 @@ export const examSchedules = pgTable(
   ],
 )
 
+export const examBrowserSettings = pgTable("exam_browser_settings", {
+  id: text("id").primaryKey(),
+  forceExamBrowser: boolean("forceExamBrowser").notNull().default(false),
+  allowedUserAgentPattern: text("allowedUserAgentPattern").notNull().default(""),
+  blockedMessage: text("blockedMessage")
+    .notNull()
+    .default("Akses ujian hanya bisa dibuka melalui aplikasi ExamBro Android."),
+  downloadUrl: text("downloadUrl").notNull().default(""),
+  createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const students = pgTable(
   "students",
   {

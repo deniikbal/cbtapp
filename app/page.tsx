@@ -1,10 +1,16 @@
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { StudentLoginForm } from "@/components/student-login-form"
+import { canAccessStudentArea } from "@/lib/exam-browser"
 
 export default async function Page() {
   const cookieStore = await cookies()
+  const headerStore = await headers()
+
+  if (!(await canAccessStudentArea(headerStore.get("user-agent") ?? ""))) {
+    redirect("/blocked")
+  }
 
   if (cookieStore.get("student_id")?.value) {
     redirect("/siswa/dashboard")
