@@ -68,7 +68,7 @@ export default async function SiswaDashboardPage() {
     )
     .orderBy(asc(examSchedules.examDate), asc(examSchedules.startTime))
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = getTodayInTimeZone("Asia/Jakarta")
   const todaySchedules = schedules.filter((schedule) => schedule.examDate === today).length
 
   return (
@@ -231,11 +231,13 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 }
 
 function formatDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number)
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(value))
+  }).format(new Date(year, month - 1, day))
 }
 
 function calculateEndTime(startTime: string, durationMinutes: number) {
@@ -248,9 +250,48 @@ function calculateEndTime(startTime: string, durationMinutes: number) {
 function canStartExam(examDate: string, startTime: string) {
   const [year, month, day] = examDate.split("-").map(Number)
   const [hours, minutes] = startTime.split(":").map(Number)
-  const startDate = new Date(year, month - 1, day, hours, minutes)
+  const now = getDateTimePartsInTimeZone("Asia/Jakarta")
+  const nowValue = Number(
+    `${now.year}${pad2(now.month)}${pad2(now.day)}${pad2(now.hours)}${pad2(now.minutes)}`
+  )
+  const startValue = Number(
+    `${year}${pad2(month)}${pad2(day)}${pad2(hours)}${pad2(minutes)}`
+  )
 
-  return new Date() >= startDate
+  return nowValue >= startValue
+}
+
+function getTodayInTimeZone(timeZone: string) {
+  const parts = getDateTimePartsInTimeZone(timeZone)
+
+  return `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`
+}
+
+function getDateTimePartsInTimeZone(timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+  const parts = Object.fromEntries(
+    formatter.formatToParts(new Date()).map((part) => [part.type, part.value])
+  )
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hours: Number(parts.hour),
+    minutes: Number(parts.minute),
+  }
+}
+
+function pad2(value: number) {
+  return String(value).padStart(2, "0")
 }
 
 function StatCard({
