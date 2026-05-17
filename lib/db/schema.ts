@@ -151,6 +151,12 @@ export const examSchedules = pgTable(
   (table) => [
     index("exam_schedules_questionBankId_idx").on(table.questionBankId),
     index("exam_schedules_classroomId_idx").on(table.classroomId),
+    uniqueIndex("exam_schedules_unique_slot_idx").on(
+      table.questionBankId,
+      table.classroomId,
+      table.examDate,
+      table.startTime
+    ),
   ],
 )
 

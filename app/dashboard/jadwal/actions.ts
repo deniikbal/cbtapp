@@ -23,6 +23,20 @@ function readScheduleBaseForm(formData: FormData) {
 }
 
 
+function getDatabaseErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (
+    message.includes("exam_schedules_unique_slot_idx") ||
+    message.includes("duplicate key") ||
+    message.includes("unique constraint")
+  ) {
+    return "Jadwal duplikat: bank soal, kelas, tanggal, dan jam mulai sudah ada."
+  }
+
+  return error instanceof Error ? error.message : "Terjadi kesalahan database."
+}
+
 export async function createExamSchedule(formData: FormData) {
   const base = readScheduleBaseForm(formData)
   const classroomIds = formData
@@ -63,7 +77,12 @@ export async function createExamSchedule(formData: FormData) {
     throw new Error("Semua kelas yang dipilih sudah memiliki jadwal yang sama.")
   }
 
-  await db.insert(examSchedules).values(values)
+  try {
+    await db.insert(examSchedules).values(values)
+  } catch (error) {
+    throw new Error(getDatabaseErrorMessage(error))
+  }
+
   revalidatePath("/dashboard/jadwal")
 
   return { created: values.length, skipped }
@@ -82,10 +101,14 @@ export async function updateExamSchedule(formData: FormData) {
 
   const [primaryClassroomId, ...additionalClassroomIds] = classroomIds
 
-  await db
-    .update(examSchedules)
-    .set({ ...base, classroomId: primaryClassroomId, updatedAt: new Date() })
-    .where(eq(examSchedules.id, id))
+  try {
+    await db
+      .update(examSchedules)
+      .set({ ...base, classroomId: primaryClassroomId, updatedAt: new Date() })
+      .where(eq(examSchedules.id, id))
+  } catch (error) {
+    throw new Error(getDatabaseErrorMessage(error))
+  }
 
   let created = 0
   let skipped = 0
@@ -109,8 +132,17 @@ export async function updateExamSchedule(formData: FormData) {
       continue
     }
 
-    await db.insert(examSchedules).values({ id: randomUUID(), ...base, classroomId })
-    created += 1
+    try {
+      await db.insert(examSchedules).values({ id: randomUUID(), ...base, classroomId })
+      created += 1
+    } catch (error) {
+      const message = getDatabaseErrorMessage(error)
+      if (message.startsWith("Jadwal duplikat")) {
+        skipped += 1
+        continue
+      }
+      throw new Error(message)
+    }
   }
 
   revalidatePath("/dashboard/jadwal")

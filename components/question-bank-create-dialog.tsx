@@ -15,8 +15,10 @@ export type SubjectOption = { id: string; name: string; code: string }
 
 export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption[] }) {
   const [open, setOpen] = useState(false)
+  const [selectedSubjectId, setSelectedSubjectId] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId)
 
   function handleSubmit(formData: FormData) {
     setError(null)
@@ -24,6 +26,7 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
       try {
         await createQuestionBank(formData)
         toast.success("Bank soal berhasil ditambahkan.")
+        setSelectedSubjectId("")
         setOpen(false)
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menyimpan bank soal."
@@ -34,7 +37,16 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) {
+          setSelectedSubjectId("")
+          setError(null)
+        }
+      }}
+    >
       <DialogTrigger render={<Button className="gap-2" disabled={subjects.length === 0} />}>
         <Plus className="size-4" />
         Tambah Bank Soal
@@ -47,8 +59,13 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="subjectId">Mapel</Label>
-            <Select name="subjectId" required>
-              <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel" /></SelectTrigger>
+            <Select
+              name="subjectId"
+              value={selectedSubjectId}
+              onValueChange={(value: string | null) => setSelectedSubjectId(value ?? "")}
+              required
+            >
+              <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel">{selectedSubject ? `${selectedSubject.code} — ${selectedSubject.name}` : "Pilih mapel"}</SelectValue></SelectTrigger>
               <SelectContent>
                 {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} — {subject.name}</SelectItem>)}
               </SelectContent>
