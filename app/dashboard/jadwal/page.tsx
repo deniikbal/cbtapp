@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -61,6 +62,7 @@ export default async function JadwalPage() {
   const activeSchedules = rows.filter((row) => row.active).length
   const inactiveSchedules = rows.length - activeSchedules
   const classUsed = new Set(rows.map((row) => row.classroomId)).size
+  const groupedRows = groupScheduleRows(rows)
 
   return (
     <SidebarProvider>
@@ -77,13 +79,49 @@ export default async function JadwalPage() {
           </section>
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
           <Card>
-            <CardHeader className="border-b"><div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"><div className="flex flex-col gap-1.5"><div className="flex items-center gap-2"><CardTitle>Daftar Jadwal</CardTitle><Badge variant="secondary" className="font-normal">{rows.length} hasil</Badge></div><CardDescription>Jadwal berisi bank soal, kelas, tanggal, jam mulai, dan durasi.</CardDescription></div><div className="flex flex-col gap-2 sm:flex-row md:shrink-0">{bankOptions.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={bankOptions} classrooms={classroomOptions} />}</div></div><div className="mt-4 grid gap-3 md:grid-cols-12"><div className="relative md:col-span-5"><Label htmlFor="search-schedule" className="sr-only">Cari jadwal</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-schedule" placeholder="Cari kode, judul, atau kelas..." className="pl-8" /></div><div className="md:col-span-3"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Semua kelas" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua kelas</SelectItem>{classroomOptions.map((classroom) => <SelectItem key={classroom.id} value={classroom.id}>{classroom.name}</SelectItem>)}</SelectContent></Select></div><div className="md:col-span-2"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent></Select></div><div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" />Reset</Button></div></div></CardHeader>
-            <CardContent><div className="overflow-hidden rounded-lg border"><Table><TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader><TableBody>{rows.length === 0 ? <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada jadwal</div><p className="text-sm">Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal.</p></div><ExamScheduleCreateDialog banks={bankOptions} classrooms={classroomOptions} /></div></TableCell></TableRow> : rows.map((row, index) => <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{row.title}</span><span className="font-mono text-xs text-muted-foreground">{row.code} • {row.subjectCode}</span></div></TableCell><TableCell><Badge variant="outline" className="font-normal">{row.className}</Badge><p className="text-xs text-muted-foreground">{row.majorCode}</p></TableCell><TableCell>{formatDate(row.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{row.startTime.slice(0, 5)}</TableCell><TableCell>{row.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(row.startTime, row.durationMinutes)}</TableCell><TableCell><div className="flex items-center gap-2"><ExamScheduleStatusSwitch id={row.id} active={row.active} /><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></div></TableCell><TableCell><ExamScheduleRowActions schedule={row} banks={bankOptions} classrooms={classroomOptions} /></TableCell></TableRow>)}</TableBody></Table></div></CardContent>
+            <CardHeader className="border-b"><div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"><div className="flex flex-col gap-1.5"><div className="flex items-center gap-2"><CardTitle>Daftar Jadwal</CardTitle><Badge variant="secondary" className="font-normal">{groupedRows.length} grup</Badge></div><CardDescription>Jadwal berisi bank soal, kelas, tanggal, jam mulai, dan durasi.</CardDescription></div><div className="flex flex-col gap-2 sm:flex-row md:shrink-0">{bankOptions.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={bankOptions} classrooms={classroomOptions} />}</div></div><div className="mt-4 grid gap-3 md:grid-cols-12"><div className="relative md:col-span-5"><Label htmlFor="search-schedule" className="sr-only">Cari jadwal</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-schedule" placeholder="Cari kode, judul, atau kelas..." className="pl-8" /></div><div className="md:col-span-3"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Semua kelas" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua kelas</SelectItem>{classroomOptions.map((classroom) => <SelectItem key={classroom.id} value={classroom.id}>{classroom.name}</SelectItem>)}</SelectContent></Select></div><div className="md:col-span-2"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent></Select></div><div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" />Reset</Button></div></div></CardHeader>
+            <CardContent><div className="overflow-hidden rounded-lg border"><Table><TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader><TableBody>{groupedRows.length === 0 ? <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada jadwal</div><p className="text-sm">Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal.</p></div><ExamScheduleCreateDialog banks={bankOptions} classrooms={classroomOptions} /></div></TableCell></TableRow> : groupedRows.map((group, index) => <TableRow key={group.key} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={bankOptions} classrooms={classroomOptions} /></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent>
           </Card>
         </main>
       </SidebarInset>
     </SidebarProvider>
   )
+}
+
+type ScheduleGroup = Omit<ScheduleRow, "id" | "classroomId" | "className" | "majorCode" | "active"> & {
+  key: string
+  rows: ScheduleRow[]
+  activeCount: number
+}
+
+function groupScheduleRows(rows: ScheduleRow[]): ScheduleGroup[] {
+  const groups = new Map<string, ScheduleGroup>()
+
+  for (const row of rows) {
+    const key = [row.questionBankId, row.examDate, row.startTime, row.durationMinutes].join("|")
+    const existing = groups.get(key)
+
+    if (existing) {
+      existing.rows.push(row)
+      if (row.active) existing.activeCount += 1
+      continue
+    }
+
+    groups.set(key, {
+      key,
+      questionBankId: row.questionBankId,
+      examDate: row.examDate,
+      startTime: row.startTime,
+      durationMinutes: row.durationMinutes,
+      title: row.title,
+      code: row.code,
+      subjectCode: row.subjectCode,
+      rows: [row],
+      activeCount: row.active ? 1 : 0,
+    })
+  }
+
+  return Array.from(groups.values())
 }
 
 function formatDate(value: string) { return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) }

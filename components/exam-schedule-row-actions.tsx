@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { toast } from "sonner"
 import { Edit, Loader2, Trash2 } from "lucide-react"
 
-import { deleteExamSchedule, updateExamSchedule } from "@/app/dashboard/jadwal/actions"
+import { deleteExamSchedules, updateExamScheduleGroup } from "@/app/dashboard/jadwal/actions"
 import type { ScheduleBankOption, ScheduleClassroomOption } from "@/components/exam-schedule-create-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -16,11 +16,24 @@ import { cn } from "@/lib/utils"
 
 export type ScheduleRowActionData = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string }
 
-export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedule: ScheduleRowActionData; banks: ScheduleBankOption[]; classrooms: ScheduleClassroomOption[] }) {
+export function ExamScheduleRowActions({
+  schedule,
+  schedules,
+  banks,
+  classrooms,
+}: {
+  schedule: ScheduleRowActionData
+  schedules?: ScheduleRowActionData[]
+  banks: ScheduleBankOption[]
+  classrooms: ScheduleClassroomOption[]
+}) {
+  const groupSchedules = schedules?.length ? schedules : [schedule]
+  const groupIds = groupSchedules.map((item) => item.id)
+  const groupClassroomIds = groupSchedules.map((item) => item.classroomId)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedBankId, setSelectedBankId] = useState(schedule.questionBankId)
-  const [selectedClassroomIds, setSelectedClassroomIds] = useState<string[]>([schedule.classroomId])
+  const [selectedClassroomIds, setSelectedClassroomIds] = useState<string[]>(groupClassroomIds)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const selectedBank = banks.find((bank) => bank.id === selectedBankId)
@@ -38,7 +51,8 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
 
   function handleUpdate(formData: FormData) {
     setError(null)
-    formData.set("id", schedule.id)
+    formData.delete("ids")
+    for (const id of groupIds) formData.append("ids", id)
 
     if (selectedClassroomIds.length === 0) {
       const message = "Pilih minimal satu kelas."
@@ -49,10 +63,10 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
 
     startTransition(async () => {
       try {
-        const result = await updateExamSchedule(formData)
+        const result = await updateExamScheduleGroup(formData)
         toast.success(
-          result.created > 0 || result.skipped > 0
-            ? `Jadwal diperbarui. ${result.created} jadwal tambahan dibuat, ${result.skipped} duplikat dilewati.`
+          result.created > 0 || result.deleted > 0 || result.skipped > 0
+            ? `Jadwal diperbarui. ${result.created} ditambahkan, ${result.deleted} dihapus, ${result.skipped} duplikat dilewati.`
             : "Jadwal berhasil diperbarui."
         )
         setEditOpen(false)
@@ -69,8 +83,8 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
     setError(null)
     startTransition(async () => {
       try {
-        await deleteExamSchedule(schedule.id)
-        toast.success("Jadwal berhasil dihapus.")
+        await deleteExamSchedules(groupIds)
+        toast.success(groupIds.length > 1 ? "Grup jadwal berhasil dihapus." : "Jadwal berhasil dihapus.")
         setDeleteOpen(false)
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menghapus jadwal."
@@ -88,14 +102,14 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
           setEditOpen(nextOpen)
           if (nextOpen) {
             setSelectedBankId(schedule.questionBankId)
-            setSelectedClassroomIds([schedule.classroomId])
+            setSelectedClassroomIds(groupClassroomIds)
           }
           if (!nextOpen) setError(null)
         }}
       >
         <DialogTrigger render={<Button variant="ghost" size="icon-sm" />}><Edit className="size-4" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader><DialogTitle>Edit Jadwal</DialogTitle><DialogDescription>Ubah bank soal, pilih satu atau beberapa kelas, tanggal, jam mulai, durasi, atau status.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Jadwal</DialogTitle><DialogDescription>Ubah satu jadwal ini untuk beberapa kelas sekaligus.</DialogDescription></DialogHeader>
           <form action={handleUpdate} className="space-y-4">
             <div className="space-y-2">
               <Label>Bank Soal</Label>
@@ -126,7 +140,7 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
                   })}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">{selectedClassroomIds.length} kelas dipilih. Baris jadwal ini akan diperbarui, kelas tambahan akan dibuat sebagai jadwal baru.</p>
+              <p className="text-xs text-muted-foreground">{selectedClassroomIds.length} kelas dipilih. Perubahan berlaku untuk satu grup jadwal ini.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Tanggal</Label><Input name="examDate" type="date" defaultValue={schedule.examDate} required /></div><div className="space-y-2"><Label>Jam Mulai</Label><Input name="startTime" type="time" defaultValue={schedule.startTime.slice(0, 5)} required /></div><div className="space-y-2"><Label>Durasi</Label><Input name="durationMinutes" type="number" min="1" defaultValue={schedule.durationMinutes} required /></div></div>
@@ -138,7 +152,7 @@ export function ExamScheduleRowActions({ schedule, banks, classrooms }: { schedu
       </Dialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}><Trash2 className="size-4" /><span className="sr-only">Hapus jadwal</span></AlertDialogTrigger>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Hapus jadwal?</AlertDialogTitle><AlertDialogDescription>Jadwal “{schedule.title}” akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>{error && <p className="text-sm text-destructive">{error}</p>}<AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Hapus jadwal?</AlertDialogTitle><AlertDialogDescription>Jadwal “{schedule.title}” untuk {groupIds.length} kelas akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>{error && <p className="text-sm text-destructive">{error}</p>}<AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   )

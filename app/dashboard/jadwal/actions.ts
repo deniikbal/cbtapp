@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto"
 
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
@@ -90,30 +90,59 @@ export async function createExamSchedule(formData: FormData) {
 
 export async function updateExamSchedule(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim()
+  if (!id) throw new Error("ID jadwal tidak valid.")
+
+  formData.append("ids", id)
+  return updateExamScheduleGroup(formData)
+}
+
+export async function updateExamScheduleGroup(formData: FormData) {
   const base = readScheduleBaseForm(formData)
+  const ids = formData
+    .getAll("ids")
+    .map((value) => String(value).trim())
+    .filter(Boolean)
   const classroomIds = formData
     .getAll("classroomIds")
     .map((value) => String(value).trim())
     .filter(Boolean)
 
-  if (!id) throw new Error("ID jadwal tidak valid.")
+  if (ids.length === 0) throw new Error("ID jadwal tidak valid.")
   if (classroomIds.length === 0) throw new Error("Pilih minimal satu kelas.")
 
-  const [primaryClassroomId, ...additionalClassroomIds] = classroomIds
+  const existingRows = await db
+    .select({ id: examSchedules.id, classroomId: examSchedules.classroomId })
+    .from(examSchedules)
+    .where(inArray(examSchedules.id, ids))
 
-  try {
-    await db
-      .update(examSchedules)
-      .set({ ...base, classroomId: primaryClassroomId, updatedAt: new Date() })
-      .where(eq(examSchedules.id, id))
-  } catch (error) {
-    throw new Error(getDatabaseErrorMessage(error))
-  }
-
+  const selectedClassroomIds = new Set(classroomIds)
+  const existingByClassroom = new Map(existingRows.map((row) => [row.classroomId, row.id]))
+  let updated = 0
   let created = 0
+  let deleted = 0
   let skipped = 0
 
-  for (const classroomId of additionalClassroomIds) {
+  for (const row of existingRows) {
+    if (!selectedClassroomIds.has(row.classroomId)) {
+      await db.delete(examSchedules).where(eq(examSchedules.id, row.id))
+      deleted += 1
+      continue
+    }
+
+    try {
+      await db
+        .update(examSchedules)
+        .set({ ...base, updatedAt: new Date() })
+        .where(eq(examSchedules.id, row.id))
+      updated += 1
+    } catch (error) {
+      throw new Error(getDatabaseErrorMessage(error))
+    }
+  }
+
+  for (const classroomId of classroomIds) {
+    if (existingByClassroom.has(classroomId)) continue
+
     const duplicate = await db
       .select({ id: examSchedules.id })
       .from(examSchedules)
@@ -146,17 +175,25 @@ export async function updateExamSchedule(formData: FormData) {
   }
 
   revalidatePath("/dashboard/jadwal")
+  revalidatePath("/siswa/dashboard")
 
-  return { updated: 1, created, skipped }
+  return { updated, created, deleted, skipped }
 }
 
 export async function setExamScheduleStatus(id: string, active: boolean) {
   if (!id) throw new Error("ID jadwal tidak valid.")
 
+  await setExamSchedulesStatus([id], active)
+}
+
+export async function setExamSchedulesStatus(ids: string[], active: boolean) {
+  const validIds = ids.map((id) => id.trim()).filter(Boolean)
+  if (validIds.length === 0) throw new Error("ID jadwal tidak valid.")
+
   await db
     .update(examSchedules)
     .set({ active, updatedAt: new Date() })
-    .where(eq(examSchedules.id, id))
+    .where(inArray(examSchedules.id, validIds))
 
   revalidatePath("/dashboard/jadwal")
   revalidatePath("/siswa/dashboard")
@@ -165,6 +202,14 @@ export async function setExamScheduleStatus(id: string, active: boolean) {
 export async function deleteExamSchedule(id: string) {
   if (!id) throw new Error("ID jadwal tidak valid.")
 
-  await db.delete(examSchedules).where(eq(examSchedules.id, id))
+  await deleteExamSchedules([id])
+}
+
+export async function deleteExamSchedules(ids: string[]) {
+  const validIds = ids.map((id) => id.trim()).filter(Boolean)
+  if (validIds.length === 0) throw new Error("ID jadwal tidak valid.")
+
+  await db.delete(examSchedules).where(inArray(examSchedules.id, validIds))
   revalidatePath("/dashboard/jadwal")
+  revalidatePath("/siswa/dashboard")
 }

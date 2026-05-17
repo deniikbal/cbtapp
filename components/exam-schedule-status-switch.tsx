@@ -3,12 +3,21 @@
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
 
-import { setExamScheduleStatus } from "@/app/dashboard/jadwal/actions"
+import { setExamSchedulesStatus } from "@/app/dashboard/jadwal/actions"
 import { Switch } from "@/components/ui/switch"
 
-export function ExamScheduleStatusSwitch({ id, active }: { id: string; active: boolean }) {
+export function ExamScheduleStatusSwitch({
+  id,
+  ids,
+  active,
+}: {
+  id?: string
+  ids?: string[]
+  active: boolean
+}) {
   const [checked, setChecked] = useState(active)
   const [isPending, startTransition] = useTransition()
+  const targetIds = ids ?? (id ? [id] : [])
 
   function handleChange(nextChecked: boolean) {
     const previous = checked
@@ -16,7 +25,7 @@ export function ExamScheduleStatusSwitch({ id, active }: { id: string; active: b
 
     startTransition(async () => {
       try {
-        await setExamScheduleStatus(id, nextChecked)
+        await setExamSchedulesStatus(targetIds, nextChecked)
         toast.success(nextChecked ? "Jadwal diaktifkan." : "Jadwal dinonaktifkan.")
       } catch (error) {
         setChecked(previous)

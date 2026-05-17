@@ -19,11 +19,21 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
   const [open, setOpen] = useState(false)
   const [selectedBankId, setSelectedBankId] = useState("")
   const [selectedClassroomIds, setSelectedClassroomIds] = useState<string[]>([])
+  const [classroomSelectOpen, setClassroomSelectOpen] = useState(false)
+  const [classroomSearch, setClassroomSearch] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const disabled = banks.length === 0 || classrooms.length === 0
   const allSelected = classrooms.length > 0 && selectedClassroomIds.length === classrooms.length
   const selectedBank = banks.find((bank) => bank.id === selectedBankId)
+  const filteredClassroomGroups = groupClassroomsByMajor(
+    classrooms.filter((classroom) =>
+      [classroom.name, classroom.majorCode]
+        .join(" ")
+        .toLowerCase()
+        .includes(classroomSearch.toLowerCase().trim())
+    )
+  )
 
   function toggleClassroom(id: string) {
     setSelectedClassroomIds((current) =>
@@ -33,6 +43,19 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
 
   function toggleAllClassrooms() {
     setSelectedClassroomIds(allSelected ? [] : classrooms.map((classroom) => classroom.id))
+  }
+
+  function toggleMajorClassrooms(majorCode: string) {
+    const groupIds = classrooms
+      .filter((classroom) => classroom.majorCode === majorCode)
+      .map((classroom) => classroom.id)
+    const groupSelected = groupIds.every((id) => selectedClassroomIds.includes(id))
+
+    setSelectedClassroomIds((current) =>
+      groupSelected
+        ? current.filter((id) => !groupIds.includes(id))
+        : Array.from(new Set([...current, ...groupIds]))
+    )
   }
 
   function handleSubmit(formData: FormData) {
@@ -72,6 +95,8 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
         if (!nextOpen) {
           setSelectedBankId("")
           setSelectedClassroomIds([])
+          setClassroomSelectOpen(false)
+          setClassroomSearch("")
           setError(null)
         }
       }}
@@ -99,43 +124,75 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <Label>Kelas</Label>
-              <Button type="button" variant="outline" size="sm" onClick={toggleAllClassrooms}>
-                {allSelected ? "Hapus pilihan" : "Pilih semua"}
+            <Label>Kelas</Label>
+            {selectedClassroomIds.map((id) => (
+              <input key={id} type="hidden" name="classroomIds" value={id} />
+            ))}
+            <div className="relative">
+              <Button type="button" variant="outline" className="w-full justify-between font-normal" onClick={() => setClassroomSelectOpen((open) => !open)}>
+                <span>{selectedClassroomIds.length > 0 ? `${selectedClassroomIds.length} kelas dipilih` : "Pilih kelas"}</span>
+                <span className="text-xs text-muted-foreground">Dropdown</span>
               </Button>
-            </div>
-            <div className="max-h-56 overflow-y-auto rounded-lg border p-2">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {classrooms.map((classroom) => {
-                  const checked = selectedClassroomIds.includes(classroom.id)
+              {classroomSelectOpen && (
+                <div className="absolute top-full left-0 z-50 mt-2 w-full rounded-lg border bg-popover p-2 text-popover-foreground shadow-md">
+                  <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                    <span className="text-xs text-muted-foreground">{selectedClassroomIds.length} dari {classrooms.length} kelas</span>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={toggleAllClassrooms}>
+                      {allSelected ? "Hapus semua" : "Pilih semua"}
+                    </Button>
+                  </div>
+                  <Input
+                    value={classroomSearch}
+                    onChange={(event) => setClassroomSearch(event.target.value)}
+                    placeholder="Cari kelas..."
+                    className="mb-2 h-8"
+                  />
+                  <div className="h-56 overflow-y-scroll rounded-lg border [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+                    {filteredClassroomGroups.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-sm text-muted-foreground">Kelas tidak ditemukan.</div>
+                    ) : (
+                      filteredClassroomGroups.map((group) => (
+                        <div key={group.majorCode} className="border-b last:border-b-0">
+                          <div className="flex items-center justify-between gap-2 bg-muted/50 px-3 py-1.5">
+                            <span className="text-xs font-medium text-muted-foreground">{group.majorCode}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() => toggleMajorClassrooms(group.majorCode)}
+                            >
+                              {group.classrooms.every((classroom) => selectedClassroomIds.includes(classroom.id)) ? "Hapus" : "Pilih semua"}
+                            </Button>
+                          </div>
+                          {group.classrooms.map((classroom) => {
+                            const checked = selectedClassroomIds.includes(classroom.id)
 
-                  return (
-                    <label
-                      key={classroom.id}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition-colors hover:bg-muted/60",
-                        checked && "border-primary bg-primary/10"
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        name="classroomIds"
-                        value={classroom.id}
-                        checked={checked}
-                        onChange={() => toggleClassroom(classroom.id)}
-                        className="size-4 accent-primary"
-                      />
-                      <span className="min-w-0">
-                        <span className="block font-medium">{classroom.name}</span>
-                        <span className="block text-xs text-muted-foreground">{classroom.majorCode}</span>
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
+                            return (
+                              <label
+                                key={classroom.id}
+                                className={cn(
+                                  "flex cursor-pointer items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted/60",
+                                  checked && "bg-primary/10"
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleClassroom(classroom.id)}
+                                  className="size-3.5 shrink-0 accent-primary"
+                                />
+                                <span className="min-w-0 truncate">{classroom.name}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">{selectedClassroomIds.length} kelas dipilih.</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -150,4 +207,15 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
       </DialogContent>
     </Dialog>
   )
+}
+
+function groupClassroomsByMajor(classrooms: ScheduleClassroomOption[]) {
+  return Array.from(
+    classrooms.reduce((map, classroom) => {
+      const group = map.get(classroom.majorCode) ?? []
+      group.push(classroom)
+      map.set(classroom.majorCode, group)
+      return map
+    }, new Map<string, ScheduleClassroomOption[]>())
+  ).map(([majorCode, items]) => ({ majorCode, classrooms: items }))
 }

@@ -13,6 +13,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
@@ -33,6 +42,8 @@ export type StudentManagementClassroom = {
   majorName: string
 }
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
+
 export function StudentManagementCard({
   students,
   classrooms,
@@ -43,6 +54,8 @@ export function StudentManagementCard({
   const [search, setSearch] = useState("")
   const [classroomId, setClassroomId] = useState("ALL")
   const [status, setStatus] = useState("ALL")
+  const [pageSize, setPageSize] = useState<number>(10)
+  const [currentPage, setCurrentPage] = useState(1)
   const selectedClassroom = classrooms.find((classroom) => classroom.id === classroomId)
   const hasActiveFilter = search.trim() !== "" || classroomId !== "ALL" || status !== "ALL"
 
@@ -62,10 +75,40 @@ export function StudentManagementCard({
     })
   }, [students, search, classroomId, status])
 
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize))
+  const activePage = Math.min(currentPage, totalPages)
+  const pageRange = buildPageRange(activePage, totalPages)
+  const startIndex = (activePage - 1) * pageSize
+  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + pageSize)
+  const from = filteredStudents.length === 0 ? 0 : startIndex + 1
+  const to = Math.min(startIndex + pageSize, filteredStudents.length)
+
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    setCurrentPage(1)
+  }
+
+  function handleClassroomChange(value: string | null) {
+    setClassroomId(value ?? "ALL")
+    setCurrentPage(1)
+  }
+
+  function handleStatusChange(value: string | null) {
+    setStatus(value ?? "ALL")
+    setCurrentPage(1)
+  }
+
+  function handlePageSizeChange(value: string | null) {
+    if (!value) return
+    setPageSize(Number(value))
+    setCurrentPage(1)
+  }
+
   function resetFilters() {
     setSearch("")
     setClassroomId("ALL")
     setStatus("ALL")
+    setCurrentPage(1)
   }
 
   return (
@@ -90,11 +133,11 @@ export function StudentManagementCard({
           <div className="relative md:col-span-5">
             <Label htmlFor="search-student" className="sr-only">Cari peserta</Label>
             <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="search-student" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari nama atau NIS..." className="pl-8" />
+            <Input id="search-student" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari nama atau NIS..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
             <Label htmlFor="filter-class" className="sr-only">Filter kelas</Label>
-            <Select value={classroomId} onValueChange={(value: string | null) => setClassroomId(value ?? "ALL")}>
+            <Select value={classroomId} onValueChange={handleClassroomChange}>
               <SelectTrigger id="filter-class" className="w-full">
                 <div className="flex items-center gap-2 truncate">
                   <Filter className="size-4 text-muted-foreground" />
@@ -111,7 +154,7 @@ export function StudentManagementCard({
           </div>
           <div className="md:col-span-2">
             <Label htmlFor="filter-status" className="sr-only">Filter status</Label>
-            <Select value={status} onValueChange={(value: string | null) => setStatus(value ?? "ALL")}>
+            <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger id="filter-status" className="w-full">
                 <SelectValue>{status === "ACTIVE" ? "Aktif" : status === "INACTIVE" ? "Tidak aktif" : "Semua status"}</SelectValue>
               </SelectTrigger>
@@ -159,9 +202,9 @@ export function StudentManagementCard({
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : filteredStudents.map((student, index) => (
+              ) : paginatedStudents.map((student, index) => (
                 <TableRow key={student.id} className="transition-colors hover:bg-muted/40">
-                  <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell>
+                  <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
                   <TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-blue-500/15 text-xs font-medium text-blue-700 dark:text-blue-300">{getInitials(student.name)}</AvatarFallback></Avatar><span className="font-medium">{student.name}</span></div></TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">••••••••</TableCell>
@@ -174,6 +217,74 @@ export function StudentManagementCard({
             </TableBody>
           </Table>
         </div>
+
+        <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              Menampilkan <span className="font-medium text-foreground">{from}</span>
+              –<span className="font-medium text-foreground">{to}</span> dari{" "}
+              <span className="font-medium text-foreground">{filteredStudents.length}</span> entri
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Per halaman</span>
+              <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+                <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+                <SelectContent align="end">
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination className="mx-0 w-auto">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Sebelumnya"
+                    className={activePage === 1 ? "pointer-events-none opacity-50" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }}
+                  />
+                </PaginationItem>
+                {pageRange.map((page, index) =>
+                  page === "..." ? (
+                    <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>
+                  ) : (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === activePage}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          setCurrentPage(page)
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Berikutnya"
+                    className={activePage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -181,4 +292,19 @@ export function StudentManagementCard({
 
 function getInitials(name: string) {
   return name.split(" ").map((part) => part[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
+}
+
+function buildPageRange(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
+
+  const range: (number | "...")[] = [1]
+  const left = Math.max(2, current - 1)
+  const right = Math.min(total - 1, current + 1)
+
+  if (left > 2) range.push("...")
+  for (let page = left; page <= right; page++) range.push(page)
+  if (right < total - 1) range.push("...")
+  range.push(total)
+
+  return range
 }
