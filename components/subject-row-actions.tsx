@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Edit, Loader2, Trash2 } from "lucide-react"
 
 import { deleteSubject, updateSubject } from "@/app/dashboard/mapel/actions"
@@ -25,17 +26,29 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
     startTransition(async () => {
       try {
         await updateSubject(formData)
+        toast.success("Mapel berhasil diperbarui.")
         setEditOpen(false)
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Gagal mengubah mapel.")
+        const message = error instanceof Error ? error.message : "Gagal mengubah mapel."
+        setError(message)
+        toast.error(message)
       }
     })
   }
 
-  function handleDelete() {
+  function handleDelete(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    setError(null)
     startTransition(async () => {
-      await deleteSubject(subject.id)
-      setDeleteOpen(false)
+      try {
+        await deleteSubject(subject.id)
+        toast.success("Mapel berhasil dihapus.")
+        setDeleteOpen(false)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Gagal menghapus mapel."
+        setError(message)
+        toast.error(message)
+      }
     })
   }
 
@@ -92,6 +105,7 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
             <AlertDialogTitle>Hapus mapel?</AlertDialogTitle>
             <AlertDialogDescription>Mapel “{subject.name}” akan dihapus permanen.</AlertDialogDescription>
           </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>

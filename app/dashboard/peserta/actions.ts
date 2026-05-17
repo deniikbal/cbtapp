@@ -35,6 +35,41 @@ export async function createStudent(formData: FormData) {
   revalidatePath("/dashboard/peserta")
 }
 
+export async function updateStudent(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim()
+  const name = String(formData.get("name") ?? "").trim()
+  const nis = String(formData.get("nis") ?? "").trim()
+  const password = String(formData.get("password") ?? "").trim()
+  const classroomId = String(formData.get("classroomId") ?? "").trim()
+  const active = String(formData.get("active") ?? "true") === "true"
+
+  if (!id || !name || !nis || !classroomId) {
+    throw new Error("Nama, NIS, dan kelas wajib diisi.")
+  }
+
+  await db
+    .update(students)
+    .set({
+      name,
+      nis,
+      classroomId,
+      active,
+      ...(password ? { passwordHash: hashPassword(password) } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(students.id, id))
+
+  revalidatePath("/dashboard/peserta")
+}
+
+export async function deleteStudent(id: string) {
+  if (!id) throw new Error("ID peserta tidak valid.")
+
+  await db.delete(students).where(eq(students.id, id))
+
+  revalidatePath("/dashboard/peserta")
+}
+
 export async function seedInitialMasterData() {
   const existingMajor = await db.query.majors.findFirst()
 

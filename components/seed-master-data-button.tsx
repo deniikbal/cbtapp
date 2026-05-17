@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { toast } from "sonner"
 import { Database, Loader2 } from "lucide-react"
 
 import { seedInitialMasterData } from "@/app/dashboard/peserta/actions"
@@ -14,7 +15,16 @@ export function SeedMasterDataButton() {
       variant="outline"
       className="gap-2"
       disabled={isPending}
-      onClick={() => startTransition(() => seedInitialMasterData())}
+      onClick={() =>
+        startTransition(async () => {
+          try {
+            await seedInitialMasterData()
+            toast.success("Data awal berhasil dibuat.")
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Gagal membuat data awal.")
+          }
+        })
+      }
     >
       {isPending ? <Loader2 className="size-4 animate-spin" /> : <Database className="size-4" />}
       Buat Data Awal

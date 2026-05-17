@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createStudent } from "@/app/dashboard/peserta/actions"
@@ -32,23 +33,38 @@ export type ClassroomOption = {
 
 export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOption[] }) {
   const [open, setOpen] = useState(false)
+  const [selectedClassroomId, setSelectedClassroomId] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const selectedClassroom = classrooms.find((classroom) => classroom.id === selectedClassroomId)
 
   function handleSubmit(formData: FormData) {
     setError(null)
     startTransition(async () => {
       try {
         await createStudent(formData)
+        toast.success("Peserta berhasil ditambahkan.")
+        setSelectedClassroomId("")
         setOpen(false)
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Gagal menyimpan peserta.")
+        const message = error instanceof Error ? error.message : "Gagal menyimpan peserta."
+        setError(message)
+        toast.error(message)
       }
     })
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (!nextOpen) {
+          setSelectedClassroomId("")
+          setError(null)
+        }
+      }}
+    >
       <DialogTrigger render={<Button className="gap-2" disabled={classrooms.length === 0} />}>
         <Plus className="size-4" />
         Tambah Peserta
@@ -93,9 +109,18 @@ export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOptio
 
           <div className="space-y-2">
             <Label htmlFor="classroomId">Kelas</Label>
-            <Select name="classroomId" required>
+            <Select
+              name="classroomId"
+              value={selectedClassroomId}
+              onValueChange={(value: string | null) => setSelectedClassroomId(value ?? "")}
+              required
+            >
               <SelectTrigger id="classroomId" className="w-full">
-                <SelectValue placeholder="Pilih kelas" />
+                <SelectValue placeholder="Pilih kelas">
+                  {selectedClassroom
+                    ? `${selectedClassroom.name} — ${selectedClassroom.majorName}`
+                    : "Pilih kelas"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {classrooms.map((classroom) => (

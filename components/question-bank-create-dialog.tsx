@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createQuestionBank } from "@/app/dashboard/bank-soal/actions"
@@ -22,9 +23,12 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
     startTransition(async () => {
       try {
         await createQuestionBank(formData)
+        toast.success("Bank soal berhasil ditambahkan.")
         setOpen(false)
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Gagal menyimpan bank soal.")
+        const message = error instanceof Error ? error.message : "Gagal menyimpan bank soal."
+        setError(message)
+        toast.error(message)
       }
     })
   }
@@ -35,30 +39,37 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
         <Plus className="size-4" />
         Tambah Bank Soal
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Tambah Bank Soal</DialogTitle>
-          <DialogDescription>Simpan kode soal, mapel, dan link Google Form.</DialogDescription>
+          <DialogDescription>Kode dan judul dibuat otomatis dari mapel agar konsisten.</DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="code">Kode Soal</Label>
-              <Input id="code" name="code" placeholder="MTK-X-001" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subjectId">Mapel</Label>
-              <Select name="subjectId" required>
-                <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel" /></SelectTrigger>
-                <SelectContent>
-                  {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} — {subject.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="subjectId">Mapel</Label>
+            <Select name="subjectId" required>
+              <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel" /></SelectTrigger>
+              <SelectContent>
+                {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} — {subject.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Kode dan judul akan mengikuti mapel dan kelas.</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title">Judul</Label>
-            <Input id="title" name="title" placeholder="Ujian Matematika Kelas X" required />
+            <Label htmlFor="grade">Kelas</Label>
+            <Select name="grade" required>
+              <SelectTrigger id="grade" className="w-full"><SelectValue placeholder="Pilih kelas" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="X">X</SelectItem>
+                <SelectItem value="XI">XI</SelectItem>
+                <SelectItem value="XII">XII</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Contoh kode otomatis: MTK-X, KIM-XI.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="teacherName">Nama Guru Pembuat</Label>
+            <Input id="teacherName" name="teacherName" placeholder="Nama guru" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="googleFormUrl">Link Google Form</Label>

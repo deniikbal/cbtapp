@@ -21,6 +21,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { ClassroomCreateDialog } from "@/components/classroom-create-dialog"
+import { ClassroomRowActions } from "@/components/classroom-row-actions"
 import { MajorCreateDialog } from "@/components/major-create-dialog"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -60,11 +61,11 @@ const menuItems = [
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
-  { href: "#", label: "Ujian", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
-type ClassRow = { id: string; name: string; grade: string; majorName: string; majorCode: string; studentCount: number }
+type ClassRow = { id: string; name: string; grade: string; majorId: string; majorName: string; majorCode: string; studentCount: number }
 type MajorOption = { id: string; name: string; code: string }
 
 export default async function KelasPage() {
@@ -77,11 +78,11 @@ export default async function KelasPage() {
 
   try {
     rows = await db
-      .select({ id: classrooms.id, name: classrooms.name, grade: classrooms.grade, majorName: majors.name, majorCode: majors.code, studentCount: count(students.id) })
+      .select({ id: classrooms.id, name: classrooms.name, grade: classrooms.grade, majorId: classrooms.majorId, majorName: majors.name, majorCode: majors.code, studentCount: count(students.id) })
       .from(classrooms)
       .innerJoin(majors, eq(classrooms.majorId, majors.id))
       .leftJoin(students, eq(students.classroomId, classrooms.id))
-      .groupBy(classrooms.id, classrooms.name, classrooms.grade, majors.name, majors.code)
+      .groupBy(classrooms.id, classrooms.name, classrooms.grade, classrooms.majorId, majors.name, majors.code)
       .orderBy(asc(classrooms.name))
 
     majorOptions = await db.select({ id: majors.id, name: majors.name, code: majors.code }).from(majors).orderBy(asc(majors.name))
@@ -129,7 +130,7 @@ export default async function KelasPage() {
                     {rows.length === 0 ? (
                       <TableRow className="hover:bg-transparent"><TableCell colSpan={7} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><GraduationCap className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada kelas</div><p className="text-sm">{majorOptions.length === 0 ? "Tambahkan jurusan terlebih dahulu." : "Tambahkan kelas untuk mengelompokkan peserta."}</p></div>{majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}</div></TableCell></TableRow>
                     ) : rows.map((row, index) => (
-                      <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell><div className="flex flex-col"><span>{row.majorName}</span><span className="text-xs text-muted-foreground">{row.majorCode}</span></div></TableCell><TableCell className="tabular-nums">{row.studentCount}</TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.studentCount > 0 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.studentCount > 0 ? "Terisi" : "Kosong"}</Badge></TableCell><TableCell className="text-right"><Button variant="ghost" size="icon-sm"><Settings className="size-4" /><span className="sr-only">Atur kelas</span></Button></TableCell></TableRow>
+                      <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell><div className="flex flex-col"><span>{row.majorName}</span><span className="text-xs text-muted-foreground">{row.majorCode}</span></div></TableCell><TableCell className="tabular-nums">{row.studentCount}</TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.studentCount > 0 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.studentCount > 0 ? "Terisi" : "Kosong"}</Badge></TableCell><TableCell className="text-right"><ClassroomRowActions classroom={row} majors={majorOptions} /></TableCell></TableRow>
                     ))}
                   </TableBody>
                 </Table>
@@ -142,7 +143,7 @@ export default async function KelasPage() {
   )
 }
 
-function DashboardSidebar() { return <Sidebar collapsible="icon"><SidebarHeader><SidebarMenu><SidebarMenuItem><SidebarMenuButton size="lg" render={<Link href="/dashboard" />}><div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Home className="size-4" /></div><div className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-semibold">CBT App</span><span className="truncate text-xs text-muted-foreground">Admin Panel</span></div></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarHeader><SidebarContent><SidebarGroup><SidebarGroupLabel>Menu Utama</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>{menuItems.map((item) => { const Icon = item.icon; return <SidebarMenuItem key={item.label}><SidebarMenuButton isActive={item.active} tooltip={item.label} render={<Link href={item.href} />}><Icon className="size-4" /><span className="truncate">{item.label}</span></SidebarMenuButton></SidebarMenuItem> })}</SidebarMenu></SidebarGroupContent></SidebarGroup></SidebarContent><SidebarFooter /><SidebarRail /></Sidebar> }
+function DashboardSidebar() { return <Sidebar collapsible="icon"><SidebarHeader><SidebarMenu><SidebarMenuItem><SidebarMenuButton size="lg" render={<Link href="/dashboard" />}><div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Home className="size-4" /></div><div className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-semibold">SMANSABA Assesmen</span><span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span></div></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarHeader><SidebarContent><SidebarGroup><SidebarGroupLabel>Menu Utama</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>{menuItems.map((item) => { const Icon = item.icon; return <SidebarMenuItem key={item.label}><SidebarMenuButton isActive={item.active} tooltip={item.label} render={<Link href={item.href} />}><Icon className="size-4" /><span className="truncate">{item.label}</span></SidebarMenuButton></SidebarMenuItem> })}</SidebarMenu></SidebarGroupContent></SidebarGroup></SidebarContent><SidebarFooter /><SidebarRail /></Sidebar> }
 function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) { return <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8"><div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4"><div className="flex items-center gap-3"><SidebarTrigger /><div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{description}</p></div></div><UserNav name={userName} email={userEmail} /></div></header> }
 type StatCardProps = { label: string; value: number; description: string; icon: ComponentType<{ className?: string }>; accent: string; ringClass: string }
 function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) { return <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}><div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} /><CardHeader className="relative"><div className="flex items-start justify-between gap-2"><div className="space-y-1"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p><p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value.toLocaleString("id-ID")}</p></div><div className={cn("flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur", accent.split(" ").find((className) => className.startsWith("text-")) ?? "")}><Icon className="size-4" /></div></div></CardHeader><CardContent className="relative"><p className="text-xs text-muted-foreground">{description}</p></CardContent></Card> }

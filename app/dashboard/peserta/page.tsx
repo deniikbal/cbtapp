@@ -24,6 +24,7 @@ import { redirect } from "next/navigation"
 
 import { SeedMasterDataButton } from "@/components/seed-master-data-button"
 import { StudentCreateDialog } from "@/components/student-create-dialog"
+import { StudentRowActions } from "@/components/student-row-actions"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -82,7 +83,7 @@ const menuItems = [
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
-  { href: "#", label: "Ujian", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
@@ -368,10 +369,7 @@ export default async function PesertaPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-1.5">
-                            <Button variant="ghost" size="icon-sm">
-                              <Settings className="size-4" />
-                              <span className="sr-only">Atur peserta</span>
-                            </Button>
+                            <StudentRowActions student={student} classrooms={classroomOptions} />
                           </div>
                         </TableCell>
                         </TableRow>
@@ -399,8 +397,8 @@ function DashboardSidebar() {
                 <Home className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">CBT App</span>
-                <span className="truncate text-xs text-muted-foreground">Admin Panel</span>
+                <span className="truncate font-semibold">SMANSABA Assesmen</span>
+                <span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

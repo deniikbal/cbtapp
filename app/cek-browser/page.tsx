@@ -36,8 +36,8 @@ export default async function CekBrowserPage() {
             Tips: biasanya cukup simpan keyword unik seperti <span className="font-mono text-foreground">exambro</span> atau <span className="font-mono text-foreground">exam</span>, bukan seluruh User-Agent.
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" className="gap-2" render={<Link href="/" />}>Kembali Login</Button>
-            <Button className="gap-2" render={<Link href="/dashboard/pengaturan" />}><Copy className="size-4" />Buka Pengaturan</Button>
+            <Button nativeButton={false} variant="outline" className="gap-2" render={<Link href="/" />}>Kembali Login</Button>
+            <Button nativeButton={false} className="gap-2" render={<Link href="/dashboard/pengaturan" />}><Copy className="size-4" />Buka Pengaturan</Button>
           </div>
         </CardContent>
       </Card>

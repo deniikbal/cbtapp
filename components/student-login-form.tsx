@@ -5,6 +5,7 @@ import { BookOpenCheck, Loader2, LogIn } from "lucide-react"
 
 import { loginStudent, type StudentLoginState } from "@/app/siswa/login/actions"
 import { Button } from "@/components/ui/button"
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +21,8 @@ export function StudentLoginForm() {
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <BookOpenCheck className="size-6" />
         </div>
-        <CardTitle className="text-xl">Login Siswa</CardTitle>
+        <CardTitle className="text-xl">{APP_NAME}</CardTitle>
+        <CardDescription>{APP_TAGLINE}</CardDescription>
         <CardDescription>Masuk menggunakan NIS dan password dari admin.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -11,12 +11,13 @@ import {
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { startExam, submitExam } from "@/app/siswa/dashboard/actions"
 import { StudentLogoutButton } from "@/components/student-logout-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/lib/db"
-import { classrooms, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
+import { classrooms, examAttempts, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
 import { canAccessStudentArea } from "@/lib/exam-browser"
 import { cn } from "@/lib/utils"
 
@@ -74,6 +75,16 @@ export default async function SiswaDashboardPage() {
     )
     .orderBy(asc(examSchedules.examDate), asc(examSchedules.startTime))
 
+  const attemptRows = await db
+    .select({
+      scheduleId: examAttempts.scheduleId,
+      startedAt: examAttempts.startedAt,
+      submittedAt: examAttempts.submittedAt,
+    })
+    .from(examAttempts)
+    .where(eq(examAttempts.studentId, student[0].id))
+
+  const attemptBySchedule = new Map(attemptRows.map((attempt) => [attempt.scheduleId, attempt]))
   const today = getTodayInTimeZone("Asia/Jakarta")
   const todaySchedules = schedules.filter((schedule) => schedule.examDate === today).length
 
@@ -82,7 +93,7 @@ export default async function SiswaDashboardPage() {
       <header className="sticky top-0 z-10 border-b bg-background px-4 py-3">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">CBT App</p>
+            <p className="truncate text-sm font-semibold">SMANSABA Assesmen</p>
             <p className="truncate text-xs text-muted-foreground">Dashboard Siswa</p>
           </div>
           <StudentLogoutButton />
@@ -161,7 +172,17 @@ export default async function SiswaDashboardPage() {
               <div className="space-y-3">
                 {schedules.map((schedule) => {
                   const isToday = schedule.examDate === today
-                  const canStart = canStartExam(schedule.examDate, schedule.startTime)
+                  const examStatus = getExamStatus(
+                    schedule.examDate,
+                    schedule.startTime,
+                    schedule.durationMinutes
+                  )
+                  const attempt = attemptBySchedule.get(schedule.id)
+                  const attemptStatus = attempt?.submittedAt
+                    ? "SUBMITTED"
+                    : attempt?.startedAt
+                      ? "STARTED"
+                      : "NOT_STARTED"
 
                   return (
                     <article
@@ -200,14 +221,31 @@ export default async function SiswaDashboardPage() {
                         />
                       </div>
 
-                      {canStart ? (
-                        <Button
-                          nativeButton={false}
-                          className="mt-4 w-full gap-2"
-                          render={<a href={schedule.googleFormUrl} target="_blank" rel="noreferrer" />}
-                        >
-                          Kerjakan Ujian
-                          <ExternalLink className="size-4" />
+                      {attemptStatus === "SUBMITTED" ? (
+                        <Button className="mt-4 w-full gap-2" disabled>
+                          Selesai dikerjakan
+                          <Clock3 className="size-4" />
+                        </Button>
+                      ) : examStatus === "ACTIVE" ? (
+                        <div className="mt-4 grid gap-2">
+                          <form action={startExam.bind(null, schedule.id, schedule.googleFormUrl)}>
+                            <Button type="submit" className="w-full gap-2">
+                              {attemptStatus === "STARTED" ? "Buka Lagi" : "Kerjakan Ujian"}
+                              <ExternalLink className="size-4" />
+                            </Button>
+                          </form>
+                          {attemptStatus === "STARTED" && (
+                            <form action={submitExam.bind(null, schedule.id)}>
+                              <Button type="submit" variant="outline" className="w-full gap-2">
+                                Saya sudah selesai
+                              </Button>
+                            </form>
+                          )}
+                        </div>
+                      ) : examStatus === "FINISHED" ? (
+                        <Button className="mt-4 w-full gap-2" disabled>
+                          Waktu ujian selesai
+                          <Clock3 className="size-4" />
                         </Button>
                       ) : (
                         <Button className="mt-4 w-full gap-2" disabled>
@@ -253,18 +291,28 @@ function calculateEndTime(startTime: string, durationMinutes: number) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
 }
 
-function canStartExam(examDate: string, startTime: string) {
-  const [year, month, day] = examDate.split("-").map(Number)
-  const [hours, minutes] = startTime.split(":").map(Number)
+function getExamStatus(
+  examDate: string,
+  startTime: string,
+  durationMinutes: number
+): "UPCOMING" | "ACTIVE" | "FINISHED" {
+  const startValue = getDateTimeValue(examDate, startTime)
+  const endValue = getDateTimeValue(examDate, calculateEndTime(startTime, durationMinutes))
   const now = getDateTimePartsInTimeZone("Asia/Jakarta")
   const nowValue = Number(
     `${now.year}${pad2(now.month)}${pad2(now.day)}${pad2(now.hours)}${pad2(now.minutes)}`
   )
-  const startValue = Number(
-    `${year}${pad2(month)}${pad2(day)}${pad2(hours)}${pad2(minutes)}`
-  )
 
-  return nowValue >= startValue
+  if (nowValue < startValue) return "UPCOMING"
+  if (nowValue <= endValue) return "ACTIVE"
+  return "FINISHED"
+}
+
+function getDateTimeValue(dateValue: string, timeValue: string) {
+  const [year, month, day] = dateValue.split("-").map(Number)
+  const [hours, minutes] = timeValue.split(":").map(Number)
+
+  return Number(`${year}${pad2(month)}${pad2(day)}${pad2(hours)}${pad2(minutes)}`)
 }
 
 function getTodayInTimeZone(timeZone: string) {

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { examBrowserSettings } from "@/lib/db/schema"
-import { EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
+import { ensureExamBrowserSettingsTable, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
 
 export async function updateExamBrowserSettings(formData: FormData) {
   const forceExamBrowser = formData.get("forceExamBrowser") === "on"
@@ -16,6 +16,8 @@ export async function updateExamBrowserSettings(formData: FormData) {
     throw new Error("Isi minimal satu pola User-Agent sebelum mode wajib ExamBro diaktifkan.")
   }
 
+  await ensureExamBrowserSettingsTable()
+
   await db
     .insert(examBrowserSettings)
     .values({
@@ -23,7 +25,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
       forceExamBrowser,
       allowedUserAgentPattern,
       blockedMessage:
-        blockedMessage || "Akses ujian hanya bisa dibuka melalui aplikasi ExamBro Android.",
+        blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
       downloadUrl,
     })
     .onConflictDoUpdate({
@@ -32,7 +34,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
         forceExamBrowser,
         allowedUserAgentPattern,
         blockedMessage:
-          blockedMessage || "Akses ujian hanya bisa dibuka melalui aplikasi ExamBro Android.",
+          blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
         downloadUrl,
         updatedAt: new Date(),
       },

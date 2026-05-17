@@ -1,0 +1,1 @@
+ALTER TABLE "question_banks" ADD COLUMN IF NOT EXISTS "grade" text DEFAULT 'X' NOT NULL;

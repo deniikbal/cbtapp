@@ -115,6 +115,8 @@ export const questionBanks = pgTable(
     id: text("id").primaryKey(),
     code: text("code").notNull(),
     title: text("title").notNull(),
+    teacherName: text("teacherName").notNull().default(""),
+    grade: text("grade").notNull().default("X"),
     googleFormUrl: text("googleFormUrl").notNull(),
     active: boolean("active").notNull().default(true),
     subjectId: text("subjectId")
@@ -124,7 +126,7 @@ export const questionBanks = pgTable(
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("question_banks_code_idx").on(table.code),
+    index("question_banks_code_idx").on(table.code),
     index("question_banks_subjectId_idx").on(table.subjectId),
   ],
 )
@@ -158,7 +160,7 @@ export const examBrowserSettings = pgTable("exam_browser_settings", {
   allowedUserAgentPattern: text("allowedUserAgentPattern").notNull().default(""),
   blockedMessage: text("blockedMessage")
     .notNull()
-    .default("Akses ujian hanya bisa dibuka melalui aplikasi ExamBro Android."),
+    .default("Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android."),
   downloadUrl: text("downloadUrl").notNull().default(""),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
@@ -181,5 +183,27 @@ export const students = pgTable(
   (table) => [
     uniqueIndex("students_nis_idx").on(table.nis),
     index("students_classroomId_idx").on(table.classroomId),
+  ],
+)
+
+export const examAttempts = pgTable(
+  "exam_attempts",
+  {
+    id: text("id").primaryKey(),
+    scheduleId: text("scheduleId")
+      .notNull()
+      .references(() => examSchedules.id, { onDelete: "cascade" }),
+    studentId: text("studentId")
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    startedAt: timestamp("startedAt", { withTimezone: true }),
+    submittedAt: timestamp("submittedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("exam_attempts_scheduleId_idx").on(table.scheduleId),
+    index("exam_attempts_studentId_idx").on(table.studentId),
+    uniqueIndex("exam_attempts_schedule_student_idx").on(table.scheduleId, table.studentId),
   ],
 )

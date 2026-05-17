@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createSubject } from "@/app/dashboard/mapel/actions"
@@ -20,9 +21,12 @@ export function SubjectCreateDialog() {
     startTransition(async () => {
       try {
         await createSubject(formData)
+        toast.success("Mapel berhasil ditambahkan.")
         setOpen(false)
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Gagal menyimpan mapel.")
+        const message = error instanceof Error ? error.message : "Gagal menyimpan mapel."
+        setError(message)
+        toast.error(message)
       }
     })
   }

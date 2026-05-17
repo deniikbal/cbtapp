@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createMajor } from "@/app/dashboard/jurusan/actions"
@@ -27,9 +28,12 @@ export function MajorCreateDialog() {
     startTransition(async () => {
       try {
         await createMajor(formData)
+        toast.success("Jurusan berhasil ditambahkan.")
         setOpen(false)
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Gagal menyimpan jurusan.")
+        const message = error instanceof Error ? error.message : "Gagal menyimpan jurusan."
+        setError(message)
+        toast.error(message)
       }
     })
   }
