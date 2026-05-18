@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Search,
   Settings,
+  UserCog,
   Users,
 } from "lucide-react"
 import Link from "next/link"
@@ -81,6 +82,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 

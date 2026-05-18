@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import { asc, eq } from "drizzle-orm"
-import { BookOpen, BookOpenCheck, Building2, CalendarDays, Download, ExternalLink, Filter, FileText, GraduationCap, Home, LayoutDashboard, LinkIcon, RotateCcw, Search, Settings, Users } from "lucide-react"
+import { BookOpen, BookOpenCheck, Building2, CalendarDays, Download, ExternalLink, Filter, FileText, GraduationCap, Home, LayoutDashboard, LinkIcon, RotateCcw, Search, Settings, UserCog, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -32,6 +32,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: true },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
@@ -68,7 +69,7 @@ export default async function BankSoalPage() {
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar title="Bank Soal" description="Kelola link Google Form" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
-          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Bank Soal</h1><p className="text-sm text-muted-foreground">Periode aktif: <span className="font-medium text-foreground">—</span></p></section>
+          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Bank Soal</h1><p className="text-sm text-muted-foreground">Kelola bank soal dan link Google Form ujian.</p></section>
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
             <StatCard label="Total Soal" value={rows.length} description="Link Google Form" icon={FileText} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
             <StatCard label="Aktif" value={activeBanks} description="Bisa dijadwalkan" icon={BookOpenCheck} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />

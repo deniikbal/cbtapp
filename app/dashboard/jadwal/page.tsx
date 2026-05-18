@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import { asc, eq } from "drizzle-orm"
-import { BookOpen, BookOpenCheck, Building2, CalendarDays, Clock3, FileText, Filter, GraduationCap, Home, LayoutDashboard, RotateCcw, Search, Settings, Users } from "lucide-react"
+import { BookOpen, BookOpenCheck, Building2, CalendarDays, Clock3, FileText, Filter, GraduationCap, Home, LayoutDashboard, RotateCcw, Search, Settings, UserCog, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -34,6 +34,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: true },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 

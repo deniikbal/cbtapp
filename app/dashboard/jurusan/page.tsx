@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Search,
   Settings,
+  UserCog,
   Users,
 } from "lucide-react"
 import Link from "next/link"
@@ -61,6 +62,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
@@ -94,7 +96,7 @@ export default async function JurusanPage() {
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data Jurusan</h1>
-            <p className="text-sm text-muted-foreground">Periode aktif: <span className="font-medium text-foreground">—</span></p>
+            <p className="text-sm text-muted-foreground">Kelola jurusan untuk pengelompokan kelas dan peserta.</p>
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

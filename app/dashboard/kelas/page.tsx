@@ -6,31 +6,22 @@ import {
   FileText,
   Building2,
   CalendarDays,
-  Download,
   Filter,
   GraduationCap,
   Home,
   LayoutDashboard,
-  RotateCcw,
-  Search,
   Settings,
+  UserCog,
   Users,
 } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { ClassroomCreateDialog } from "@/components/classroom-create-dialog"
-import { ClassroomRowActions } from "@/components/classroom-row-actions"
-import { MajorCreateDialog } from "@/components/major-create-dialog"
+import { ClassroomManagementCard } from "@/components/classroom-management-card"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Sidebar,
   SidebarContent,
@@ -47,7 +38,6 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, majors, students } from "@/lib/db/schema"
@@ -62,6 +52,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
@@ -99,7 +90,7 @@ export default async function KelasPage() {
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar title="Kelas" description="Kelola data kelas" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
-          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data Kelas</h1><p className="text-sm text-muted-foreground">Periode aktif: <span className="font-medium text-foreground">—</span></p></section>
+          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data Kelas</h1><p className="text-sm text-muted-foreground">Kelola kelas berdasarkan tingkat, jurusan, dan jumlah peserta.</p></section>
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
             <StatCard label="Total Kelas" value={rows.length} description="Semua kelas" icon={GraduationCap} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
             <StatCard label="Terisi" value={usedClasses} description="Memiliki peserta" icon={Users} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
@@ -109,34 +100,7 @@ export default async function KelasPage() {
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
 
-          <Card>
-            <CardHeader className="border-b">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="flex flex-col gap-1.5"><div className="flex items-center gap-2"><CardTitle>Daftar Kelas</CardTitle><Badge variant="secondary" className="font-normal">{rows.length} hasil</Badge></div><CardDescription>Kelola kelas berdasarkan tingkat dan jurusan.</CardDescription></div>
-                <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>{majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}</div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-12">
-                <div className="relative md:col-span-5"><Label htmlFor="search-class" className="sr-only">Cari kelas</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-class" placeholder="Cari kelas atau jurusan..." className="pl-8" /></div>
-                <div className="md:col-span-3"><Select defaultValue="ALL"><SelectTrigger className="w-full"><div className="flex items-center gap-2 truncate"><Filter className="size-4 text-muted-foreground" /><SelectValue placeholder="Semua jurusan" /></div></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua jurusan</SelectItem>{majorOptions.map((major) => <SelectItem key={major.id} value={major.id}>{major.code}</SelectItem>)}</SelectContent></Select></div>
-                <div className="md:col-span-2"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Tingkat" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="X">X</SelectItem><SelectItem value="XI">XI</SelectItem><SelectItem value="XII">XII</SelectItem></SelectContent></Select></div>
-                <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" />Reset</Button></div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Kelas</TableHead><TableHead>Tingkat</TableHead><TableHead>Jurusan</TableHead><TableHead>Peserta</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow className="hover:bg-transparent"><TableCell colSpan={7} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><GraduationCap className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada kelas</div><p className="text-sm">{majorOptions.length === 0 ? "Tambahkan jurusan terlebih dahulu." : "Tambahkan kelas untuk mengelompokkan peserta."}</p></div>{majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}</div></TableCell></TableRow>
-                    ) : rows.map((row, index) => (
-                      <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell><div className="flex flex-col"><span>{row.majorName}</span><span className="text-xs text-muted-foreground">{row.majorCode}</span></div></TableCell><TableCell className="tabular-nums">{row.studentCount}</TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.studentCount > 0 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.studentCount > 0 ? "Terisi" : "Kosong"}</Badge></TableCell><TableCell className="text-right"><ClassroomRowActions classroom={row} majors={majorOptions} /></TableCell></TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <ClassroomManagementCard rows={rows} majorOptions={majorOptions} />
         </main>
       </SidebarInset>
     </SidebarProvider>

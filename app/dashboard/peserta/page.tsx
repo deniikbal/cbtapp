@@ -10,6 +10,7 @@ import {
   KeyRound,
   LayoutDashboard,
   Settings,
+  UserCog,
   ShieldCheck,
   Users,
 } from "lucide-react"
@@ -56,6 +57,7 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
@@ -138,7 +140,7 @@ export default async function PesertaPage() {
               Data Peserta
             </h1>
             <p className="text-sm text-muted-foreground">
-              Periode aktif: <span className="font-medium text-foreground">—</span>
+              Kelola akun peserta, NIS, status, dan penempatan kelas.
             </p>
           </section>
 

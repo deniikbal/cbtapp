@@ -1,18 +1,46 @@
 import type { ComponentType } from "react"
 import { asc } from "drizzle-orm"
-import { BookOpen, BookOpenCheck, Building2, CalendarDays, FileText, Filter, GraduationCap, Home, LayoutDashboard, Settings, UserCog, Users } from "lucide-react"
+import {
+  BookOpen,
+  BookOpenCheck,
+  Building2,
+  CalendarDays,
+  FileText,
+  GraduationCap,
+  Home,
+  LayoutDashboard,
+  Settings,
+  ShieldCheck,
+  UserCog,
+  Users,
+} from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { SubjectManagementCard } from "@/components/subject-management-card"
+import { UserManagementCard, type UserManagementRow } from "@/components/user-management-card"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { subjects } from "@/lib/db/schema"
+import { user } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
@@ -20,49 +48,65 @@ const menuItems = [
   { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
   { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap, active: false },
   { href: "/dashboard/peserta", label: "Peserta", icon: Users, active: false },
-  { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: true },
+  { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
-  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
+  { href: "/dashboard/user", label: "User", icon: UserCog, active: true },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
-type SubjectRow = { id: string; name: string; code: string; active: boolean }
-
-export default async function MapelPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect("/login")
+export default async function UserPage() {
+  const currentSession = await auth.api.getSession({ headers: await headers() })
+  if (!currentSession) redirect("/login")
 
   let databaseError: string | null = null
-  let rows: SubjectRow[] = []
+  let rows: UserManagementRow[] = []
 
   try {
-    rows = await db.select({ id: subjects.id, name: subjects.name, code: subjects.code, active: subjects.active }).from(subjects).orderBy(asc(subjects.name))
+    const result = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .orderBy(asc(user.name))
+
+    rows = result.map((row) => ({
+      ...row,
+      createdAt: row.createdAt.toISOString(),
+    }))
   } catch (error) {
-    databaseError = error instanceof Error ? error.message : "Gagal mengambil data mapel."
+    databaseError = error instanceof Error ? error.message : "Gagal mengambil data user."
   }
 
-  const activeSubjects = rows.filter((row) => row.active).length
-  const inactiveSubjects = rows.length - activeSubjects
+  const newUsersThisMonth = rows.filter((row) => {
+    const createdAt = new Date(row.createdAt)
+    const now = new Date()
+    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
+  }).length
+  const uniqueDomains = new Set(rows.map((row) => row.email.split("@")[1]).filter(Boolean)).size
 
   return (
     <SidebarProvider>
       <DashboardSidebar />
       <SidebarInset className="bg-muted/30">
-        <DashboardNavbar title="Mapel" description="Kelola mata pelajaran" userName={session.user.name} userEmail={session.user.email} />
+        <DashboardNavbar title="User" description="Kelola akun dashboard" userName={currentSession.user.name} userEmail={currentSession.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
-          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data Mapel</h1><p className="text-sm text-muted-foreground">Kelola mata pelajaran untuk bank soal dan jadwal ujian.</p></section>
+          <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data User</h1><p className="text-sm text-muted-foreground">Kelola akun admin dan operator yang dapat mengakses dashboard.</p></section>
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Total Mapel" value={rows.length} description="Semua mata pelajaran" icon={BookOpen} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
-            <StatCard label="Aktif" value={activeSubjects} description="Bisa dipakai bank ujian" icon={BookOpenCheck} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
-            <StatCard label="Tidak Aktif" value={inactiveSubjects} description="Disembunyikan dari ujian" icon={Filter} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" ringClass="ring-pink-500/20" />
-            <StatCard label="Bank Ujian" value={0} description="Akan terhubung nanti" icon={BookOpenCheck} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
+            <StatCard label="Total User" value={rows.length} description="Akun dashboard" icon={Users} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
+            <StatCard label="User Baru" value={newUsersThisMonth} description="Dibuat bulan ini" icon={ShieldCheck} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
+            <StatCard label="Domain Email" value={uniqueDomains} description="Domain email unik" icon={UserCog} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" ringClass="ring-pink-500/20" />
+            <StatCard label="Akun Dashboard" value={rows.length} description="Akses admin/operator" icon={BookOpenCheck} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
           </section>
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
 
-          <SubjectManagementCard rows={rows} />
+          <UserManagementCard users={rows} currentUserId={currentSession.user.id} />
         </main>
       </SidebarInset>
     </SidebarProvider>

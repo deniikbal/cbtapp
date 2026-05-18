@@ -4,15 +4,15 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS=--no-network-family-autoselection next dev --turbopack",
+    "dev": "cross-env NODE_OPTIONS=--no-network-family-autoselection next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "db:migrate:auth": "NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local scripts/migrate-auth-db.mjs",
+    "db:migrate:auth": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local scripts/migrate-auth-db.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:push": "NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push"
+    "db:push": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -51,6 +51,7 @@
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.1.7",
