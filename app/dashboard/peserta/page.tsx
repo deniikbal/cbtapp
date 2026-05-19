@@ -48,6 +48,11 @@ import { db } from "@/lib/db"
 import { classrooms, majors, students } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
+const naturalClassroomCollator = new Intl.Collator("id-ID", {
+  numeric: true,
+  sensitivity: "base",
+})
+
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
   { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
@@ -115,6 +120,11 @@ export default async function PesertaPage() {
       .from(classrooms)
       .innerJoin(majors, eq(classrooms.majorId, majors.id))
       .orderBy(asc(classrooms.name))
+
+    classroomOptions.sort((a, b) => {
+      const byName = naturalClassroomCollator.compare(a.name, b.name)
+      return byName || naturalClassroomCollator.compare(a.majorName, b.majorName)
+    })
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data peserta."
   }

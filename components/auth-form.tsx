@@ -172,16 +172,18 @@ export function AuthForm() {
 
           <div className="mt-5 flex items-center justify-between gap-3 text-xs">
             <span>© 2026</span>
-            <button
-              type="button"
-              className="text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
-              onClick={() => {
-                setMessage("")
-                setMode(mode === "login" ? "register" : "login")
-              }}
-            >
-              {mode === "login" ? "Buat akun admin" : "Sudah punya akun? Masuk"}
-            </button>
+            {mode === "register" && (
+              <button
+                type="button"
+                className="text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
+                onClick={() => {
+                  setMessage("")
+                  setMode("login")
+                }}
+              >
+                Sudah punya akun? Masuk
+              </button>
+            )}
             <span className="hidden text-muted-foreground sm:inline">Powered by {APP_NAME}</span>
           </div>
         </div>

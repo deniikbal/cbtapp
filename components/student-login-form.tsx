@@ -1,7 +1,7 @@
 "use client"
 
-import { useActionState } from "react"
-import { BookOpenCheck, Loader2, LogIn } from "lucide-react"
+import { useActionState, useState } from "react"
+import { BookOpenCheck, Eye, EyeOff, Loader2, LogIn } from "lucide-react"
 
 import { loginStudent, type StudentLoginState } from "@/app/siswa/login/actions"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ const initialState: StudentLoginState = {}
 
 export function StudentLoginForm() {
   const [state, formAction, pending] = useActionState(loginStudent, initialState)
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Card className="w-full max-w-md">
@@ -28,12 +29,35 @@ export function StudentLoginForm() {
       <CardContent>
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nis">NIS</Label>
-            <Input id="nis" name="nis" placeholder="2026001" required />
+            <Label htmlFor="nis">Nomor Induk Siswa (NIS)</Label>
+            <Input
+              id="nis"
+              name="nis"
+              placeholder="Masukkan NIS"
+              className="placeholder:text-muted-foreground/60"
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="******"
+                className="pr-10 placeholder:text-muted-foreground/60"
+                required
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => setShowPassword((value) => !value)}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </div>
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}

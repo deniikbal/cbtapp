@@ -28,6 +28,7 @@ export function UserNav({ name, email }: { name: string; email: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        id="user-nav-trigger"
         render={
           <Button variant="ghost" className="h-auto gap-3 px-2 py-1.5" />
         }

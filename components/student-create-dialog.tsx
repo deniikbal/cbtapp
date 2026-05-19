@@ -97,11 +97,11 @@ export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOptio
               <Label htmlFor="active">Status</Label>
               <Select name="active" defaultValue="true">
                 <SelectTrigger id="active" className="w-full">
-                  <SelectValue />
+                  <SelectValue>Aktif</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="true">Aktif</SelectItem>
-                  <SelectItem value="false">Tidak aktif</SelectItem>
+                  <SelectItem value="false">Tidak Aktif</SelectItem>
                 </SelectContent>
               </Select>
             </div>

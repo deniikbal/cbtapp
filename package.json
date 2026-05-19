@@ -10,9 +10,9 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "db:migrate:auth": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local scripts/migrate-auth-db.mjs",
+    "db:migrate:auth": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env scripts/migrate-auth-db.mjs",
     "db:generate": "drizzle-kit generate",
-    "db:push": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push"
+    "db:push": "cross-env NODE_OPTIONS=--no-network-family-autoselection node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
