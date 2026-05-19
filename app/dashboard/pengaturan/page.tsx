@@ -21,16 +21,12 @@ import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { updateExamBrowserSettings } from "@/app/dashboard/pengaturan/actions"
+import { ExamBrowserSettingsForm } from "@/components/exam-browser-settings-form"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
-import { Textarea } from "@/components/ui/textarea"
 import { auth } from "@/lib/auth"
 import { getAllowedUserAgentPatterns, getExamBrowserSettings } from "@/lib/exam-browser"
 import { cn } from "@/lib/utils"
@@ -92,40 +88,7 @@ export default async function PengaturanPage() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <form
-                key={`${settings.forceExamBrowser}-${settings.allowedUserAgentPattern}-${settings.blockedMessage}-${settings.downloadUrl}`}
-                action={updateExamBrowserSettings}
-                className="space-y-5"
-              >
-                <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
-                  <input id="forceExamBrowser" name="forceExamBrowser" type="checkbox" defaultChecked={settings.forceExamBrowser} className="mt-1 size-4 rounded border-border" />
-                  <div className="space-y-1">
-                    <Label htmlFor="forceExamBrowser">Wajib menggunakan ExamBro</Label>
-                    <p className="text-sm text-muted-foreground">Jika aktif, Chrome/browser biasa akan diarahkan ke halaman blokir.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="allowedUserAgentPattern">Pola User-Agent yang diizinkan</Label>
-                  <Textarea id="allowedUserAgentPattern" name="allowedUserAgentPattern" defaultValue={settings.allowedUserAgentPattern} placeholder="Contoh: exambro&#10;exam browser" rows={5} />
-                  <p className="text-xs text-muted-foreground">Bisa lebih dari satu, pisahkan dengan baris baru atau koma. Gunakan keyword unik, jangan User-Agent lengkap.</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="blockedMessage">Pesan saat diblokir</Label>
-                  <Textarea id="blockedMessage" name="blockedMessage" defaultValue={settings.blockedMessage} rows={3} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="downloadUrl">Link Play Store ExamBro</Label>
-                  <Input id="downloadUrl" name="downloadUrl" defaultValue={settings.downloadUrl} placeholder="https://play.google.com/store/apps/details?id=..." />
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                  <Button nativeButton={false} variant="outline" className="gap-2" render={<Link href="/cek-browser" />}>Cek User-Agent</Button>
-                  <Button type="submit" className="gap-2"><Settings className="size-4" />Simpan Pengaturan</Button>
-                </div>
-              </form>
+              <ExamBrowserSettingsForm settings={settings} />
             </CardContent>
           </Card>
         </main>
