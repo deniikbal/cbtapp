@@ -24,16 +24,16 @@ export function StudentLoginForm() {
         </div>
         <CardTitle className="text-xl">{APP_NAME}</CardTitle>
         <CardDescription>{APP_TAGLINE}</CardDescription>
-        <CardDescription>Masuk menggunakan NIS dan password dari admin.</CardDescription>
+        <CardDescription>Masuk menggunakan Username dan password dari Panitia.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nis">Nomor Induk Siswa (NIS)</Label>
+            <Label htmlFor="nis">Username</Label>
             <Input
               id="nis"
               name="nis"
-              placeholder="Masukkan NIS"
+              placeholder="Masukan Username"
               className="placeholder:text-muted-foreground/60"
               required
             />
