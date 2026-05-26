@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
+const naturalClassroomCollator = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
 const subscribe = () => () => {}
 
 type ProgressRow = {
@@ -46,7 +47,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
   const filteredRows = useMemo(() => {
     const keyword = search.toLowerCase().trim()
 
-    return rows.filter((row) => {
+    const result = rows.filter((row) => {
       if (todayOnly && row.examDate !== getTodayDateValue()) return false
       if (!keyword) return true
 
@@ -54,6 +55,18 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
         .join(" ")
         .toLowerCase()
         .includes(keyword)
+    })
+
+    if (!todayOnly) return result
+
+    return [...result].sort((a, b) => {
+      const classCompare = naturalClassroomCollator.compare(a.className, b.className)
+      if (classCompare !== 0) return classCompare
+
+      const timeCompare = a.startTime.localeCompare(b.startTime)
+      if (timeCompare !== 0) return timeCompare
+
+      return naturalClassroomCollator.compare(a.title, b.title)
     })
   }, [rows, search, todayOnly])
 

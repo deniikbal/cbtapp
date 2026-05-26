@@ -91,11 +91,12 @@ export default async function SiswaDashboardPage() {
 
   const attemptBySchedule = new Map(attemptRows.map((attempt) => [attempt.scheduleId, attempt]))
   const today = getTodayInTimeZone("Asia/Jakarta")
+  const visibleSchedules = schedules.filter(
+    (schedule) => getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) === "ACTIVE"
+  )
   const todaySchedules = schedules.filter((schedule) => schedule.examDate === today).length
   const completedSchedules = attemptRows.filter((attempt) => attempt.submittedAt).length
-  const activeNowSchedules = schedules.filter(
-    (schedule) => getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) === "ACTIVE"
-  ).length
+  const activeNowSchedules = visibleSchedules.length
   const progressPercent = schedules.length > 0 ? Math.round((completedSchedules / schedules.length) * 100) : 0
 
   return (
@@ -160,26 +161,26 @@ export default async function SiswaDashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">Jadwal Ujian</h2>
-            <span className="text-sm text-muted-foreground">{schedules.length} jadwal</span>
+            <span className="text-sm text-muted-foreground">{visibleSchedules.length} jadwal aktif</span>
           </div>
 
-          {schedules.length === 0 ? (
+          {visibleSchedules.length === 0 ? (
             <Card>
               <CardContent className="flex min-h-56 flex-col items-center justify-center gap-3 text-center">
                 <div className="rounded-xl bg-primary/10 p-3">
                   <BookOpen className="size-6 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Belum ada jadwal</p>
+                  <p className="text-sm font-medium text-foreground">Belum ada jadwal yang bisa dikerjakan</p>
                   <p className="max-w-xs text-sm text-muted-foreground">
-                    Jadwal ujian akan tampil setelah admin membuat jadwal untuk kelasmu.
+                    Jadwal ujian akan tampil otomatis sesuai tanggal dan jam yang diatur admin.
                   </p>
                 </div>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {schedules.map((schedule) => {
+              {visibleSchedules.map((schedule) => {
                 const isToday = schedule.examDate === today
                 const examStatus = getExamStatus(
                   schedule.examDate,
@@ -247,7 +248,7 @@ export default async function SiswaDashboardPage() {
                           </Button>
                         ) : examStatus === "ACTIVE" ? (
                           <div className="grid gap-2">
-                            <form action={startExam.bind(null, schedule.id, schedule.googleFormUrl)}>
+                            <form action={startExam.bind(null, schedule.id)}>
                               <Button type="submit" className="w-full gap-2">
                                 {attemptStatus === "STARTED" ? "Buka Lagi" : "Kerjakan Ujian"}
                                 <ExternalLink className="size-4" />

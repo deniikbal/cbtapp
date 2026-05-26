@@ -1,23 +1,15 @@
 import type { ComponentType } from "react"
 import { asc, eq } from "drizzle-orm"
-import { BookOpen, BookOpenCheck, Building2, CalendarDays, Download, ExternalLink, Filter, FileText, GraduationCap, Home, LayoutDashboard, LinkIcon, RotateCcw, Search, Settings, UserCog, Users } from "lucide-react"
+import { BookOpen, BookOpenCheck, Building2, CalendarDays, Filter, FileText, GraduationCap, Home, LayoutDashboard, Settings, UserCog, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
-import { QuestionBankRowActions } from "@/components/question-bank-row-actions"
-import { SubjectCreateDialog } from "@/components/subject-create-dialog"
+import { QuestionBankManagementCard } from "@/components/question-bank-management-card"
 import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, subjects } from "@/lib/db/schema"
@@ -66,9 +58,9 @@ export default async function BankSoalPage() {
   return (
     <SidebarProvider>
       <DashboardSidebar />
-      <SidebarInset className="bg-muted/30">
+      <SidebarInset className="min-w-0 overflow-x-hidden bg-muted/30">
         <DashboardNavbar title="Bank Soal" description="Kelola link Google Form" userName={session.user.name} userEmail={session.user.email} />
-        <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
+        <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Bank Soal</h1><p className="text-sm text-muted-foreground">Kelola bank soal dan link Google Form ujian.</p></section>
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
             <StatCard label="Total Soal" value={rows.length} description="Link Google Form" icon={FileText} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
@@ -79,34 +71,7 @@ export default async function BankSoalPage() {
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
 
-          <Card>
-            <CardHeader className="border-b">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="flex flex-col gap-1.5"><div className="flex items-center gap-2"><CardTitle>Daftar Bank Soal</CardTitle><Badge variant="secondary" className="font-normal">{rows.length} hasil</Badge></div><CardDescription>Bank soal hanya menyimpan kode, mapel, dan link Google Form. Durasi nanti di jadwal.</CardDescription></div>
-                <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>{subjectOptions.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjectOptions} />}</div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-12">
-                <div className="relative md:col-span-5"><Label htmlFor="search-bank" className="sr-only">Cari bank soal</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-bank" placeholder="Cari kode, judul, atau mapel..." className="pl-8" /></div>
-                <div className="md:col-span-3"><Select defaultValue="ALL"><SelectTrigger className="w-full"><div className="flex items-center gap-2 truncate"><BookOpen className="size-4 text-muted-foreground" /><SelectValue placeholder="Semua mapel" /></div></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua mapel</SelectItem>{subjectOptions.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code}</SelectItem>)}</SelectContent></Select></div>
-                <div className="md:col-span-2"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent></Select></div>
-                <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" />Reset</Button></div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Kode Soal</TableHead><TableHead>Judul</TableHead><TableHead>Kelas</TableHead><TableHead>Guru</TableHead><TableHead>Mapel</TableHead><TableHead>Link GForm</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada bank soal</div><p className="text-sm">{subjectOptions.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{subjectOptions.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjectOptions} />}</div></TableCell></TableRow>
-                    ) : rows.map((row, index) => (
-                      <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="font-medium">{row.title}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell>{row.teacherName || "—"}</TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.subjectCode}</span></div></TableCell><TableCell><Button nativeButton={false} variant="ghost" size="sm" className="gap-2" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" />Buka <ExternalLink className="size-3" /></Button></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjectOptions} /></TableCell></TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+          <QuestionBankManagementCard rows={rows} subjects={subjectOptions} />
         </main>
       </SidebarInset>
     </SidebarProvider>

@@ -39,6 +39,10 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
   const [currentPage, setCurrentPage] = useState(1)
 
   const groupedRows = useMemo(() => groupScheduleRows(rows), [rows])
+  const sortedClassrooms = useMemo(
+    () => [...classrooms].sort((a, b) => naturalClassroomCollator.compare(a.name, b.name)),
+    [classrooms]
+  )
   const filteredRows = useMemo(() => {
     const keyword = search.toLowerCase().trim()
 
@@ -130,7 +134,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
             <CardDescription>Jadwal berisi bank soal, kelas, tanggal, jam mulai, dan durasi.</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
-            {banks.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={banks} classrooms={classrooms} />}
+            {banks.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-12">
@@ -144,7 +148,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
               <SelectTrigger className="w-full"><SelectValue placeholder="Semua kelas" /></SelectTrigger>
               <SelectContent align="start">
                 <SelectItem value="ALL">Semua kelas</SelectItem>
-                {classrooms.map((classroom) => <SelectItem key={classroom.id} value={classroom.id}>{classroom.name}</SelectItem>)}
+                {sortedClassrooms.map((classroom) => <SelectItem key={classroom.id} value={classroom.id}>{classroom.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -164,9 +168,9 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={classrooms} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
               ) : (
-                paginatedRows.map((group, index) => <TableRow key={group.key} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={classrooms} /></div></TableCell></TableRow>)
+                paginatedRows.map((group, index) => <TableRow key={group.key} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
               )}
             </TableBody>
           </Table>

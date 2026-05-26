@@ -6,6 +6,7 @@ import { Filter, RotateCcw, Search, Users } from "lucide-react"
 import { SeedMasterDataButton } from "@/components/seed-master-data-button"
 import { StudentCreateDialog } from "@/components/student-create-dialog"
 import { StudentImportDialog } from "@/components/student-import-dialog"
+import { StudentNisImportDialog } from "@/components/student-nis-import-dialog"
 import { StudentRowActions } from "@/components/student-row-actions"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -125,6 +126,7 @@ export function StudentManagementCard({
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
             {classrooms.length === 0 && <SeedMasterDataButton />}
             <StudentImportDialog />
+            <StudentNisImportDialog />
             <StudentCreateDialog classrooms={classrooms} />
           </div>
         </div>
@@ -180,7 +182,7 @@ export function StudentManagementCard({
               <TableRow className="bg-muted/40 hover:bg-muted/40">
                 <TableHead className="w-12 text-center">#</TableHead>
                 <TableHead>Nama</TableHead>
-                <TableHead>NIS</TableHead>
+                <TableHead>Username</TableHead>
                 <TableHead>Password</TableHead>
                 <TableHead>Kelas</TableHead>
                 <TableHead>Jurusan</TableHead>
