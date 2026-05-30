@@ -23,18 +23,22 @@ export function AuthForm() {
     setMessage("")
 
     startTransition(async () => {
-      const result =
-        mode === "login"
-          ? await authClient.signIn.email({ email, password })
-          : await authClient.signUp.email({ name, email, password })
+      try {
+        const result =
+          mode === "login"
+            ? await authClient.signIn.email({ email, password })
+            : await authClient.signUp.email({ name, email, password })
 
-      if (result.error) {
-        setMessage(result.error.message || "Autentikasi gagal")
-        return
+        if (result.error) {
+          setMessage(result.error.message || "Autentikasi gagal")
+          return
+        }
+
+        router.push("/dashboard")
+        router.refresh()
+      } catch {
+        setMessage("Tidak dapat terhubung ke server autentikasi. Periksa koneksi atau URL aplikasi.")
       }
-
-      router.push("/dashboard")
-      router.refresh()
     })
   }
 
