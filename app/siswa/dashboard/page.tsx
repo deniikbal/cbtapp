@@ -256,7 +256,7 @@ export default async function SiswaDashboardPage() {
                             </form>
                             {attemptStatus === "STARTED" && (
                               <form action={submitExam.bind(null, schedule.id)}>
-                                <Button type="submit" variant="outline" className="w-full gap-2">
+                                <Button type="submit" className="w-full gap-2 bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40">
                                   Saya sudah selesai
                                 </Button>
                               </form>
