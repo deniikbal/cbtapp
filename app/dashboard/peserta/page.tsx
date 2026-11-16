@@ -1,18 +1,5 @@
 import type { ComponentType } from "react"
-import {
-  BookOpen,
-  BookOpenCheck,
-  FileText,
-  Building2,
-  CalendarDays,
-  GraduationCap,
-  Home,
-  KeyRound,
-  LayoutDashboard,
-  Settings,
-  UserCog,
-  ShieldCheck,
-  Users, BarChart3 } from "lucide-react"
+import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, FileText, GraduationCap, Home, KeyRound, LayoutDashboard, Settings, ShieldCheck, UserCog, UserRound, Users } from "lucide-react"
 import { asc, eq } from "drizzle-orm"
 import Link from "next/link"
 import { headers } from "next/headers"
@@ -56,6 +43,8 @@ const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
   { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
   { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap, active: false },
+
+  { href: "/dashboard/guru", label: "Guru", icon: UserRound, active: false },
   { href: "/dashboard/peserta", label: "Peserta", icon: Users, active: true },
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },

@@ -194,6 +194,24 @@ export const students = pgTable(
   ],
 )
 
+export const teachers = pgTable(
+  "teachers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    nip: text("nip").notNull(),
+    nuptk: text("nuptk").notNull().default(""),
+    gender: text("gender").notNull().default(""),
+    birthPlace: text("birthPlace").notNull().default(""),
+    birthDate: text("birthDate").notNull().default(""),
+    passwordHash: text("passwordHash").notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("teachers_nip_idx").on(table.nip)],
+)
+
 export const examAttempts = pgTable(
   "exam_attempts",
   {
