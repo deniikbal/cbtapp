@@ -10,19 +10,33 @@ import { db } from "@/lib/db"
 import { classrooms, examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
 import { auth } from "@/lib/auth"
 import { ambilForm, ambilRespons, cariNama, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
+import { getDatabaseErrorMessage } from "@/lib/db-error"
 
-async function wajibAdmin() {
+// Server action mengembalikan {ok,message}: error yang dilempar tidak sampai ke
+// pengguna di build produksi (diganti digest generik).
+type Gagal = { ok: false; message: string }
+
+async function wajibAdmin(): Promise<Gagal | null> {
   const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) throw new Error("Sesi habis. Silakan login ulang.")
-  return session
+  return session ? null : { ok: false, message: "Sesi habis. Silakan login ulang." }
 }
 
 export type HasilSyncInfo = { respons: number; cocok: number; tidakCocok: number; totalSoal: number }
+export type HasilSyncResult = { ok: true; info: HasilSyncInfo } | Gagal
 
-export async function syncHasil(scheduleId: string): Promise<HasilSyncInfo> {
-  await wajibAdmin()
-  if (!scheduleId) throw new Error("Jadwal tidak valid.")
+export async function syncHasil(scheduleId: string): Promise<HasilSyncResult> {
+  const sesi = await wajibAdmin()
+  if (sesi) return sesi
+  if (!scheduleId) return { ok: false, message: "Jadwal tidak valid." }
 
+  try {
+    return await jalankanSync(scheduleId)
+  } catch (error) {
+    return { ok: false, message: pesanError(error, "Gagal sync hasil dari Google Form.") }
+  }
+}
+
+async function jalankanSync(scheduleId: string): Promise<HasilSyncResult> {
   const jadwal = await db
     .select({ classroomId: examSchedules.classroomId, bankId: questionBanks.id, formId: questionBanks.formId, title: questionBanks.title })
     .from(examSchedules)
@@ -30,12 +44,12 @@ export async function syncHasil(scheduleId: string): Promise<HasilSyncInfo> {
     .where(eq(examSchedules.id, scheduleId))
     .limit(1)
 
-  if (!jadwal[0]) throw new Error("Jadwal tidak ditemukan.")
-  if (!jadwal[0].formId) throw new Error("Bank soal ini belum punya Form ID. Isi dulu di menu Bank Soal (link /edit).")
+  if (!jadwal[0]) return { ok: false, message: "Jadwal tidak ditemukan." }
+  if (!jadwal[0].formId) return { ok: false, message: "Bank soal ini belum punya Form ID. Isi dulu di menu Bank Soal (link /edit)." }
 
   const form = await ambilForm(jadwal[0].formId)
   const soal = soalDariItems(form.items)
-  if (!soal.length) throw new Error("Form tidak punya butir soal yang bisa dibaca.")
+  if (!soal.length) return { ok: false, message: "Form tidak punya butir soal yang bisa dibaca." }
 
   await db.update(questionBanks).set({ formItems: form.items, updatedAt: new Date() }).where(eq(questionBanks.id, jadwal[0].bankId))
 
@@ -80,7 +94,16 @@ export async function syncHasil(scheduleId: string): Promise<HasilSyncInfo> {
   }
 
   revalidatePath("/dashboard/hasil")
-  return { respons: respons.length, cocok, tidakCocok, totalSoal: soal.filter((s) => s.kunci.length > 0).length }
+  return { ok: true, info: { respons: respons.length, cocok, tidakCocok, totalSoal: soal.filter((s) => s.kunci.length > 0).length } }
+}
+
+function pesanError(error: unknown, fallback: string) {
+  const mentah = error instanceof Error ? error.message : ""
+  if (!mentah) return fallback
+  if (/google|credential|token|unauthor|permission|failed to fetch|fetch failed/i.test(mentah)) {
+    return `${fallback} (${mentah})`
+  }
+  return getDatabaseErrorMessage(error, fallback)
 }
 
 export type HasilDetail = {
@@ -101,9 +124,20 @@ export type HasilDetail = {
   }[]
 }
 
-export async function getHasilDetail(scheduleId: string): Promise<HasilDetail> {
-  await wajibAdmin()
+export type HasilDetailResult = { ok: true; detail: HasilDetail } | Gagal
 
+export async function getHasilDetail(scheduleId: string): Promise<HasilDetailResult> {
+  const sesi = await wajibAdmin()
+  if (sesi) return sesi
+
+  try {
+    return { ok: true, detail: await bacaHasilDetail(scheduleId) }
+  } catch (error) {
+    return { ok: false, message: pesanError(error, "Gagal mengambil rincian hasil.") }
+  }
+}
+
+async function bacaHasilDetail(scheduleId: string): Promise<HasilDetail> {
   const jadwal = await db
     .select({ judul: questionBanks.title, items: questionBanks.formItems, kelas: classrooms.name })
     .from(examSchedules)

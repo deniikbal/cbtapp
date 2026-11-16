@@ -33,28 +33,29 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   function handleSync(row: HasilRow) {
     setPendingId(row.id)
     startTransition(async () => {
-      try {
-        const info = await syncHasil(row.id)
-        toast.success(`${info.cocok} respons tercatat, ${info.tidakCocok} tidak cocok NIS, ${info.totalSoal} soal dinilai.`)
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Gagal sync hasil.")
-      } finally {
+      const hasil = await syncHasil(row.id)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
         setPendingId(null)
+        return
       }
+      const { cocok, tidakCocok, totalSoal } = hasil.info
+      toast.success(`${cocok} respons tercatat, ${tidakCocok} tidak cocok NIS, ${totalSoal} soal dinilai.`)
+      setPendingId(null)
     })
   }
 
   function handleDetail(row: HasilRow) {
     setPendingId(row.id)
     startTransition(async () => {
-      try {
-        setDetail(await getHasilDetail(row.id))
-        setDetailOpen(true)
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Gagal mengambil rincian.")
-      } finally {
-        setPendingId(null)
+      const hasil = await getHasilDetail(row.id)
+      setPendingId(null)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
       }
+      setDetail(hasil.detail)
+      setDetailOpen(true)
     })
   }
 
