@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
-import { BookOpenCheck, CalendarDays, RotateCcw, Search } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import { BookOpenCheck, CalendarDays, RefreshCw, RotateCcw, Search } from "lucide-react"
 
 import { ProgressDetailDialog, type ProgressStudent } from "@/components/progress-detail-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +14,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
+const AUTO_REFRESH_MS = 120_000
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 const naturalClassroomCollator = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
 const subscribe = () => () => {}
@@ -39,10 +41,35 @@ type ProgressRow = {
 
 export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false)
+  const router = useRouter()
+  const [refreshing, startRefresh] = useTransition()
+  const [lastSync, setLastSync] = useState<Date | null>(null)
   const [search, setSearch] = useState("")
   const [todayOnly, setTodayOnly] = useState(false)
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const refresh = useCallback(() => {
+    startRefresh(() => {
+      router.refresh()
+      setLastSync(new Date())
+    })
+  }, [router])
+
+  // ponytail: poll 2 menit lewat router.refresh(); naikkan ke SSE/pusher hanya kalau
+  // jumlah jadwal aktif besar dan refresh mulai terasa berat.
+  useEffect(() => {
+    refresh()
+    const tick = () => {
+      if (document.visibilityState === "visible") refresh()
+    }
+    const timer = setInterval(tick, AUTO_REFRESH_MS)
+    document.addEventListener("visibilitychange", tick)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener("visibilitychange", tick)
+    }
+  }, [refresh])
 
   const filteredRows = useMemo(() => {
     const keyword = search.toLowerCase().trim()
@@ -127,6 +154,13 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2"><CardTitle>Rekap per Jadwal</CardTitle><Badge variant="secondary" className="font-normal">{filteredRows.length} jadwal</Badge></div>
             <CardDescription>Lihat jumlah peserta yang belum mulai, sedang mengerjakan, dan sudah selesai.</CardDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">{lastSync ? `Diperbarui ${lastSync.toLocaleTimeString("id-ID")}` : "Otomatis tiap 2 menit"}</span>
+            <Button variant="outline" size="sm" className="gap-2" onClick={refresh} disabled={refreshing}>
+              <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
+              Perbarui
+            </Button>
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-12">
