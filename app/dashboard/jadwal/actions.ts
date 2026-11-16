@@ -6,6 +6,7 @@ import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
+import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { examSchedules } from "@/lib/db/schema"
 
 function readScheduleBaseForm(formData: FormData) {
@@ -22,20 +23,6 @@ function readScheduleBaseForm(formData: FormData) {
   return { questionBankId, examDate, startTime, durationMinutes, active }
 }
 
-
-function getDatabaseErrorMessage(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error)
-
-  if (
-    message.includes("exam_schedules_unique_slot_idx") ||
-    message.includes("duplicate key") ||
-    message.includes("unique constraint")
-  ) {
-    return "Jadwal duplikat: bank soal, kelas, tanggal, dan jam mulai sudah ada."
-  }
-
-  return error instanceof Error ? error.message : "Terjadi kesalahan database."
-}
 
 export async function createExamSchedule(formData: FormData) {
   const base = readScheduleBaseForm(formData)

@@ -2,10 +2,11 @@
 
 import { randomUUID } from "node:crypto"
 
-import { eq } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
+import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { examSchedules, questionBanks, subjects } from "@/lib/db/schema"
 import { formIdDari } from "@/lib/google-forms"
 
@@ -85,6 +86,37 @@ export async function updateQuestionBank(formData: FormData) {
     .where(eq(questionBanks.id, id))
 
   revalidatePath("/dashboard/bank-soal")
+}
+
+export async function deleteQuestionBanks(ids: string[]): Promise<{ ok: boolean; message: string }> {
+  const validIds = ids.map((id) => id.trim()).filter(Boolean)
+  if (validIds.length === 0) return { ok: false, message: "Pilih minimal satu bank soal." }
+
+  try {
+    const used = await db
+      .select({ id: examSchedules.questionBankId })
+      .from(examSchedules)
+      .where(inArray(examSchedules.questionBankId, validIds))
+    const dipakai = new Set(used.map((row) => row.id))
+    const boleh = validIds.filter((id) => !dipakai.has(id))
+
+    if (boleh.length === 0) {
+      return { ok: false, message: "Semua bank soal terpilih masih dipakai jadwal. Hapus jadwalnya terlebih dahulu, atau nonaktifkan bank soal." }
+    }
+
+    await db.delete(questionBanks).where(inArray(questionBanks.id, boleh))
+    revalidatePath("/dashboard/bank-soal")
+    const dilewati = validIds.length - boleh.length
+    return {
+      ok: true,
+      message: dilewati > 0
+        ? `${boleh.length} bank soal dihapus, ${dilewati} dilewati karena masih dipakai jadwal.`
+        : `${boleh.length} bank soal dihapus.`,
+    }
+  } catch (error) {
+    console.error("Gagal menghapus bank soal:", error)
+    return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
 }
 
 export async function deleteQuestionBank(id: string): Promise<{ ok: boolean; message: string }> {

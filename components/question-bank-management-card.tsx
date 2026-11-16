@@ -1,14 +1,18 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { BookOpen, Download, ExternalLink, FileText, LinkIcon, RotateCcw, Search } from "lucide-react"
+import { useMemo, useState, useTransition } from "react"
+import { BookOpen, Download, ExternalLink, FileText, LinkIcon, Loader2, RotateCcw, Search, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
+import { deleteQuestionBanks } from "@/app/dashboard/bank-soal/actions"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
 import { QuestionBankRowActions } from "@/components/question-bank-row-actions"
 import { SubjectCreateDialog } from "@/components/subject-create-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -58,6 +62,9 @@ export function QuestionBankManagementCard({
   const [status, setStatus] = useState("ALL")
   const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deletePending, startDelete] = useTransition()
   const selectedSubject = subjects.find((subject) => subject.id === subjectId)
   const hasActiveFilter = search.trim() !== "" || subjectId !== "ALL" || status !== "ALL"
 
@@ -85,6 +92,31 @@ export function QuestionBankManagementCard({
   const from = filteredRows.length === 0 ? 0 : startIndex + 1
   const to = Math.min(startIndex + pageSize, filteredRows.length)
 
+  const pageIds = paginatedRows.map((row) => row.id)
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id))
+
+  function toggleRow(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+  }
+
+  function togglePage() {
+    setSelectedIds((prev) => (allPageSelected ? prev.filter((id) => !pageIds.includes(id)) : [...new Set([...prev, ...pageIds])]))
+  }
+
+  function handleBulkDelete() {
+    setDeleteError(null)
+    startDelete(async () => {
+      const result = await deleteQuestionBanks(selectedIds)
+      if (!result.ok) {
+        setDeleteError(result.message)
+        toast.error(result.message)
+        return
+      }
+      setSelectedIds([])
+      toast.success(result.message)
+    })
+  }
+
   function resetFilters() {
     setSearch("")
     setSubjectId("ALL")
@@ -104,6 +136,24 @@ export function QuestionBankManagementCard({
             <CardDescription>Bank soal hanya menyimpan kode, mapel, dan link Google Form. Durasi nanti di jadwal.</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
+            {selectedIds.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button variant="destructive" className="gap-2" disabled={deletePending} />}>
+                  {deletePending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  Hapus terpilih ({selectedIds.length})
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus {selectedIds.length} bank soal?</AlertDialogTitle>
+                    <AlertDialogDescription>Bank soal yang masih dipakai jadwal akan dilewati. Sisanya dihapus permanen.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={handleBulkDelete}>Hapus</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             <Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>
             {subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} />}
           </div>
@@ -129,17 +179,18 @@ export function QuestionBankManagementCard({
           </div>
           <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" />Reset</Button></div>
         </div>
+        {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
 
       <CardContent>
         <div className="overflow-hidden rounded-lg border">
           <Table>
-            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Kode Soal</TableHead><TableHead>Judul</TableHead><TableHead>Kelas</TableHead><TableHead>Guru</TableHead><TableHead>Mapel</TableHead><TableHead>Link GForm</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua bank soal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Kode Soal</TableHead><TableHead>Judul</TableHead><TableHead>Kelas</TableHead><TableHead>Guru</TableHead><TableHead>Mapel</TableHead><TableHead>Link GForm</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} />}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
-                <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="font-medium">{row.title}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell>{row.teacherName || "—"}</TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.subjectCode}</span></div></TableCell><TableCell><Button nativeButton={false} variant="ghost" size="sm" className="gap-2" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" />Buka <ExternalLink className="size-3" /></Button></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} /></TableCell></TableRow>
+                <TableRow key={row.id} data-state={selectedIds.includes(row.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedIds.includes(row.id)} onCheckedChange={() => toggleRow(row.id)} aria-label={`Pilih ${row.code}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="font-medium">{row.title}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell>{row.teacherName || "—"}</TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.subjectCode}</span></div></TableCell><TableCell><Button nativeButton={false} variant="ghost" size="sm" className="gap-2" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" />Buka <ExternalLink className="size-3" /></Button></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} /></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>
