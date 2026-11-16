@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { classrooms, examAttempts, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
+import { classrooms, examAttempts, examResults, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
@@ -63,7 +63,7 @@ export default async function PengerjaanPage() {
   let rows: ProgressRow[] = []
 
   try {
-    const [scheduleRows, studentRows, attemptRows] = await Promise.all([
+    const [scheduleRows, studentRows, attemptRows, resultRows] = await Promise.all([
       db
         .select({
           id: examSchedules.id,
@@ -88,6 +88,11 @@ export default async function PengerjaanPage() {
       db
         .select({ scheduleId: examAttempts.scheduleId, studentId: examAttempts.studentId, startedAt: examAttempts.startedAt, submittedAt: examAttempts.submittedAt })
         .from(examAttempts),
+      // Sync hasil Google Form hanya menulis exam_results, jadi progres harus
+      // membaca dua sumber: tombol kerjakan siswa (exam_attempts) dan respons form.
+      db
+        .select({ scheduleId: examResults.scheduleId, studentId: examResults.studentId, startedAt: examResults.startedAt, submittedAt: examResults.submittedAt })
+        .from(examResults),
     ])
 
     const studentsByClassroom = new Map<string, typeof studentRows>()
@@ -97,17 +102,23 @@ export default async function PengerjaanPage() {
       studentsByClassroom.set(student.classroomId, list)
     }
 
-    const attemptsBySchedule = new Map<string, typeof attemptRows>()
-    for (const attempt of attemptRows) {
-      const list = attemptsBySchedule.get(attempt.scheduleId) ?? []
-      list.push(attempt)
-      attemptsBySchedule.set(attempt.scheduleId, list)
+    // Gabungkan dua sumber; satu siswa satu baris (submitted menang, started paling awal).
+    const attemptsBySchedule = new Map<string, Map<string, { studentId: string; startedAt: Date | null; submittedAt: Date | null }>>()
+    for (const attempt of [...attemptRows, ...resultRows]) {
+      if (!attempt.studentId) continue
+      const perStudent = attemptsBySchedule.get(attempt.scheduleId) ?? new Map()
+      const lama = perStudent.get(attempt.studentId)
+      perStudent.set(attempt.studentId, {
+        studentId: attempt.studentId,
+        startedAt: pilihAwal(lama?.startedAt ?? null, attempt.startedAt),
+        submittedAt: lama?.submittedAt ?? attempt.submittedAt,
+      })
+      attemptsBySchedule.set(attempt.scheduleId, perStudent)
     }
 
     rows = scheduleRows.map((schedule) => {
       const classStudents = studentsByClassroom.get(schedule.classroomId) ?? []
-      const attempts = attemptsBySchedule.get(schedule.id) ?? []
-      const attemptByStudent = new Map(attempts.map((attempt) => [attempt.studentId, attempt]))
+      const attemptByStudent = attemptsBySchedule.get(schedule.id) ?? new Map<string, { studentId: string; startedAt: Date | null; submittedAt: Date | null }>()
       const studentDetails: ProgressStudent[] = classStudents.map((student) => {
         const attempt = attemptByStudent.get(student.id)
         const status = attempt?.submittedAt ? "SUBMITTED" : attempt?.startedAt ? "STARTED" : "NOT_STARTED"
@@ -146,7 +157,7 @@ export default async function PengerjaanPage() {
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Progress Pengerjaan</h1>
-            <p className="text-sm text-muted-foreground">Data berasal dari tombol Kerjakan Ujian dan Saya sudah selesai di dashboard siswa.</p>
+            <p className="text-sm text-muted-foreground">Data berasal dari tombol Kerjakan Ujian dan Saya sudah selesai di dashboard siswa, ditambah respons Google Form yang sudah di-sync di menu Hasil Ujian.</p>
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
@@ -163,6 +174,12 @@ export default async function PengerjaanPage() {
       </SidebarInset>
     </SidebarProvider>
   )
+}
+
+function pilihAwal(a: Date | null, b: Date | null) {
+  if (!a) return b
+  if (!b) return a
+  return a < b ? a : b
 }
 
 function DashboardSidebar() { return <Sidebar collapsible="icon"><SidebarHeader><SidebarMenu><SidebarMenuItem><SidebarMenuButton size="lg" render={<Link href="/dashboard" />}><div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Home className="size-4" /></div><div className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-semibold">SMANSABA Assesmen</span><span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span></div></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarHeader><SidebarContent><SidebarGroup><SidebarGroupLabel>Menu Utama</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>{menuItems.map((item) => { const Icon = item.icon; return <SidebarMenuItem key={item.label}><SidebarMenuButton isActive={item.active} tooltip={item.label} render={<Link href={item.href} />}><Icon className="size-4" /><span className="truncate">{item.label}</span></SidebarMenuButton></SidebarMenuItem> })}</SidebarMenu></SidebarGroupContent></SidebarGroup></SidebarContent><SidebarFooter /><SidebarRail /></Sidebar> }
