@@ -1,15 +1,19 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
-import { CalendarDays, Clock3, RotateCcw, Search } from "lucide-react"
+import { useMemo, useState, useSyncExternalStore, useTransition } from "react"
+import { CalendarDays, Clock3, Loader2, RotateCcw, Search, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
+import { deleteExamSchedules } from "@/app/dashboard/jadwal/actions"
 import { ExamScheduleCreateDialog, type ScheduleBankOption, type ScheduleClassroomOption } from "@/components/exam-schedule-create-dialog"
 import { ExamScheduleRowActions } from "@/components/exam-schedule-row-actions"
 import { ExamScheduleStatusSwitch } from "@/components/exam-schedule-status-switch"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
@@ -37,6 +41,9 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
   const [todayOnly, setTodayOnly] = useState(false)
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deletePending, startDelete] = useTransition()
 
   const groupedRows = useMemo(() => groupScheduleRows(rows), [rows])
   const sortedClassrooms = useMemo(
@@ -95,6 +102,33 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
     setCurrentPage(1)
   }
 
+  const selectedGroups = filteredRows.filter((group) => selectedKeys.includes(group.key))
+  const selectedScheduleIds = selectedGroups.flatMap((group) => group.rows.map((row) => row.id))
+  const pageKeys = paginatedRows.map((group) => group.key)
+  const allPageSelected = pageKeys.length > 0 && pageKeys.every((key) => selectedKeys.includes(key))
+
+  function toggleGroup(key: string) {
+    setSelectedKeys((prev) => (prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key]))
+  }
+
+  function togglePage() {
+    setSelectedKeys((prev) => (allPageSelected ? prev.filter((key) => !pageKeys.includes(key)) : [...new Set([...prev, ...pageKeys])]))
+  }
+
+  function handleBulkDelete() {
+    setDeleteError(null)
+    startDelete(async () => {
+      const result = await deleteExamSchedules(selectedScheduleIds)
+      if (!result.ok) {
+        setDeleteError(result.message)
+        toast.error(result.message)
+        return
+      }
+      setSelectedKeys([])
+      toast.success(`${selectedScheduleIds.length} jadwal dihapus.`)
+    })
+  }
+
   function resetFilters() {
     setSearch("")
     setClassroomFilter("ALL")
@@ -134,6 +168,24 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
             <CardDescription>Jadwal berisi bank soal, kelas, tanggal, jam mulai, dan durasi.</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
+            {selectedGroups.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger render={<Button variant="destructive" className="gap-2" disabled={deletePending} />}>
+                  {deletePending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  Hapus terpilih ({selectedScheduleIds.length})
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus {selectedScheduleIds.length} jadwal?</AlertDialogTitle>
+                    <AlertDialogDescription>Jadwal yang dipilih akan dihapus permanen beserta pengerjaan siswa pada jadwal tersebut.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={handleBulkDelete}>Hapus</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             {banks.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}
           </div>
         </div>
@@ -161,16 +213,17 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
           <div className="md:col-span-2"><Button variant={todayOnly ? "default" : "outline"} className="w-full gap-2" onClick={handleTodayFilterClick}><CalendarDays className="size-4" />Hari ini</Button></div>
           <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" onClick={resetFilters} disabled={!hasActiveFilter}><RotateCcw className="size-4" />Reset</Button></div>
         </div>
+        {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-lg border">
           <Table>
-            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua jadwal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={9} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
               ) : (
-                paginatedRows.map((group, index) => <TableRow key={group.key} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
+                paginatedRows.map((group, index) => <TableRow key={group.key} data-state={selectedKeys.includes(group.key) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedKeys.includes(group.key)} onCheckedChange={() => toggleGroup(group.key)} aria-label={`Pilih ${group.title}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
               )}
             </TableBody>
           </Table>
