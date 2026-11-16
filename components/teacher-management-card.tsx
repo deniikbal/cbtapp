@@ -34,6 +34,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -50,8 +59,12 @@ export type TeacherItem = {
   hasPassword: boolean
 }
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
+
 export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] }) {
   const [query, setQuery] = useState("")
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10)
+  const [currentPage, setCurrentPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<TeacherItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TeacherItem | null>(null)
@@ -67,6 +80,14 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
       ),
     )
   }, [teachers, query])
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize))
+  const activePage = Math.min(currentPage, totalPages)
+  const pageRange = buildPageRange(activePage, totalPages)
+  const startIndex = (activePage - 1) * pageSize
+  const paginatedRows = rows.slice(startIndex, startIndex + pageSize)
+  const from = rows.length === 0 ? 0 : startIndex + 1
+  const to = Math.min(startIndex + pageSize, rows.length)
 
   function submit(formData: FormData, mode: "create" | "edit") {
     setError(null)
@@ -115,7 +136,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
               placeholder="Cari nama, NIP, NUPTK..."
               className="pl-9 sm:w-64"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => { setQuery(event.target.value); setCurrentPage(1) }}
             />
           </div>
           <Button className="gap-2" onClick={() => { setError(null); setCreateOpen(true) }}>
@@ -152,10 +173,10 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((teacher, index) => (
+                paginatedRows.map((teacher, index) => (
                   <TableRow key={teacher.id} className="hover:bg-muted/40">
                     <TableCell className="text-center text-sm text-muted-foreground tabular-nums">
-                      {index + 1}
+                      {startIndex + index + 1}
                     </TableCell>
                     <TableCell className="font-medium">{teacher.name}</TableCell>
                     <TableCell className="font-mono text-xs">{teacher.nip}</TableCell>
@@ -203,6 +224,69 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
             </TableBody>
           </Table>
         </div>
+
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p className="text-sm text-muted-foreground">
+            Menampilkan <span className="font-medium text-foreground">{from}</span>–
+            <span className="font-medium text-foreground">{to}</span> dari{" "}
+            <span className="font-medium text-foreground">{rows.length}</span> entri
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Per halaman</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value: string | null) => {
+                setPageSize(Number(value) as (typeof PAGE_SIZE_OPTIONS)[number])
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+              <SelectContent align="end">
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination className="mx-0 w-auto justify-end">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  text="Sebelumnya"
+                  className={activePage === 1 ? "pointer-events-none opacity-50" : undefined}
+                  onClick={(event) => { event.preventDefault(); setCurrentPage(Math.max(1, activePage - 1)) }}
+                />
+              </PaginationItem>
+              {pageRange.map((page, index) =>
+                page === "..." ? (
+                  <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>
+                ) : (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === activePage}
+                      onClick={(event) => { event.preventDefault(); setCurrentPage(page) }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  text="Berikutnya"
+                  className={activePage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                  onClick={(event) => { event.preventDefault(); setCurrentPage(Math.min(totalPages, activePage + 1)) }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </CardContent>
 
       <Dialog
@@ -395,4 +479,19 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
       </AlertDialog>
     </Card>
   )
+}
+
+function buildPageRange(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
+
+  const range: (number | "...")[] = [1]
+  const left = Math.max(2, current - 1)
+  const right = Math.min(total - 1, current + 1)
+
+  if (left > 2) range.push("...")
+  for (let page = left; page <= right; page++) range.push(page)
+  if (right < total - 1) range.push("...")
+  range.push(total)
+
+  return range
 }
