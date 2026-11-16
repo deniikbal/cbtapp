@@ -11,9 +11,16 @@ import { examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schem
 import { formIdDari } from "@/lib/google-forms"
 
 // Form ID wajib untuk sync hasil; boleh kosong saat bank dibuat, diisi belakangan.
-function bacaFormId(formData: FormData) {
+// formIdDari melempar error untuk input salah, jadi ditangkap dan diteruskan sebagai pesan.
+function bacaFormId(formData: FormData): { formId: string; error: string | null } {
   const mentah = String(formData.get("formId") ?? "").trim()
-  return mentah ? formIdDari(mentah) : ""
+  if (!mentah) return { formId: "", error: null }
+
+  try {
+    return { formId: formIdDari(mentah), error: null }
+  } catch (error) {
+    return { formId: "", error: error instanceof Error ? error.message : "Form ID tidak valid." }
+  }
 }
 
 // Kembalikan URL valid, atau null kalau tidak bisa dipakai. Tidak melempar error
@@ -67,13 +74,14 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
-  const formId = bacaFormId(formData)
+  const { formId, error: formIdError } = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!subjectId) return { ok: false, message: "Mapel wajib dipilih." }
   if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
   if (!googleFormUrl) return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  if (formIdError) return { ok: false, message: `${formIdError}. Kosongkan kolom Form ID bila belum ada.` }
 
   try {
     const generated = await generateQuestionBankIdentity(subjectId, grade)
@@ -106,7 +114,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
-  const formId = bacaFormId(formData)
+  const { formId, error: formIdError } = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!id) return { ok: false, message: "Data bank soal tidak dikenali." }
@@ -114,6 +122,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
   if (!googleFormUrl) return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  if (formIdError) return { ok: false, message: `${formIdError}. Kosongkan kolom Form ID bila belum ada.` }
 
   try {
     await db
