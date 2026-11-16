@@ -42,8 +42,13 @@ export function QuestionBankRowActions({ bank, subjects }: { bank: QuestionBankR
     setError(null)
     startTransition(async () => {
       try {
-        await deleteQuestionBank(bank.id)
-        toast.success("Bank soal berhasil dihapus.")
+        const result = await deleteQuestionBank(bank.id)
+        if (!result.ok) {
+          setError(result.message)
+          toast.error(result.message)
+          return
+        }
+        toast.success(result.message)
         setDeleteOpen(false)
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menghapus bank soal."

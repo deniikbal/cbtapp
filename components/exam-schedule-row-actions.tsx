@@ -83,8 +83,13 @@ export function ExamScheduleRowActions({
     setError(null)
     startTransition(async () => {
       try {
-        await deleteExamSchedules(groupIds)
-        toast.success(groupIds.length > 1 ? "Grup jadwal berhasil dihapus." : "Jadwal berhasil dihapus.")
+        const result = await deleteExamSchedules(groupIds)
+        if (!result.ok) {
+          setError(result.message)
+          toast.error(result.message)
+          return
+        }
+        toast.success(result.message)
         setDeleteOpen(false)
       } catch (error) {
         const message = error instanceof Error ? error.message : "Gagal menghapus jadwal."

@@ -87,8 +87,8 @@ export async function updateQuestionBank(formData: FormData) {
   revalidatePath("/dashboard/bank-soal")
 }
 
-export async function deleteQuestionBank(id: string) {
-  if (!id) throw new Error("ID bank soal tidak valid.")
+export async function deleteQuestionBank(id: string): Promise<{ ok: boolean; message: string }> {
+  if (!id) return { ok: false, message: "ID bank soal tidak valid." }
 
   const usedSchedules = await db
     .select({ id: examSchedules.id })
@@ -97,9 +97,11 @@ export async function deleteQuestionBank(id: string) {
     .limit(1)
 
   if (usedSchedules.length > 0) {
-    throw new Error("Bank soal tidak bisa dihapus karena sudah dipakai pada jadwal. Hapus jadwal terkait terlebih dahulu, atau nonaktifkan bank soal.")
+    // pesan dikembalikan, bukan di-throw: throw di server action diubah Next jadi pesan generik ber-digest di production
+    return { ok: false, message: "Bank soal tidak bisa dihapus karena sudah dipakai pada jadwal. Hapus jadwal terkait terlebih dahulu, atau nonaktifkan bank soal." }
   }
 
   await db.delete(questionBanks).where(eq(questionBanks.id, id))
   revalidatePath("/dashboard/bank-soal")
+  return { ok: true, message: "Bank soal berhasil dihapus." }
 }

@@ -199,17 +199,23 @@ export async function setExamSchedulesStatus(ids: string[], active: boolean) {
   revalidatePath("/siswa/dashboard")
 }
 
-export async function deleteExamSchedule(id: string) {
-  if (!id) throw new Error("ID jadwal tidak valid.")
+export async function deleteExamSchedule(id: string): Promise<{ ok: boolean; message: string }> {
+  if (!id) return { ok: false, message: "ID jadwal tidak valid." }
 
-  await deleteExamSchedules([id])
+  return deleteExamSchedules([id])
 }
 
-export async function deleteExamSchedules(ids: string[]) {
+export async function deleteExamSchedules(ids: string[]): Promise<{ ok: boolean; message: string }> {
   const validIds = ids.map((id) => id.trim()).filter(Boolean)
-  if (validIds.length === 0) throw new Error("ID jadwal tidak valid.")
+  if (validIds.length === 0) return { ok: false, message: "ID jadwal tidak valid." }
 
-  await db.delete(examSchedules).where(inArray(examSchedules.id, validIds))
-  revalidatePath("/dashboard/jadwal")
-  revalidatePath("/siswa/dashboard")
+  try {
+    await db.delete(examSchedules).where(inArray(examSchedules.id, validIds))
+    revalidatePath("/dashboard/jadwal")
+    revalidatePath("/siswa/dashboard")
+    return { ok: true, message: validIds.length > 1 ? "Grup jadwal berhasil dihapus." : "Jadwal berhasil dihapus." }
+  } catch (error) {
+    console.error("Gagal menghapus jadwal:", error)
+    return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
 }
