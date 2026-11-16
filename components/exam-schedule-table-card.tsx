@@ -9,6 +9,7 @@ import { ExamScheduleCreateDialog, type ScheduleBankOption, type ScheduleClassro
 import { ExamScheduleRowActions } from "@/components/exam-schedule-row-actions"
 import { ExamScheduleStatusSwitch } from "@/components/exam-schedule-status-switch"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
+import type { TeacherOption } from "@/components/teacher-combobox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,7 +34,7 @@ type ScheduleGroup = Omit<ScheduleRow, "id" | "classroomId" | "className" | "maj
   activeCount: number
 }
 
-export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: ScheduleRow[]; banks: ScheduleBankOption[]; classrooms: ScheduleClassroomOption[] }) {
+export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }: { rows: ScheduleRow[]; banks: ScheduleBankOption[]; classrooms: ScheduleClassroomOption[]; teachers?: TeacherOption[] }) {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false)
   const [search, setSearch] = useState("")
   const [classroomFilter, setClassroomFilter] = useState("ALL")
@@ -186,7 +187,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms }: { rows: Sched
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            {banks.length === 0 ? <QuestionBankCreateDialog subjects={[]} /> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}
+            {banks.length === 0 ? <QuestionBankCreateDialog subjects={[]} teachers={teachers} /> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-12">

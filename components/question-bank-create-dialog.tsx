@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createQuestionBank } from "@/app/dashboard/bank-soal/actions"
+import { TeacherCombobox, type TeacherOption } from "@/components/teacher-combobox"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export type SubjectOption = { id: string; name: string; code: string }
 
-export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption[] }) {
+export function QuestionBankCreateDialog({
+  subjects,
+  teachers = [],
+}: {
+  subjects: SubjectOption[]
+  teachers?: TeacherOption[]
+}) {
   const [open, setOpen] = useState(false)
   const [selectedSubjectId, setSelectedSubjectId] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -85,8 +92,8 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
             <p className="text-xs text-muted-foreground">Contoh kode otomatis: MTK-X, KIM-XI.</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="teacherName">Nama Guru Pembuat</Label>
-            <Input id="teacherName" name="teacherName" placeholder="Nama guru" required />
+            <Label htmlFor="teacherId">Guru Pembuat</Label>
+            <TeacherCombobox teachers={teachers} id="teacherId" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="googleFormUrl">Link Google Form</Label>

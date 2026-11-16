@@ -1,4 +1,5 @@
 import { boolean, date, index, integer, jsonb, numeric, pgTable, text, time, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -116,6 +117,7 @@ export const questionBanks = pgTable(
     code: text("code").notNull(),
     title: text("title").notNull(),
     teacherName: text("teacherName").notNull().default(""),
+    teacherId: text("teacherId").references((): AnyPgColumn => teachers.id, { onDelete: "set null" }),
     grade: text("grade").notNull().default("X"),
     googleFormUrl: text("googleFormUrl").notNull(),
     formId: text("formId").notNull().default(""),
@@ -130,6 +132,7 @@ export const questionBanks = pgTable(
   (table) => [
     index("question_banks_code_idx").on(table.code),
     index("question_banks_subjectId_idx").on(table.subjectId),
+    index("question_banks_teacherId_idx").on(table.teacherId),
   ],
 )
 

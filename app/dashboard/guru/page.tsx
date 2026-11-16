@@ -15,7 +15,7 @@ import {
   Users,
   ShieldCheck,
   BarChart3 } from "lucide-react"
-import { asc } from "drizzle-orm"
+import { asc, count, isNotNull } from "drizzle-orm"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { teachers } from "@/lib/db/schema"
+import { questionBanks, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
@@ -74,6 +74,7 @@ export type TeacherRow = {
   birthDate: string
   active: boolean
   hasPassword: boolean
+  bankCount: number
 }
 
 export default async function GuruPage() {
@@ -99,7 +100,18 @@ export default async function GuruPage() {
       .from(teachers)
       .orderBy(asc(teachers.name))
 
-    teacherRows = rows.map(({ passwordHash, ...row }) => ({ ...row, hasPassword: passwordHash.length > 0 }))
+    const bankCounts = await db
+      .select({ teacherId: questionBanks.teacherId, total: count() })
+      .from(questionBanks)
+      .where(isNotNull(questionBanks.teacherId))
+      .groupBy(questionBanks.teacherId)
+    const bankMap = new Map(bankCounts.map((row) => [row.teacherId, Number(row.total)]))
+
+    teacherRows = rows.map(({ passwordHash, ...row }) => ({
+      ...row,
+      hasPassword: passwordHash.length > 0,
+      bankCount: bankMap.get(row.id) ?? 0,
+    }))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data guru."
   }

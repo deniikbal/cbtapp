@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { questionBanks, subjects } from "@/lib/db/schema"
+import { questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
@@ -31,8 +31,9 @@ const menuItems = [
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
-type BankRow = { id: string; code: string; title: string; teacherName: string; grade: string; googleFormUrl: string; formId: string; active: boolean; subjectId: string; subjectName: string; subjectCode: string }
+type BankRow = { id: string; code: string; title: string; teacherName: string; teacherId: string | null; grade: string; googleFormUrl: string; formId: string; active: boolean; subjectId: string; subjectName: string; subjectCode: string }
 type SubjectOption = { id: string; name: string; code: string }
+type TeacherOption = { id: string; name: string }
 
 export default async function BankSoalPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -41,15 +42,17 @@ export default async function BankSoalPage() {
   let databaseError: string | null = null
   let rows: BankRow[] = []
   let subjectOptions: SubjectOption[] = []
+  let teacherOptions: TeacherOption[] = []
 
   try {
     rows = await db
-      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
+      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, teacherId: questionBanks.teacherId, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
       .from(questionBanks)
       .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
       .orderBy(asc(questionBanks.code))
 
     subjectOptions = await db.select({ id: subjects.id, name: subjects.name, code: subjects.code }).from(subjects).orderBy(asc(subjects.name))
+    teacherOptions = await db.select({ id: teachers.id, name: teachers.name }).from(teachers).where(eq(teachers.active, true)).orderBy(asc(teachers.name))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data bank soal."
   }
@@ -74,7 +77,7 @@ export default async function BankSoalPage() {
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
 
-          <QuestionBankManagementCard rows={rows} subjects={subjectOptions} />
+          <QuestionBankManagementCard rows={rows} subjects={subjectOptions} teachers={teacherOptions} />
         </main>
       </SidebarInset>
     </SidebarProvider>

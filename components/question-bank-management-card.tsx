@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { deleteQuestionBanks } from "@/app/dashboard/bank-soal/actions"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
+import type { TeacherOption } from "@/components/teacher-combobox"
 import { QuestionBankRowActions } from "@/components/question-bank-row-actions"
 import { SubjectCreateDialog } from "@/components/subject-create-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -33,6 +34,7 @@ export type QuestionBankManagementRow = {
   code: string
   title: string
   teacherName: string
+  teacherId: string | null
   grade: string
   googleFormUrl: string
   formId: string
@@ -53,9 +55,11 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 export function QuestionBankManagementCard({
   rows,
   subjects,
+  teachers,
 }: {
   rows: QuestionBankManagementRow[]
   subjects: QuestionBankManagementSubject[]
+  teachers: TeacherOption[]
 }) {
   const [search, setSearch] = useState("")
   const [subjectId, setSubjectId] = useState("ALL")
@@ -155,7 +159,7 @@ export function QuestionBankManagementCard({
               </AlertDialog>
             )}
             <Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>
-            {subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} />}
+            {subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} />}
           </div>
         </div>
 
@@ -188,9 +192,9 @@ export function QuestionBankManagementCard({
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua bank soal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Kode Soal</TableHead><TableHead>Judul</TableHead><TableHead>Kelas</TableHead><TableHead>Guru</TableHead><TableHead>Mapel</TableHead><TableHead>Link GForm</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} />}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
-                <TableRow key={row.id} data-state={selectedIds.includes(row.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedIds.includes(row.id)} onCheckedChange={() => toggleRow(row.id)} aria-label={`Pilih ${row.code}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="font-medium">{row.title}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell>{row.teacherName || "—"}</TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.subjectCode}</span></div></TableCell><TableCell><Button nativeButton={false} variant="ghost" size="sm" className="gap-2" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" />Buka <ExternalLink className="size-3" /></Button></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} /></TableCell></TableRow>
+                <TableRow key={row.id} data-state={selectedIds.includes(row.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedIds.includes(row.id)} onCheckedChange={() => toggleRow(row.id)} aria-label={`Pilih ${row.code}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="font-medium">{row.title}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell>{row.teacherName || "—"}</TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.subjectCode}</span></div></TableCell><TableCell><Button nativeButton={false} variant="ghost" size="sm" className="gap-2" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" />Buka <ExternalLink className="size-3" /></Button></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} teachers={teachers} /></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>

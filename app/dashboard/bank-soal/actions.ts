@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
-import { examSchedules, questionBanks, subjects } from "@/lib/db/schema"
+import { examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { formIdDari } from "@/lib/google-forms"
 
 // Form ID wajib untuk sync hasil; boleh kosong saat bank dibuat, diisi belakangan.
@@ -38,16 +38,30 @@ async function generateQuestionBankIdentity(subjectId: string, grade: string) {
   }
 }
 
+async function bacaGuru(formData: FormData) {
+  const teacherId = String(formData.get("teacherId") ?? "").trim()
+  if (!teacherId) return null
+
+  const [teacher] = await db
+    .select({ id: teachers.id, name: teachers.name })
+    .from(teachers)
+    .where(eq(teachers.id, teacherId))
+    .limit(1)
+
+  return teacher ?? null
+}
+
 export async function createQuestionBank(formData: FormData) {
   const subjectId = String(formData.get("subjectId") ?? "").trim()
-  const teacherName = String(formData.get("teacherName") ?? "").trim()
+  const teacher = await bacaGuru(formData)
+  const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? "").trim())
   const formId = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
-  if (!subjectId || !teacherName || !grade || !googleFormUrl) {
-    throw new Error("Mapel, kelas, nama guru, dan link Google Form wajib diisi.")
+  if (!subjectId || !teacher || !grade || !googleFormUrl) {
+    throw new Error("Mapel, guru pembuat, kelas, dan link Google Form wajib diisi.")
   }
 
   const generated = await generateQuestionBankIdentity(subjectId, grade)
@@ -57,6 +71,7 @@ export async function createQuestionBank(formData: FormData) {
     code: generated.code,
     title: generated.title,
     teacherName,
+    teacherId: teacher.id,
     grade,
     subjectId,
     googleFormUrl,
@@ -70,19 +85,20 @@ export async function createQuestionBank(formData: FormData) {
 export async function updateQuestionBank(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim()
   const subjectId = String(formData.get("subjectId") ?? "").trim()
-  const teacherName = String(formData.get("teacherName") ?? "").trim()
+  const teacher = await bacaGuru(formData)
+  const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? "").trim())
   const formId = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
-  if (!id || !subjectId || !teacherName || !grade || !googleFormUrl) {
-    throw new Error("Mapel, kelas, nama guru, dan link Google Form wajib diisi.")
+  if (!id || !subjectId || !teacher || !grade || !googleFormUrl) {
+    throw new Error("Mapel, guru pembuat, kelas, dan link Google Form wajib diisi.")
   }
 
   await db
     .update(questionBanks)
-    .set({ subjectId, teacherName, grade, googleFormUrl, formId, active, updatedAt: new Date() })
+    .set({ subjectId, teacherName, teacherId: teacher.id, grade, googleFormUrl, formId, active, updatedAt: new Date() })
     .where(eq(questionBanks.id, id))
 
   revalidatePath("/dashboard/bank-soal")

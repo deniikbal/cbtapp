@@ -57,6 +57,7 @@ export type TeacherItem = {
   birthDate: string
   active: boolean
   hasPassword: boolean
+  bankCount: number
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
@@ -162,13 +163,14 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                 <TableHead>Tempat / Tgl Lahir</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Password</TableHead>
+                <TableHead className="w-24 text-center">Bank Soal</TableHead>
                 <TableHead className="w-16 text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="h-40 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={10} className="h-40 text-center text-sm text-muted-foreground">
                     Tidak ada data guru yang cocok.
                   </TableCell>
                 </TableRow>
@@ -196,6 +198,13 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                       <Badge variant={teacher.hasPassword ? "secondary" : "outline"}>
                         {teacher.hasPassword ? "Terisi" : "Belum diatur"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {teacher.bankCount > 0 ? (
+                        <Badge variant="secondary" className="tabular-nums">{teacher.bankCount}</Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

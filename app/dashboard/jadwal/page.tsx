@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { classrooms, examSchedules, majors, questionBanks, subjects } from "@/lib/db/schema"
+import { classrooms, examSchedules, majors, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
@@ -44,10 +44,12 @@ export default async function JadwalPage() {
   let rows: ScheduleRow[] = []
   let bankOptions: BankOption[] = []
   let classroomOptions: ClassOption[] = []
+  let teacherOptions: { id: string; name: string }[] = []
 
   try {
     rows = await db.select({ id: examSchedules.id, questionBankId: examSchedules.questionBankId, classroomId: examSchedules.classroomId, examDate: examSchedules.examDate, startTime: examSchedules.startTime, durationMinutes: examSchedules.durationMinutes, active: examSchedules.active, title: questionBanks.title, code: questionBanks.code, className: classrooms.name, majorCode: majors.code, subjectCode: subjects.code }).from(examSchedules).innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id)).innerJoin(subjects, eq(questionBanks.subjectId, subjects.id)).innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id)).innerJoin(majors, eq(classrooms.majorId, majors.id)).orderBy(asc(examSchedules.examDate), asc(examSchedules.startTime))
     bankOptions = await db.select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, subjectCode: subjects.code }).from(questionBanks).innerJoin(subjects, eq(questionBanks.subjectId, subjects.id)).orderBy(asc(questionBanks.code))
+    teacherOptions = await db.select({ id: teachers.id, name: teachers.name }).from(teachers).where(eq(teachers.active, true)).orderBy(asc(teachers.name))
     classroomOptions = await db.select({ id: classrooms.id, name: classrooms.name, majorCode: majors.code }).from(classrooms).innerJoin(majors, eq(classrooms.majorId, majors.id)).orderBy(asc(classrooms.name))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data jadwal."
@@ -70,7 +72,7 @@ export default async function JadwalPage() {
             <StatCard label="Kelas" value={classUsed} description="Kelas terjadwal" icon={GraduationCap} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
           </section>
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
-          <ExamScheduleTableCard rows={rows} banks={bankOptions} classrooms={classroomOptions} />
+          <ExamScheduleTableCard rows={rows} banks={bankOptions} classrooms={classroomOptions} teachers={teacherOptions} />
         </main>
       </SidebarInset>
     </SidebarProvider>
