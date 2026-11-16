@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, pgTable, text, time, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { boolean, date, index, integer, jsonb, numeric, pgTable, text, time, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -118,6 +118,8 @@ export const questionBanks = pgTable(
     teacherName: text("teacherName").notNull().default(""),
     grade: text("grade").notNull().default("X"),
     googleFormUrl: text("googleFormUrl").notNull(),
+    formId: text("formId").notNull().default(""),
+    formItems: jsonb("formItems"),
     active: boolean("active").notNull().default(true),
     subjectId: text("subjectId")
       .notNull()
@@ -211,5 +213,32 @@ export const examAttempts = pgTable(
     index("exam_attempts_scheduleId_idx").on(table.scheduleId),
     index("exam_attempts_studentId_idx").on(table.studentId),
     uniqueIndex("exam_attempts_schedule_student_idx").on(table.scheduleId, table.studentId),
+  ],
+)
+
+export const examResults = pgTable(
+  "exam_results",
+  {
+    id: text("id").primaryKey(),
+    scheduleId: text("scheduleId")
+      .notNull()
+      .references(() => examSchedules.id, { onDelete: "cascade" }),
+    studentId: text("studentId").references(() => students.id, { onDelete: "set null" }),
+    responseId: text("responseId").notNull().unique(),
+    nis: text("nis").notNull().default(""),
+    nama: text("nama").notNull().default(""),
+    respondentEmail: text("respondentEmail").notNull().default(""),
+    startedAt: timestamp("startedAt", { withTimezone: true }),
+    submittedAt: timestamp("submittedAt", { withTimezone: true }),
+    answers: jsonb("answers").notNull().default({}),
+    total: integer("total").notNull().default(0),
+    correct: integer("correct").notNull().default(0),
+    wrong: integer("wrong").notNull().default(0),
+    score: numeric("score", { precision: 6, scale: 2 }).notNull().default("0"),
+    syncedAt: timestamp("syncedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("exam_results_schedule_idx").on(table.scheduleId),
+    index("exam_results_nis_idx").on(table.nis),
   ],
 )

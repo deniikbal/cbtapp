@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import { asc, eq } from "drizzle-orm"
-import { BookOpen, BookOpenCheck, Building2, CalendarDays, Filter, FileText, GraduationCap, Home, LayoutDashboard, Settings, UserCog, Users } from "lucide-react"
+import { BookOpen, BookOpenCheck, Building2, CalendarDays, Filter, FileText, GraduationCap, Home, LayoutDashboard, Settings, UserCog, Users, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -24,11 +24,12 @@ const menuItems = [
   { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: true },
   { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
   { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
+  { href: "/dashboard/hasil", label: "Hasil Ujian", icon: BarChart3, active: false },
   { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
 ]
 
-type BankRow = { id: string; code: string; title: string; teacherName: string; grade: string; googleFormUrl: string; active: boolean; subjectId: string; subjectName: string; subjectCode: string }
+type BankRow = { id: string; code: string; title: string; teacherName: string; grade: string; googleFormUrl: string; formId: string; active: boolean; subjectId: string; subjectName: string; subjectCode: string }
 type SubjectOption = { id: string; name: string; code: string }
 
 export default async function BankSoalPage() {
@@ -41,7 +42,7 @@ export default async function BankSoalPage() {
 
   try {
     rows = await db
-      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
+      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
       .from(questionBanks)
       .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
       .orderBy(asc(questionBanks.code))

@@ -93,6 +93,11 @@ export function QuestionBankCreateDialog({ subjects }: { subjects: SubjectOption
             <Input id="googleFormUrl" name="googleFormUrl" placeholder="https://forms.gle/..." required />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="formId">Form ID (opsional, untuk sync hasil)</Label>
+            <Input id="formId" name="formId" placeholder="tempel link /d/…/edit atau ID-nya" />
+            <p className="text-xs text-muted-foreground">Diambil dari URL saat form dibuka lewat tombol Edit. Link viewform/forms.gle tidak bisa dipakai.</p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="active">Status</Label>
             <Select name="active" defaultValue="true">
               <SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger>

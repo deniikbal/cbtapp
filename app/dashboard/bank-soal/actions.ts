@@ -7,6 +7,13 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { examSchedules, questionBanks, subjects } from "@/lib/db/schema"
+import { formIdDari } from "@/lib/google-forms"
+
+// Form ID wajib untuk sync hasil; boleh kosong saat bank dibuat, diisi belakangan.
+function bacaFormId(formData: FormData) {
+  const mentah = String(formData.get("formId") ?? "").trim()
+  return mentah ? formIdDari(mentah) : ""
+}
 
 function normalizeUrl(url: string) {
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -35,6 +42,7 @@ export async function createQuestionBank(formData: FormData) {
   const teacherName = String(formData.get("teacherName") ?? "").trim()
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? "").trim())
+  const formId = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!subjectId || !teacherName || !grade || !googleFormUrl) {
@@ -51,6 +59,7 @@ export async function createQuestionBank(formData: FormData) {
     grade,
     subjectId,
     googleFormUrl,
+    formId,
     active,
   })
 
@@ -63,6 +72,7 @@ export async function updateQuestionBank(formData: FormData) {
   const teacherName = String(formData.get("teacherName") ?? "").trim()
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? "").trim())
+  const formId = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!id || !subjectId || !teacherName || !grade || !googleFormUrl) {
@@ -71,7 +81,7 @@ export async function updateQuestionBank(formData: FormData) {
 
   await db
     .update(questionBanks)
-    .set({ subjectId, teacherName, grade, googleFormUrl, active, updatedAt: new Date() })
+    .set({ subjectId, teacherName, grade, googleFormUrl, formId, active, updatedAt: new Date() })
     .where(eq(questionBanks.id, id))
 
   revalidatePath("/dashboard/bank-soal")

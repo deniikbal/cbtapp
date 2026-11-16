@@ -31,6 +31,7 @@ export type QuestionBankManagementRow = {
   teacherName: string
   grade: string
   googleFormUrl: string
+  formId: string
   active: boolean
   subjectId: string
   subjectName: string
