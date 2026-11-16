@@ -30,16 +30,15 @@ export function QuestionBankCreateDialog({
   function handleSubmit(formData: FormData) {
     setError(null)
     startTransition(async () => {
-      try {
-        await createQuestionBank(formData)
-        toast.success("Bank soal berhasil ditambahkan.")
-        setSelectedSubjectId("")
-        setOpen(false)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Gagal menyimpan bank soal."
-        setError(message)
-        toast.error(message)
+      const result = await createQuestionBank(formData)
+      if (!result.ok) {
+        setError(result.message)
+        toast.error(result.message)
+        return
       }
+      toast.success(result.message)
+      setSelectedSubjectId("")
+      setOpen(false)
     })
   }
 

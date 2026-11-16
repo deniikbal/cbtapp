@@ -26,15 +26,14 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
     setError(null)
     formData.set("id", bank.id)
     startTransition(async () => {
-      try {
-        await updateQuestionBank(formData)
-        toast.success("Bank soal berhasil diperbarui.")
-        setEditOpen(false)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Gagal mengubah bank soal."
-        setError(message)
-        toast.error(message)
+      const result = await updateQuestionBank(formData)
+      if (!result.ok) {
+        setError(result.message)
+        toast.error(result.message)
+        return
       }
+      toast.success(result.message)
+      setEditOpen(false)
     })
   }
 
