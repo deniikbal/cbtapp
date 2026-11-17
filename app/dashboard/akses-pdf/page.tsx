@@ -4,7 +4,6 @@ import { Clock, Download, ShieldCheck, Users } from "lucide-react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { CocokMutasiCard } from "@/components/cocok-mutasi-card"
 import { PdfAccessCard, type AksesRow } from "@/components/pdf-access-card"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
@@ -144,8 +143,6 @@ export default async function AksesPdfPage() {
               ringClass="ring-zinc-500/20"
             />
           </section>
-
-          <CocokMutasiCard />
 
           <PdfAccessCard rows={aksesRows} />
         </main>

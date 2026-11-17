@@ -10,7 +10,6 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { teachers } from "@/lib/db/schema"
-import { cocokkanDanAktifkan } from "@/lib/mutasi-server"
 import { bolehKelolaUser } from "@/lib/peran"
 
 const PATH = "/dashboard/guru"
@@ -131,47 +130,4 @@ export async function deleteTeacher(id: string): Promise<{ ok: boolean; message:
     console.error("Gagal menghapus guru:", error)
     return { ok: false, message: getDatabaseErrorMessage(error) }
   }
-}
-
-export type HasilCocokMutasi = {
-  ok: boolean
-  message: string
-  cocok?: { nama: string; nominal: string }[]
-  tidakDikenal?: string[]
-}
-
-/**
- * Cocokkan teks notifikasi mutasi (tempel dari email/app GoPay) dengan tagihan guru.
- * QRIS statis tak punya webhook, jadi bukti bayar dicocokkan lewat nominal unik.
- */
-export async function cocokkanMutasiTeks(teks: string): Promise<HasilCocokMutasi> {
-  if (!teks.trim()) return { ok: false, message: "Tempel dulu teks notifikasi mutasi." }
-  const sesi = await auth.api.getSession({ headers: await headers() })
-  if (!sesi) return { ok: false, message: "Sesi habis. Silakan login ulang." }
-  if (!(await bolehKelolaUser())) return { ok: false, message: "Hanya superadmin yang boleh mencocokkan mutasi." }
-
-  try {
-    const { cocok, tidakDikenal } = await cocokkanDanAktifkan(teks)
-    if (cocok.length > 0) {
-      revalidatePath("/dashboard/akses-pdf")
-      revalidatePath("/guru/dashboard")
-    }
-
-    return {
-      ok: true,
-      message:
-        cocok.length > 0
-          ? `${cocok.length} pembayaran cocok, akses langsung diaktifkan.`
-          : "Tidak ada pembayaran yang cocok dengan tagihan yang menunggu.",
-      cocok: cocok.map((baris) => ({ nama: baris.nama, nominal: rupiah(baris.nominal) })),
-      tidakDikenal: tidakDikenal.map(rupiah),
-    }
-  } catch (error) {
-    console.error("Gagal mencocokkan mutasi:", error)
-    return { ok: false, message: getDatabaseErrorMessage(error) }
-  }
-}
-
-function rupiah(nilai: number) {
-  return `Rp ${nilai.toLocaleString("id-ID")}`
 }
