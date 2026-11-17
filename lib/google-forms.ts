@@ -59,8 +59,11 @@ async function gpost(url: string, body: unknown) {
 // Butir identitas default: tidak dinilai (tanpa correctAnswers), hanya wajib diisi.
 const BUTIR_IDENTITAS = ["NIS", "Nama Lengkap", "Kelas"]
 
-export async function buatFormKosong(judul: string, opsi: { kuis?: boolean; identitas?: boolean } = {}) {
-  const { kuis = true, identitas = true } = opsi
+export async function buatFormKosong(
+  judul: string,
+  opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[] } = {}
+) {
+  const { kuis = true, identitas = true, kelas = [] } = opsi
 
   // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
   const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
@@ -76,9 +79,18 @@ export async function buatFormKosong(judul: string, opsi: { kuis?: boolean; iden
 
   if (identitas) {
     for (const judulButir of BUTIR_IDENTITAS) {
+      // Butir Kelas jadi dropdown berisi nama kelas sesuai angkatan bank soal.
+      const pakaiDropdown = judulButir === "Kelas" && kelas.length > 0
       requests.push({
         createItem: {
-          item: { title: judulButir, questionItem: { question: { required: true, textQuestion: { paragraph: false } } } },
+          item: {
+            title: judulButir,
+            questionItem: {
+              question: pakaiDropdown
+                ? { required: true, choiceQuestion: { type: "DROP_DOWN", options: kelas.map((nama) => ({ value: nama })) } }
+                : { required: true, textQuestion: { paragraph: false } },
+            },
+          },
           location: { index: index++ },
         },
       })

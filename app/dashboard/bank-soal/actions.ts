@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
-import { examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
+import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
 // Form ID wajib untuk sync hasil; boleh kosong saat bank dibuat, diisi belakangan.
@@ -164,7 +164,7 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
 
   try {
     const [bank] = await db
-      .select({ code: questionBanks.code, title: questionBanks.title, formId: questionBanks.formId })
+      .select({ code: questionBanks.code, title: questionBanks.title, grade: questionBanks.grade, formId: questionBanks.formId })
       .from(questionBanks)
       .where(eq(questionBanks.id, id))
       .limit(1)
@@ -174,7 +174,15 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       return { ok: false, message: "Bank soal ini sudah punya Form ID. Kosongkan dulu kolom Form ID kalau mau membuat form baru." }
     }
 
-    const { formId, editUrl, responderUri } = await buatFormKosong(`${bank.code} | ${bank.title}`)
+    const kelasAngkatan = (
+      await db.select({ name: classrooms.name }).from(classrooms).where(eq(classrooms.grade, bank.grade))
+    )
+      .map((k) => k.name)
+      .sort((a, b) => a.localeCompare(b, "id", { numeric: true }))
+
+    const { formId, editUrl, responderUri } = await buatFormKosong(`${bank.code} | ${bank.title}`, {
+      kelas: kelasAngkatan,
+    })
     const shareUrl = responderUri || `https://docs.google.com/forms/d/${formId}/viewform`
 
     await db
