@@ -99,11 +99,11 @@ export default async function GuruDashboardPage() {
   return (
     <main className="min-h-svh bg-muted/30">
       <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Area Guru</p>
-            <h1 className="text-xl font-semibold">{guru.name}</h1>
-            <p className="text-sm text-muted-foreground">NIP {guru.nip}</p>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2">
+          <div className="leading-tight">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Area Guru</p>
+            <h1 className="text-sm font-semibold">{guru.name}</h1>
+            <p className="text-[11px] text-muted-foreground">NIP {guru.nip}</p>
           </div>
           <form action={logoutGuru}>
             <Button type="submit" variant="outline" size="sm">
@@ -114,43 +114,37 @@ export default async function GuruDashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-6">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Bank soal milik saya</CardDescription>
-              <CardTitle className="text-2xl">{ringkas.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Jadwal ujian</CardDescription>
-              <CardTitle className="text-2xl">{jadwal.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Respons masuk</CardDescription>
-              <CardTitle className="text-2xl">{totalRespons}</CardTitle>
-            </CardHeader>
-          </Card>
+      <div className="mx-auto max-w-6xl space-y-3 px-3 py-3">
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[
+            { label: "Bank soal milik saya", nilai: ringkas.length },
+            { label: "Jadwal ujian", nilai: jadwal.length },
+            { label: "Respons masuk", nilai: totalRespons },
+          ].map((kartu) => (
+            <Card key={kartu.label} className="gap-0 py-0">
+              <CardHeader className="gap-0.5 px-3 py-2">
+                <CardDescription className="text-[11px]">{kartu.label}</CardDescription>
+                <CardTitle className="text-base leading-none">{kartu.nilai}</CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Bank soal &amp; hasil</CardTitle>
-            <CardDescription>
+        <Card className="gap-0 py-0">
+          <CardHeader className="gap-0.5 px-3 py-2">
+            <CardTitle className="text-sm">Bank soal &amp; hasil</CardTitle>
+            <CardDescription className="text-[11px]">
               Hanya bank soal yang terhubung ke akun Anda. Data hasil berasal dari sync Google Form oleh panitia.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 pb-2">
             {ringkas.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
+              <p className="py-4 text-center text-xs text-muted-foreground">
                 Belum ada bank soal yang terhubung ke akun Anda. Hubungi panitia.
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="text-xs [&_th]:h-8 [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Bank soal</TableHead>
@@ -166,21 +160,21 @@ export default async function GuruDashboardPage() {
                     {ringkas.map((bank) => (
                       <TableRow key={bank.id}>
                         <TableCell>
-                          <p className="font-medium">{bank.code}</p>
-                          <p className="text-sm text-muted-foreground">{bank.title}</p>
+                          <p className="font-medium leading-tight">{bank.code}</p>
+                          <p className="text-[11px] leading-tight text-muted-foreground">{bank.title}</p>
                         </TableCell>
                         <TableCell>{bank.subjectName ?? "-"}</TableCell>
                         <TableCell>{bank.grade}</TableCell>
                         <TableCell>
                           {bank.jumlahJadwal === 0 ? (
-                            <span className="text-sm text-muted-foreground">Belum dijadwalkan</span>
+                            <span className="text-[11px] text-muted-foreground">Belum dijadwalkan</span>
                           ) : (
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="font-normal">
+                              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
                                 {bank.jumlahJadwal} jadwal
                               </Badge>
                               {bank.kelas.map((kelas) => (
-                                <Badge key={kelas} variant="outline" className="font-normal">
+                                <Badge key={kelas} variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
                                   {kelas}
                                 </Badge>
                               ))}
@@ -192,20 +186,26 @@ export default async function GuruDashboardPage() {
                           {bank.respons ? bank.rataRata.toFixed(2) : "-"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1">
                             {bank.formId ? (
                               <a
                                 href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={buttonVariants({ variant: "outline", size: "sm" })}
+                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
                               >
-                                <ExternalLink className="size-4" />
+                                <ExternalLink className="size-3.5" />
                                 Edit form
                               </a>
                             ) : (
-                              <Button variant="outline" size="sm" disabled title="Form belum dibuat">
-                                <ExternalLink className="size-4" />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                title="Form belum dibuat"
+                                className="h-7 gap-1 px-2 text-[11px]"
+                              >
+                                <ExternalLink className="size-3.5" />
                                 Edit form
                               </Button>
                             )}

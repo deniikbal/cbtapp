@@ -28,8 +28,14 @@ export function GuruAnalisisButton({ bankId, judul }: { bankId: string; judul: s
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={buka} disabled={pending}>
-        {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={buka}
+        disabled={pending}
+        className="h-7 gap-1 px-2 text-[11px]"
+      >
+        {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChartColumn className="size-3.5" />}
         Analisis butir
       </Button>
       <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} butir={butir} />
