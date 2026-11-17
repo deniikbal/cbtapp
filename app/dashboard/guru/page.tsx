@@ -20,8 +20,6 @@ import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { PdfAccessCard, type AksesRow } from "@/components/pdf-access-card"
-import { bolehKelolaUser } from "@/lib/peran"
 import { TeacherManagementCard } from "@/components/teacher-management-card"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
@@ -104,33 +102,6 @@ export default async function GuruPage() {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data guru."
   }
 
-  // Verifikasi pembayaran & akses unduh PDF: khusus superadmin, admin biasa tidak melihat.
-  const superadmin = await bolehKelolaUser()
-  let aksesRows: AksesRow[] = []
-  try {
-    if (superadmin) {
-    const akses = await db
-      .select({
-        id: teachers.id,
-        name: teachers.name,
-        nip: teachers.nip,
-        status: teachers.aksesPdf,
-        diaktifkanPada: teachers.aksesPdfPada,
-      })
-      .from(teachers)
-      .orderBy(asc(teachers.name))
-    aksesRows = akses.map((r) => ({
-      id: r.id,
-      name: r.name,
-      nip: r.nip,
-      status: r.status ?? "belum",
-      diaktifkanPada: r.diaktifkanPada ? r.diaktifkanPada.toISOString().slice(0, 10) : null,
-    }))
-    }
-  } catch (error) {
-    databaseError ??= error instanceof Error ? error.message : "Gagal mengambil data akses PDF."
-  }
-
   const activeTeachers = teacherRows.filter((teacher) => teacher.active).length
 
   return (
@@ -196,7 +167,6 @@ export default async function GuruPage() {
             </Alert>
           )}
 
-          {superadmin && <PdfAccessCard rows={aksesRows} />}
           <TeacherManagementCard teachers={teacherRows} />
         </main>
       </SidebarInset>

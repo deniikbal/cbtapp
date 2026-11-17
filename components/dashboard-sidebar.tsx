@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, FileText, GraduationCap, Home, LayoutDashboard, Settings, UserCog, UserRound, Users } from "lucide-react"
+import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, FileText, GraduationCap, Home, LayoutDashboard, Lock, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -38,11 +38,16 @@ const menuUtama = [
 
 const menuSistem = [
   { href: "/dashboard/user", label: "User", icon: UserCog },
+  { href: "/dashboard/akses-pdf", label: "Akses Unduh PDF", icon: Lock },
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings },
 ]
 
 export async function DashboardSidebar({ active }: { active: string }) {
-  const menu = (await bolehKelolaUser()) ? menuSistem : menuSistem.filter((item) => item.href !== "/dashboard/user")
+  // Menu sistem sensitif (kelola user & verifikasi akses PDF) hanya untuk superadmin.
+  const khususSuperadmin = ["/dashboard/user", "/dashboard/akses-pdf"]
+  const menu = (await bolehKelolaUser())
+    ? menuSistem
+    : menuSistem.filter((item) => !khususSuperadmin.includes(item.href))
   const masterAktif = masterData.some((item) => item.href === active)
 
   return (

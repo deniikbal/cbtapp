@@ -110,7 +110,7 @@ export async function setAksesPdf(teacherId: string, aktif: boolean): Promise<{ 
         updatedAt: new Date(),
       })
       .where(eq(teachers.id, teacherId))
-    revalidatePath(PATH)
+    revalidatePath("/dashboard/akses-pdf")
     revalidatePath("/guru/dashboard")
     return { ok: true, message: aktif ? "Akses unduh PDF diaktifkan." : "Akses unduh PDF ditolak." }
   } catch (error) {
