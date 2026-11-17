@@ -35,6 +35,42 @@ async function accessToken(): Promise<string> {
   return cacheToken.access
 }
 
+async function gpost(url: string, body: unknown) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${await accessToken()}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const pesan =
+      res.status === 403
+        ? "akun Google pemilik token tidak punya izin tulis (scope forms.body ditolak)"
+        : res.status === 401
+          ? "token Google ditolak"
+          : (data?.error?.message ?? res.status)
+    throw new Error(`Google ${res.status}: ${pesan}`)
+  }
+  return data
+}
+
+// Buat form kosong di akun pemilik token. Judul saja; soal diisi guru di Google Forms.
+export async function buatFormKosong(judul: string, opsi: { kuis?: boolean } = {}) {
+  // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
+  const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
+  const formId = String(form.formId ?? "")
+  if (!formId) throw new Error("Google tidak mengembalikan formId.")
+
+  if (opsi.kuis) {
+    await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
+      requests: [{ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } }],
+    })
+  }
+
+  return { formId, editUrl: `https://docs.google.com/forms/d/${formId}/edit`, responderUri: String(form.responderUri ?? "") }
+}
+
 async function gget(url: string) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${await accessToken()}` }, cache: "no-store" })
   const data = await res.json().catch(() => ({}))

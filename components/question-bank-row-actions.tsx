@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, Loader2, Trash2 } from "lucide-react"
+import { Edit, FilePlus2, Loader2, Trash2 } from "lucide-react"
 
-import { deleteQuestionBank, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
+import { buatFormDariBank, deleteQuestionBank, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
 import type { SubjectOption } from "@/components/question-bank-create-dialog"
 import { TeacherCombobox, type TeacherOption } from "@/components/teacher-combobox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -20,6 +20,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [buatOpen, setBuatOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   function handleUpdate(formData: FormData) {
@@ -34,6 +35,24 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
       }
       toast.success(result.message)
       setEditOpen(false)
+    })
+  }
+
+  function handleBuatForm(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    setError(null)
+    startTransition(async () => {
+      const hasil = await buatFormDariBank(bank.id)
+      if (!hasil.ok) {
+        setError(hasil.message)
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message, {
+        description: "Form dibuat di akun Google sekolah, bukan akun guru.",
+        action: { label: "Buka form", onClick: () => window.open(hasil.editUrl, "_blank", "noopener") },
+      })
+      setBuatOpen(false)
     })
   }
 
@@ -80,6 +99,14 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
           </form>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={buatOpen} onOpenChange={setBuatOpen}>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" disabled={Boolean(bank.formId)} title={bank.formId ? "Sudah punya form" : "Buat form kosong"} />}><FilePlus2 className="size-4" /><span className="sr-only">Buat form kosong</span></AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogMedia><FilePlus2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Buat form kosong?</AlertDialogTitle><AlertDialogDescription>Form baru berjudul “{bank.code} | {bank.title}” dibuat di akun Google sekolah (akun pemilik token), lalu Form ID dan link edit disimpan ke bank soal ini. Soal tetap diisi guru lewat link tersebut.</AlertDialogDescription></AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction disabled={isPending} onClick={handleBuatForm}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Membuat..." : "Buat form"}</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}><Trash2 className="size-4" /><span className="sr-only">Hapus bank soal</span></AlertDialogTrigger>
         <AlertDialogContent>

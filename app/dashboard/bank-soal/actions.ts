@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
-import { formIdDari } from "@/lib/google-forms"
+import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
 // Form ID wajib untuk sync hasil; boleh kosong saat bank dibuat, diisi belakangan.
 // formIdDari melempar error untuk input salah, jadi ditangkap dan diteruskan sebagai pesan.
@@ -135,6 +135,42 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
 
   revalidatePath("/dashboard/bank-soal")
   return { ok: true, message: "Bank soal berhasil diperbarui." }
+}
+
+export type BuatFormResult =
+  | { ok: true; message: string; formId: string; editUrl: string }
+  | { ok: false; message: string }
+
+// Bikin form kosong (judul saja) di akun Google pemilik token, lalu simpan
+// formId + link edit ke bank soal. Soal tetap diisi guru di Google Forms.
+export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> {
+  const id = (bankId ?? "").trim()
+  if (!id) return { ok: false, message: "Data bank soal tidak dikenali." }
+
+  try {
+    const [bank] = await db
+      .select({ code: questionBanks.code, title: questionBanks.title, formId: questionBanks.formId })
+      .from(questionBanks)
+      .where(eq(questionBanks.id, id))
+      .limit(1)
+
+    if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+    if (bank.formId) {
+      return { ok: false, message: "Bank soal ini sudah punya Form ID. Kosongkan dulu kolom Form ID kalau mau membuat form baru." }
+    }
+
+    const { formId, editUrl } = await buatFormKosong(`${bank.code} | ${bank.title}`)
+
+    await db
+      .update(questionBanks)
+      .set({ formId, googleFormUrl: editUrl, updatedAt: new Date() })
+      .where(eq(questionBanks.id, id))
+
+    revalidatePath("/dashboard/bank-soal")
+    return { ok: true, message: "Form kosong dibuat. Isi soal lewat tombol buka form.", formId, editUrl }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal membuat form di Google." }
+  }
 }
 
 export async function deleteQuestionBanks(ids: string[]): Promise<{ ok: boolean; message: string }> {
