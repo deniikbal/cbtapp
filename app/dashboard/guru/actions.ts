@@ -10,8 +10,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { teachers } from "@/lib/db/schema"
-import { NOMINAL_PDF } from "@/lib/akses-pdf"
-import { cocokkanNominal, nominalTagihan } from "@/lib/mutasi"
+import { cocokkanDanAktifkan } from "@/lib/mutasi-server"
 import { bolehKelolaUser } from "@/lib/peran"
 
 const PATH = "/dashboard/guru"
@@ -152,20 +151,8 @@ export async function cocokkanMutasiTeks(teks: string): Promise<HasilCocokMutasi
   if (!(await bolehKelolaUser())) return { ok: false, message: "Hanya superadmin yang boleh mencocokkan mutasi." }
 
   try {
-    const tagihan = await db
-      .select({ id: teachers.id, name: teachers.name, kode: teachers.aksesPdfKode })
-      .from(teachers)
-      .where(eq(teachers.aksesPdf, "menunggu"))
-
-    const { cocok, nominalTidakDikenal } = cocokkanNominal(teks, NOMINAL_PDF, tagihan)
+    const { cocok, tidakDikenal } = await cocokkanDanAktifkan(teks)
     if (cocok.length > 0) {
-      const pada = new Date()
-      for (const baris of cocok) {
-        await db
-          .update(teachers)
-          .set({ aksesPdf: "aktif", aksesPdfPada: pada, updatedAt: pada })
-          .where(eq(teachers.id, baris.id))
-      }
       revalidatePath("/dashboard/akses-pdf")
       revalidatePath("/guru/dashboard")
     }
@@ -176,8 +163,8 @@ export async function cocokkanMutasiTeks(teks: string): Promise<HasilCocokMutasi
         cocok.length > 0
           ? `${cocok.length} pembayaran cocok, akses langsung diaktifkan.`
           : "Tidak ada pembayaran yang cocok dengan tagihan yang menunggu.",
-      cocok: cocok.map((baris) => ({ nama: baris.name, nominal: rupiah(nominalTagihan(NOMINAL_PDF, baris.kode)) })),
-      tidakDikenal: nominalTidakDikenal.map(rupiah),
+      cocok: cocok.map((baris) => ({ nama: baris.nama, nominal: rupiah(baris.nominal) })),
+      tidakDikenal: tidakDikenal.map(rupiah),
     }
   } catch (error) {
     console.error("Gagal mencocokkan mutasi:", error)
