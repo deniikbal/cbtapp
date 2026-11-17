@@ -1,12 +1,12 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
-import { LogOut } from "lucide-react"
+import { ExternalLink, LogOut } from "lucide-react"
 
 import { logoutGuru } from "@/app/guru/login/actions"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -35,6 +35,7 @@ export default async function GuruDashboardPage() {
       code: questionBanks.code,
       title: questionBanks.title,
       grade: questionBanks.grade,
+      formId: questionBanks.formId,
       subjectName: subjects.name,
     })
     .from(questionBanks)
@@ -191,7 +192,25 @@ export default async function GuruDashboardPage() {
                           {bank.respons ? bank.rataRata.toFixed(2) : "-"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <GuruAnalisisButton bankId={bank.id} judul={bank.code} />
+                          <div className="flex justify-end gap-2">
+                            {bank.formId ? (
+                              <a
+                                href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={buttonVariants({ variant: "outline", size: "sm" })}
+                              >
+                                <ExternalLink className="size-4" />
+                                Edit form
+                              </a>
+                            ) : (
+                              <Button variant="outline" size="sm" disabled title="Form belum dibuat">
+                                <ExternalLink className="size-4" />
+                                Edit form
+                              </Button>
+                            )}
+                            <GuruAnalisisButton bankId={bank.id} judul={bank.code} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
