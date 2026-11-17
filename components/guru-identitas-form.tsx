@@ -8,6 +8,7 @@ import { simpanIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const awal: IdentitasResult = { ok: false, message: "" }
 
@@ -45,16 +46,15 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
         <Label htmlFor="semester" className="text-[11px]">
           Semester
         </Label>
-        <select
-          id="semester"
-          name="semester"
-          defaultValue={nilai.semester}
-          className="h-8 rounded-md border bg-background px-2 text-xs"
-        >
-          <option value="">-</option>
-          <option value="Ganjil">Ganjil</option>
-          <option value="Genap">Genap</option>
-        </select>
+        <Select name="semester" defaultValue={nilai.semester || undefined}>
+          <SelectTrigger id="semester" size="sm" className="w-full text-xs">
+            <SelectValue placeholder="-" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Ganjil">Ganjil</SelectItem>
+            <SelectItem value="Genap">Genap</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div className="grid gap-1">
         <Label htmlFor="kkm" className="text-[11px]">
