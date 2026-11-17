@@ -10,6 +10,7 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { account, user } from "@/lib/db/schema"
+import { bolehKelolaUser, peranSekarang } from "@/lib/peran"
 
 function normalizeEmail(value: FormDataEntryValue | null) {
   return String(value ?? "").trim().toLowerCase()
@@ -20,6 +21,7 @@ function revalidateUserPaths() {
 }
 
 export async function createUser(formData: FormData) {
+  if (!(await bolehKelolaUser())) throw new Error("Hanya superadmin yang boleh menambah user.")
   const name = String(formData.get("name") ?? "").trim()
   const email = normalizeEmail(formData.get("email"))
   const password = String(formData.get("password") ?? "").trim()
@@ -57,6 +59,7 @@ export async function createUser(formData: FormData) {
 }
 
 export async function updateUser(formData: FormData) {
+  if (!(await bolehKelolaUser())) throw new Error("Hanya superadmin yang boleh mengubah user.")
   const id = String(formData.get("id") ?? "").trim()
   const name = String(formData.get("name") ?? "").trim()
   const email = normalizeEmail(formData.get("email"))
@@ -103,6 +106,7 @@ export async function updateUser(formData: FormData) {
 }
 
 export async function deleteUser(id: string) {
+  if (!(await bolehKelolaUser())) throw new Error("Hanya superadmin yang boleh menghapus user.")
   if (!id) throw new Error("ID user tidak valid.")
 
   const session = await auth.api.getSession({ headers: await headers() })
@@ -113,4 +117,21 @@ export async function deleteUser(id: string) {
   await db.delete(user).where(eq(user.id, id))
 
   revalidateUserPaths()
+}
+
+/** Ubah peran user: admin ↔ superadmin. Superadmin tidak bisa menurunkan dirinya sendiri. */
+export async function setRoleUser(id: string, role: "admin" | "superadmin") {
+  if (!(await bolehKelolaUser())) return { ok: false, message: "Hanya superadmin yang boleh mengubah peran." }
+  if (role !== "admin" && role !== "superadmin") return { ok: false, message: "Peran tidak dikenal." }
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (session?.user.id === id && role === "admin") {
+    return { ok: false, message: "Tidak bisa menurunkan peran akun yang sedang dipakai." }
+  }
+  try {
+    await db.update(user).set({ role, updatedAt: new Date() }).where(eq(user.id, id))
+    revalidateUserPaths()
+    return { ok: true, message: role === "superadmin" ? "Peran dijadikan superadmin." : "Peran dijadikan admin." }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal mengubah peran." }
+  }
 }

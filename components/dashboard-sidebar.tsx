@@ -2,6 +2,7 @@ import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRig
 import Link from "next/link"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { bolehKelolaUser } from "@/lib/peran"
 import {
   Sidebar,
   SidebarContent,
@@ -40,7 +41,8 @@ const menuSistem = [
   { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings },
 ]
 
-export function DashboardSidebar({ active }: { active: string }) {
+export async function DashboardSidebar({ active }: { active: string }) {
+  const menu = (await bolehKelolaUser()) ? menuSistem : menuSistem.filter((item) => item.href !== "/dashboard/user")
   const masterAktif = masterData.some((item) => item.href === active)
 
   return (
@@ -100,7 +102,7 @@ export function DashboardSidebar({ active }: { active: string }) {
           <SidebarGroupLabel>Sistem</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuSistem.map((item) => (
+              {menu.map((item) => (
                 <Item key={item.href} href={item.href} label={item.label} icon={item.icon} active={active === item.href} />
               ))}
             </SidebarMenu>

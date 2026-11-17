@@ -2,9 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, Loader2, Plus, RotateCcw, Search, Trash2, Users } from "lucide-react"
+import { Edit, Loader2, Plus, RotateCcw, Search, ShieldCheck, Trash2, Users } from "lucide-react"
 
-import { createUser, deleteUser, updateUser } from "@/app/dashboard/user/actions"
+import { createUser, deleteUser, setRoleUser, updateUser } from "@/app/dashboard/user/actions"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +40,7 @@ export type UserManagementRow = {
   name: string
   email: string
   emailVerified: boolean
+  role: string
   createdAt: string
 }
 
@@ -56,6 +57,7 @@ export function UserManagementCard({ users, currentUserId }: { users: UserManage
   const [dialogMode, setDialogMode] = useState<DialogMode>("create")
   const [editing, setEditing] = useState<UserManagementRow | null>(null)
   const [deleting, setDeleting] = useState<UserManagementRow | null>(null)
+  const [rolePending, setRolePending] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const hasActiveFilter = search.trim() !== ""
@@ -100,6 +102,17 @@ export function UserManagementCard({ users, currentUserId }: { users: UserManage
     setDialogMode("create")
     setEditing(null)
     setDialogOpen(true)
+  }
+
+  function ubahPeran(row: UserManagementRow) {
+    const baru = row.role === "superadmin" ? "admin" : "superadmin"
+    setRolePending(row.id)
+    startTransition(async () => {
+      const hasil = await setRoleUser(row.id, baru)
+      if (hasil.ok) toast.success(hasil.message)
+      else toast.error(hasil.message)
+      setRolePending(null)
+    })
   }
 
   function openEdit(row: UserManagementRow) {
@@ -173,12 +186,12 @@ export function UserManagementCard({ users, currentUserId }: { users: UserManage
         <CardContent>
           <div className="overflow-hidden rounded-lg border">
             <Table>
-              <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama</TableHead><TableHead>Email</TableHead><TableHead>Dibuat</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama</TableHead><TableHead>Email</TableHead><TableHead className="w-28">Peran</TableHead><TableHead>Dibuat</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
-                  <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><Users className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada user"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan user untuk mengatur akses dashboard."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <Button size="sm" onClick={openCreate}><Plus className="size-4" />Tambah User</Button>}</div></TableCell></TableRow>
+                  <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><Users className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada user"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan user untuk mengatur akses dashboard."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <Button size="sm" onClick={openCreate}><Plus className="size-4" />Tambah User</Button>}</div></TableCell></TableRow>
                 ) : paginatedUsers.map((row, index) => (
-                  <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-sky-500/15 text-xs font-medium text-sky-700 dark:text-sky-300">{getInitials(row.name)}</AvatarFallback></Avatar><div className="font-medium">{row.name}{row.id === currentUserId && <span className="ml-2 text-xs font-normal text-muted-foreground">(Anda)</span>}</div></div></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{row.email}</TableCell><TableCell className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</TableCell><TableCell><div className="flex justify-end gap-1.5"><Button variant="ghost" size="icon-sm" onClick={() => openEdit(row)}><Edit className="size-4" /><span className="sr-only">Edit</span></Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={row.id === currentUserId} onClick={() => setDeleting(row)}><Trash2 className="size-4" /><span className="sr-only">Hapus</span></Button></div></TableCell></TableRow>
+                  <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-sky-500/15 text-xs font-medium text-sky-700 dark:text-sky-300">{getInitials(row.name)}</AvatarFallback></Avatar><div className="font-medium">{row.name}{row.id === currentUserId && <span className="ml-2 text-xs font-normal text-muted-foreground">(Anda)</span>}</div></div></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{row.email}</TableCell><TableCell>{row.role === "superadmin" ? <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Superadmin</Badge> : <Badge variant="secondary">Admin</Badge>}</TableCell><TableCell className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</TableCell><TableCell><div className="flex justify-end gap-1.5"><Button variant="ghost" size="icon-sm" title={row.role === "superadmin" ? "Jadikan admin" : "Jadikan superadmin"} disabled={row.id === currentUserId || rolePending === row.id} onClick={() => ubahPeran(row)}>{rolePending === row.id ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}<span className="sr-only">Ubah peran</span></Button><Button variant="ghost" size="icon-sm" onClick={() => openEdit(row)}><Edit className="size-4" /><span className="sr-only">Edit</span></Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={row.id === currentUserId} onClick={() => setDeleting(row)}><Trash2 className="size-4" /><span className="sr-only">Hapus</span></Button></div></TableCell></TableRow>
                 ))}
               </TableBody>
             </Table>

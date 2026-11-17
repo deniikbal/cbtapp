@@ -29,11 +29,13 @@ import {
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema"
+import { bolehKelolaUser } from "@/lib/peran"
 import { cn } from "@/lib/utils"
 
 export default async function UserPage() {
   const currentSession = await auth.api.getSession({ headers: await headers() })
   if (!currentSession) redirect("/login")
+  if (!(await bolehKelolaUser())) redirect("/dashboard")
 
   let databaseError: string | null = null
   let rows: UserManagementRow[] = []
@@ -45,6 +47,7 @@ export default async function UserPage() {
         name: user.name,
         email: user.email,
         emailVerified: user.emailVerified,
+        role: user.role,
         createdAt: user.createdAt,
       })
       .from(user)

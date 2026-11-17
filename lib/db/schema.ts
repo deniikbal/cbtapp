@@ -6,6 +6,8 @@ export const user = pgTable("user", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull().default(false),
+  /** admin | superadmin — superadmin saja yang boleh kelola akun user */
+  role: text("role").notNull().default("admin"),
   image: text("image"),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
