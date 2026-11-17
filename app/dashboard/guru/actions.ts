@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { teachers } from "@/lib/db/schema"
+import { bolehKelolaUser } from "@/lib/peran"
 
 const PATH = "/dashboard/guru"
 
@@ -99,6 +100,7 @@ export async function setAksesPdf(teacherId: string, aktif: boolean): Promise<{ 
   if (!teacherId) return { ok: false, message: "Guru tidak ditemukan." }
   const sesi = await auth.api.getSession({ headers: await headers() })
   if (!sesi) return { ok: false, message: "Sesi habis. Silakan login ulang." }
+  if (!(await bolehKelolaUser())) return { ok: false, message: "Hanya superadmin yang boleh mengubah akses unduh PDF." }
   try {
     await db
       .update(teachers)
