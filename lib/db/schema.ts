@@ -124,6 +124,8 @@ export const questionBanks = pgTable(
     googleFormUrl: text("googleFormUrl").notNull(),
     formId: text("formId").notNull().default(""),
     formItems: jsonb("formItems"),
+    // Kapan terakhir sync dari Google Form (null = belum pernah).
+    syncedAt: timestamp("syncedAt", { withTimezone: true }),
     active: boolean("active").notNull().default(true),
     subjectId: text("subjectId")
       .notNull()

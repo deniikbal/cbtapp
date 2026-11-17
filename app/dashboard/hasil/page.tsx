@@ -36,6 +36,7 @@ export default async function HasilPage() {
           code: questionBanks.code,
           formId: questionBanks.formId,
           formItems: questionBanks.formItems,
+          syncedAt: questionBanks.syncedAt,
           className: classrooms.name,
         })
         .from(examSchedules)
@@ -78,6 +79,7 @@ export default async function HasilPage() {
         startTime: utama.startTime,
         adaFormId: Boolean(utama.formId),
         soalDinilai: soalDariItems((utama.formItems as unknown[] | null) ?? []).filter((soal) => soal.kunci.length > 0).length,
+        syncedAt: utama.syncedAt ? utama.syncedAt.toISOString() : null,
         respons: nilai.length,
         rataRata: nilai.length ? nilai.reduce((a, b) => a + b, 0) / nilai.length : null,
       }

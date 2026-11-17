@@ -27,6 +27,8 @@ export type HasilRow = {
   soalDinilai: number
   respons: number
   rataRata: number | null
+  /** ISO waktu sync terakhir; null = belum pernah disinkronkan */
+  syncedAt: string | null
 }
 
 export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
@@ -100,13 +102,14 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
               <TableHead className="text-center">Soal Dinilai</TableHead>
               <TableHead className="text-center">Respons</TableHead>
               <TableHead className="text-center">Rata-rata</TableHead>
+              <TableHead className="text-center">Sync terakhir</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Belum ada bank soal yang dijadwalkan.</TableCell>
+                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">Belum ada bank soal yang dijadwalkan.</TableCell>
               </TableRow>
             )}
             {rows.map((row) => (
@@ -129,6 +132,16 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                 </TableCell>
                 <TableCell className="text-center tabular-nums">{row.respons}</TableCell>
                 <TableCell className="text-center tabular-nums">{row.rataRata === null ? "-" : row.rataRata.toFixed(1)}</TableCell>
+                <TableCell className="whitespace-nowrap text-center">
+                  {row.syncedAt ? (
+                    <span className="text-xs text-muted-foreground" title={new Date(row.syncedAt).toLocaleString("id-ID")}>
+                      {new Date(row.syncedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" })}{" "}
+                      {new Date(row.syncedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600">belum</Badge>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-1.5">
                     <Button variant="ghost" size="icon-sm" disabled={!row.adaFormId || pendingId === row.id} onClick={() => handleSync(row)} title="Sync hasil">
