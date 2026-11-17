@@ -22,6 +22,7 @@ import { redirect } from "next/navigation"
 
 import { TeacherManagementCard } from "@/components/teacher-management-card"
 import { UserNav } from "@/components/user-nav"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Card,
@@ -48,21 +49,6 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
-
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
-  { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
-  { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap, active: false },
-  { href: "/dashboard/guru", label: "Guru", icon: UserRound, active: true },
-  { href: "/dashboard/peserta", label: "Peserta", icon: Users, active: false },
-  { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
-  { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
-  { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
-  { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
-  { href: "/dashboard/hasil", label: "Hasil Ujian", icon: BarChart3, active: false },
-  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
-  { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
-]
 
 export type TeacherRow = {
   id: string
@@ -120,7 +106,7 @@ export default async function GuruPage() {
 
   return (
     <SidebarProvider>
-      <DashboardSidebar />
+      <DashboardSidebar active="/dashboard/guru" />
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar
           title="Guru"
@@ -188,54 +174,6 @@ export default async function GuruPage() {
   )
 }
 
-function DashboardSidebar() {
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Home className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">SMANSABA Assesmen</span>
-                <span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const Icon = item.icon
-
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      isActive={item.active}
-                      tooltip={item.label}
-                      render={<Link href={item.href} />}
-                    >
-                      <Icon className="size-4" />
-                      <span className="truncate">{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter />
-      <SidebarRail />
-    </Sidebar>
-  )
-}
 
 function DashboardNavbar({
   title,

@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 
 import { ExamScheduleTableCard } from "@/components/exam-schedule-table-card"
 import { UserNav } from "@/components/user-nav"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
@@ -14,22 +15,6 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, examSchedules, majors, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
-
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
-  { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
-  { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap, active: false },
-
-  { href: "/dashboard/guru", label: "Guru", icon: UserRound, active: false },
-  { href: "/dashboard/peserta", label: "Peserta", icon: Users, active: false },
-  { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
-  { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
-  { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: true },
-  { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
-  { href: "/dashboard/hasil", label: "Hasil Ujian", icon: BarChart3, active: false },
-  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
-  { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
-]
 
 type ScheduleRow = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string; code: string; className: string; majorCode: string; subjectCode: string }
 
@@ -60,7 +45,7 @@ export default async function JadwalPage() {
   const classUsed = new Set(rows.map((row) => row.classroomId)).size
   return (
     <SidebarProvider>
-      <DashboardSidebar />
+      <DashboardSidebar active="/dashboard/jadwal" />
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar title="Jadwal" description="Atur pelaksanaan ujian" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
@@ -79,7 +64,6 @@ export default async function JadwalPage() {
   )
 }
 
-function DashboardSidebar() { return <Sidebar collapsible="icon"><SidebarHeader><SidebarMenu><SidebarMenuItem><SidebarMenuButton size="lg" render={<Link href="/dashboard" />}><div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Home className="size-4" /></div><div className="grid flex-1 text-left text-sm leading-tight"><span className="truncate font-semibold">SMANSABA Assesmen</span><span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span></div></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarHeader><SidebarContent><SidebarGroup><SidebarGroupLabel>Menu Utama</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>{menuItems.map((item) => { const Icon = item.icon; return <SidebarMenuItem key={item.label}><SidebarMenuButton isActive={item.active} tooltip={item.label} render={<Link href={item.href} />}><Icon className="size-4" /><span className="truncate">{item.label}</span></SidebarMenuButton></SidebarMenuItem> })}</SidebarMenu></SidebarGroupContent></SidebarGroup></SidebarContent><SidebarFooter /><SidebarRail /></Sidebar> }
 function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) { return <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8"><div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4"><div className="flex items-center gap-3"><SidebarTrigger /><div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{description}</p></div></div><UserNav name={userName} email={userEmail} /></div></header> }
 type StatCardProps = { label: string; value: number; description: string; icon: ComponentType<{ className?: string }>; accent: string; ringClass: string }
 function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) { return <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}><div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} /><CardHeader className="relative"><div className="flex items-start justify-between gap-2"><div className="space-y-1"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p><p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value.toLocaleString("id-ID")}</p></div><div className={cn("flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur", accent.split(" ").find((className) => className.startsWith("text-")) ?? "")}><Icon className="size-4" /></div></div></CardHeader><CardContent className="relative"><p className="text-xs text-muted-foreground">{description}</p></CardContent></Card> }

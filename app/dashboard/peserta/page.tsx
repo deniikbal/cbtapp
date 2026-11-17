@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 
 import { StudentManagementCard } from "@/components/student-management-card"
 import { UserNav } from "@/components/user-nav"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Card,
@@ -38,22 +39,6 @@ const naturalClassroomCollator = new Intl.Collator("id-ID", {
   numeric: true,
   sensitivity: "base",
 })
-
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, active: false },
-  { href: "/dashboard/jurusan", label: "Jurusan", icon: Building2, active: false },
-  { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap, active: false },
-
-  { href: "/dashboard/guru", label: "Guru", icon: UserRound, active: false },
-  { href: "/dashboard/peserta", label: "Peserta", icon: Users, active: true },
-  { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen, active: false },
-  { href: "/dashboard/bank-soal", label: "Bank Soal", icon: FileText, active: false },
-  { href: "/dashboard/jadwal", label: "Jadwal", icon: CalendarDays, active: false },
-  { href: "/dashboard/pengerjaan", label: "Pengerjaan", icon: BookOpenCheck, active: false },
-  { href: "/dashboard/hasil", label: "Hasil Ujian", icon: BarChart3, active: false },
-  { href: "/dashboard/user", label: "User", icon: UserCog, active: false },
-  { href: "/dashboard/pengaturan", label: "Pengaturan", icon: Settings, active: false },
-]
 
 type StudentRow = {
   id: string
@@ -124,7 +109,7 @@ export default async function PesertaPage() {
 
   return (
     <SidebarProvider>
-      <DashboardSidebar />
+      <DashboardSidebar active="/dashboard/peserta" />
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar
           title="Peserta"
@@ -194,54 +179,6 @@ export default async function PesertaPage() {
   )
 }
 
-function DashboardSidebar() {
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Home className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">SMANSABA Assesmen</span>
-                <span className="truncate text-xs text-muted-foreground">Manajemen Assesmen</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const Icon = item.icon
-
-                return (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      isActive={item.active}
-                      tooltip={item.label}
-                      render={<Link href={item.href} />}
-                    >
-                      <Icon className="size-4" />
-                      <span className="truncate">{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter />
-      <SidebarRail />
-    </Sidebar>
-  )
-}
 
 function DashboardNavbar({
   title,
