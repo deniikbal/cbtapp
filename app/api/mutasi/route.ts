@@ -18,8 +18,9 @@ export async function POST(request: Request) {
   let teks = ""
   const tipe = request.headers.get("content-type") ?? ""
   if (tipe.includes("application/json")) {
-    const body = (await request.json().catch(() => null)) as { teks?: string; text?: string } | null
-    teks = String(body?.teks ?? body?.text ?? "")
+    // Terima bentuk apa pun dari app penerus notifikasi: {teks}, {text}, atau objek bebas.
+    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null
+    teks = ambilTeks(body)
   } else {
     teks = await request.text()
   }
@@ -36,4 +37,16 @@ export async function POST(request: Request) {
     console.error("Gagal mencocokkan mutasi:", error)
     return Response.json({ ok: false, message: "Gagal mencocokkan mutasi." }, { status: 500 })
   }
+}
+
+/** Ambil teks dari body JSON apa pun; gabungkan semua nilai string bila tak ada field standar. */
+function ambilTeks(body: Record<string, unknown> | null) {
+  if (!body) return ""
+  for (const kunci of ["teks", "text", "message", "body", "content", "notification"]) {
+    const nilai = body[kunci]
+    if (typeof nilai === "string" && nilai.trim()) return nilai
+  }
+  return Object.values(body)
+    .filter((nilai): nilai is string => typeof nilai === "string")
+    .join(" ")
 }
