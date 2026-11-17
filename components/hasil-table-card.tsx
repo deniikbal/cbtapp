@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { FileSearch, Loader2, RefreshCw, TriangleAlert } from "lucide-react"
+import { ChartColumn, FileSearch, Loader2, RefreshCw, TriangleAlert } from "lucide-react"
 
-import { getHasilDetail, syncHasil, type HasilDetail } from "@/app/dashboard/hasil/actions"
+import { getAnalisisButir, getHasilDetail, syncHasil, type HasilDetail } from "@/app/dashboard/hasil/actions"
+import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
+import type { AnalisisButir } from "@/lib/analisis-butir"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +33,9 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [detail, setDetail] = useState<HasilDetail | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [butir, setButir] = useState<AnalisisButir[]>([])
+  const [butirJudul, setButirJudul] = useState("")
+  const [butirOpen, setButirOpen] = useState(false)
   const [, startTransition] = useTransition()
 
   function handleSync(row: HasilRow) {
@@ -45,6 +50,21 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
       const { cocok, tidakCocok, totalSoal } = hasil.info
       toast.success(`${cocok} respons tercatat, ${tidakCocok} tidak cocok NIS, ${totalSoal} soal dinilai.`)
       setPendingId(null)
+    })
+  }
+
+  function handleAnalisis(row: HasilRow) {
+    setPendingId(row.id)
+    startTransition(async () => {
+      const hasil = await getAnalisisButir(row.bankId)
+      setPendingId(null)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      setButir(hasil.butir)
+      setButirJudul(`${row.code} — ${row.title}`)
+      setButirOpen(true)
     })
   }
 
@@ -117,6 +137,10 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                       <FileSearch className="size-4" />
                       <span className="sr-only">Rincian jawaban</span>
                     </Button>
+                    <Button variant="ghost" size="icon-sm" disabled={!row.respons || pendingId === row.id} onClick={() => handleAnalisis(row)} title="Analisis butir soal">
+                      <ChartColumn className="size-4" />
+                      <span className="sr-only">Analisis butir soal</span>
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -124,6 +148,8 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
           </TableBody>
         </Table>
       </CardContent>
+
+      <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} butir={butir} />
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-4xl">

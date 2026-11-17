@@ -1,5 +1,5 @@
 // Google Forms: token, struktur form, dan respons. Hanya baca.
-export type Soal = { qid: string; judul: string; kunci: string[]; tipe: "text" | "choice" | "lain" }
+export type Soal = { qid: string; judul: string; kunci: string[]; tipe: "text" | "choice" | "lain"; poin: number }
 export type Respons = {
   responseId: string
   createTime?: string
@@ -83,7 +83,14 @@ export async function ambilRespons(formId: string): Promise<Respons[]> {
 
 type ButirForm = {
   title?: string
-  questionItem?: { question?: { questionId?: string; textQuestion?: unknown; choiceQuestion?: unknown; grading?: { correctAnswers?: { answers?: { value?: string }[] } } } }
+  questionItem?: {
+    question?: {
+      questionId?: string
+      textQuestion?: unknown
+      choiceQuestion?: unknown
+      grading?: { pointValue?: number; correctAnswers?: { answers?: { value?: string }[] } }
+    }
+  }
 }
 
 export function soalDariItems(items: unknown[]): Soal[] {
@@ -96,6 +103,7 @@ export function soalDariItems(items: unknown[]): Soal[] {
       judul: (butir.title ?? "").trim(),
       kunci: (q.grading?.correctAnswers?.answers ?? []).map((a) => (a.value ?? "").trim().toLowerCase()).filter(Boolean),
       tipe: q.textQuestion ? "text" : q.choiceQuestion ? "choice" : "lain",
+      poin: q.grading?.pointValue && q.grading.pointValue > 0 ? q.grading.pointValue : 1,
     })
   }
   return hasil
