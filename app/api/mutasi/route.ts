@@ -28,6 +28,7 @@ export async function POST(request: Request) {
 
   try {
     const hasil = await cocokkanDanAktifkan(teks)
+    console.log("[mutasi] teks:", teks.replace(/\s+/g, " ").slice(0, 200), "→ cocok:", hasil.cocok.length)
     if (hasil.cocok.length > 0) {
       revalidatePath("/dashboard/akses-pdf")
       revalidatePath("/guru/dashboard")

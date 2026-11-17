@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { eq, ne } from "drizzle-orm"
 
 import { NOMINAL_PDF } from "@/lib/akses-pdf"
 import { db } from "@/lib/db"
@@ -15,10 +15,11 @@ export type HasilCocok = {
  * lalu aktifkan aksesnya. Dipakai halaman admin dan endpoint notifikasi HP.
  */
 export async function cocokkanDanAktifkan(teks: string): Promise<HasilCocok> {
+  // Guru bisa bayar sebelum menekan "sudah bayar", jadi cocokkan semua yang belum aktif.
   const tagihan = await db
     .select({ id: teachers.id, name: teachers.name, kode: teachers.aksesPdfKode })
     .from(teachers)
-    .where(eq(teachers.aksesPdf, "menunggu"))
+    .where(ne(teachers.aksesPdf, "aktif"))
 
   const { cocok, nominalTidakDikenal } = cocokkanNominal(teks, NOMINAL_PDF, tagihan)
   if (cocok.length > 0) {
