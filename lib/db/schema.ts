@@ -215,6 +215,25 @@ export const teachers = pgTable(
   (table) => [uniqueIndex("teachers_nip_idx").on(table.nip)],
 )
 
+export const reportSettings = pgTable(
+  "report_settings",
+  {
+    id: text("id").primaryKey(),
+    teacherId: text("teacherId")
+      .notNull()
+      .references(() => teachers.id, { onDelete: "cascade" }),
+    namaTes: text("namaTes").notNull().default(""),
+    tahunPelajaran: text("tahunPelajaran").notNull().default(""),
+    semester: text("semester").notNull().default(""),
+    kkm: integer("kkm").notNull().default(75),
+    kepalaSekolah: text("kepalaSekolah").notNull().default(""),
+    nipKepalaSekolah: text("nipKepalaSekolah").notNull().default(""),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("report_settings_teacher_idx").on(table.teacherId)],
+)
+
 export const examAttempts = pgTable(
   "exam_attempts",
   {

@@ -3,8 +3,10 @@ import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
 import { ExternalLink, LogOut } from "lucide-react"
 
+import { getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
+import { GuruIdentitasForm } from "@/components/guru-identitas-form"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -43,6 +45,7 @@ export default async function GuruDashboardPage() {
     .where(eq(questionBanks.teacherId, guru.id))
     .orderBy(questionBanks.code)
 
+  const identitas = await getIdentitasLaporan()
   const bankIds = banks.map((b) => b.id)
 
   const jadwal = bankIds.length
@@ -219,6 +222,16 @@ export default async function GuruDashboardPage() {
               </div>
             )}
           </CardContent>
+        </Card>
+
+        <Card className="gap-0 py-0">
+          <CardHeader className="gap-0.5 px-3 py-2">
+            <CardTitle className="text-sm">Identitas laporan</CardTitle>
+            <CardDescription className="text-[11px]">
+              Dipakai di header PDF analisis butir: nama tes, tahun pelajaran, semester, KKM, kepala sekolah.
+            </CardDescription>
+          </CardHeader>
+          <GuruIdentitasForm identitas={identitas} />
         </Card>
       </div>
     </main>
