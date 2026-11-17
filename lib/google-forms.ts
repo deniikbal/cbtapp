@@ -56,17 +56,41 @@ async function gpost(url: string, body: unknown) {
 }
 
 // Buat form kosong di akun pemilik token. Judul saja; soal diisi guru di Google Forms.
-export async function buatFormKosong(judul: string, opsi: { kuis?: boolean } = {}) {
+// Butir identitas default: tidak dinilai (tanpa correctAnswers), hanya wajib diisi.
+const BUTIR_IDENTITAS = ["NIS", "Nama Lengkap", "Kelas"]
+
+export async function buatFormKosong(judul: string, opsi: { kuis?: boolean; identitas?: boolean } = {}) {
+  const { kuis = true, identitas = true } = opsi
+
   // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
   const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
   const formId = String(form.formId ?? "")
   if (!formId) throw new Error("Google tidak mengembalikan formId.")
 
-  if (opsi.kuis) {
-    await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
-      requests: [{ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } }],
-    })
+  const requests: Record<string, unknown>[] = []
+  let index = 0
+
+  if (kuis) {
+    requests.push({ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } })
   }
+
+  if (identitas) {
+    for (const judulButir of BUTIR_IDENTITAS) {
+      requests.push({
+        createItem: {
+          item: { title: judulButir, questionItem: { question: { required: true, textQuestion: { paragraph: false } } } },
+          location: { index: index++ },
+        },
+      })
+    }
+  }
+
+  // Bagian kosong tempat guru menaruh soal, dipisah dari butir identitas.
+  requests.push({
+    createItem: { item: { title: "Soal", description: "Isi soal di bagian ini.", pageBreakItem: {} }, location: { index: index++ } },
+  })
+
+  await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
 
   return { formId, editUrl: `https://docs.google.com/forms/d/${formId}/edit`, responderUri: String(form.responderUri ?? "") }
 }
