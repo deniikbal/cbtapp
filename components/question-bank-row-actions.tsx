@@ -49,8 +49,8 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
         return
       }
       toast.success(hasil.message, {
-        description: "Form dibuat di akun Google sekolah, bukan akun guru.",
-        action: { label: "Buka form", onClick: () => window.open(hasil.editUrl, "_blank", "noopener") },
+        description: "Link siswa tersimpan. Untuk mengisi soal, buka link edit.",
+        action: { label: "Edit form", onClick: () => window.open(hasil.editUrl, "_blank", "noopener") },
       })
       setBuatOpen(false)
     })
@@ -91,7 +91,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
             <div className="space-y-2"><Label>Judul Otomatis</Label><Input value={bank.title} disabled /></div>
             <div className="space-y-2"><Label htmlFor={`grade-${bank.id}`}>Kelas</Label><Select name="grade" defaultValue={bank.grade} required><SelectTrigger id={`grade-${bank.id}`} className="w-full"><SelectValue>{bank.grade}</SelectValue></SelectTrigger><SelectContent><SelectItem value="X">X</SelectItem><SelectItem value="XI">XI</SelectItem><SelectItem value="XII">XII</SelectItem></SelectContent></Select></div>
             <div className="space-y-2"><Label htmlFor={`teacher-${bank.id}`}>Guru Pembuat</Label><TeacherCombobox teachers={teachers} defaultValue={bank.teacherId ?? ""} id={`teacher-${bank.id}`} /></div>
-            <div className="space-y-2"><Label htmlFor={`url-${bank.id}`}>Link Google Form (opsional)</Label><Input id={`url-${bank.id}`} name="googleFormUrl" defaultValue={bank.googleFormUrl} placeholder="Kosongkan kalau form belum ada" /></div>
+            <div className="space-y-2"><Label htmlFor={`url-${bank.id}`}>Link Google Form untuk siswa (opsional)</Label><Input id={`url-${bank.id}`} name="googleFormUrl" defaultValue={bank.googleFormUrl} placeholder="https://docs.google.com/forms/d/…/viewform" /><p className="text-xs text-muted-foreground">Link yang dibagikan ke siswa. Link edit otomatis diubah ke viewform.</p></div>
             <div className="space-y-2"><Label htmlFor={`formid-${bank.id}`}>Form ID (sync hasil)</Label><Input id={`formid-${bank.id}`} name="formId" defaultValue={bank.formId} placeholder="tempel link /d/…/edit atau ID-nya" /><p className="text-xs text-muted-foreground">Ambil dari URL saat form dibuka lewat tombol Edit. Link viewform/forms.gle tidak bisa dipakai.</p></div>
             <div className="space-y-2"><Label htmlFor={`active-${bank.id}`}>Status</Label><Select name="active" defaultValue={String(bank.active)}><SelectTrigger id={`active-${bank.id}`} className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
             {error && <p className="text-sm text-destructive">{error}</p>}
@@ -102,7 +102,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
       <AlertDialog open={buatOpen} onOpenChange={setBuatOpen}>
         <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" disabled={Boolean(bank.formId)} title={bank.formId ? "Sudah punya form" : "Buat form kosong"} />}><FilePlus2 className="size-4" /><span className="sr-only">Buat form kosong</span></AlertDialogTrigger>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogMedia><FilePlus2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Buat form kosong?</AlertDialogTitle><AlertDialogDescription>Form baru berjudul “{bank.code} | {bank.title}” dibuat di akun Google sekolah (akun pemilik token), lalu Form ID dan link edit disimpan ke bank soal ini. Soal tetap diisi guru lewat link tersebut.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogMedia><FilePlus2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Buat form kosong?</AlertDialogTitle><AlertDialogDescription>Form baru berjudul “{bank.code} | {bank.title}” dibuat di akun Google sekolah (akun pemilik token). Yang disimpan ke bank soal: Form ID dan link siswa (viewform). Soal diisi guru lewat link edit, lalu form harus dipublikasikan supaya bisa diisi siswa.</AlertDialogDescription></AlertDialogHeader>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction disabled={isPending} onClick={handleBuatForm}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Membuat..." : "Buat form"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>

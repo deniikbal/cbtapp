@@ -95,9 +95,9 @@ export function QuestionBankCreateDialog({
             <TeacherCombobox teachers={teachers} id="teacherId" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="googleFormUrl">Link Google Form (opsional)</Label>
-            <Input id="googleFormUrl" name="googleFormUrl" placeholder="https://forms.gle/..." />
-            <p className="text-xs text-muted-foreground">Boleh dikosongkan — form bisa dibuat belakangan lewat tombol <span className="font-medium">Buat form kosong</span> di tabel.</p>
+            <Label htmlFor="googleFormUrl">Link Google Form untuk siswa (opsional)</Label>
+            <Input id="googleFormUrl" name="googleFormUrl" placeholder="https://docs.google.com/forms/d/…/viewform" />
+            <p className="text-xs text-muted-foreground">Link yang dibagikan ke siswa, bukan link edit. Kalau yang ditempel link edit, otomatis diubah ke viewform. Boleh dikosongkan — form bisa dibuat lewat tombol <span className="font-medium">Buat form kosong</span> di tabel.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="formId">Form ID (opsional, untuk sync hasil)</Label>

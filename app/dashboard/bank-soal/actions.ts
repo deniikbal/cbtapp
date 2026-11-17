@@ -23,6 +23,14 @@ function bacaFormId(formData: FormData): { formId: string; error: string | null 
   }
 }
 
+// Link yang disimpan/bagikan ke siswa = /viewform. Link /edit dari guru
+// otomatis diubah supaya satu kolom tidak bercampur dua jenis link.
+function keLinkSiswa(url: string) {
+  // Jangan sentuh link publik /d/e/<token>/viewform (format responderUri).
+  const id = url.match(/\/forms\/d\/([A-Za-z0-9_-]{20,})\/(?:edit|viewform)/)?.[1]
+  return id ? `https://docs.google.com/forms/d/${id}/viewform` : url
+}
+
 // Kembalikan URL valid, atau null kalau tidak bisa dipakai. Tidak melempar error
 // supaya pesan bisa sampai ke pengguna (throw di server action jadi digest generik).
 function normalizeUrl(url: string) {
@@ -73,7 +81,8 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacher = await bacaGuru(formData)
   const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
-  const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
+  const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
+  const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
   const { formId, error: formIdError } = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
@@ -116,7 +125,8 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacher = await bacaGuru(formData)
   const teacherName = teacher?.name ?? ""
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
-  const googleFormUrl = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
+  const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
+  const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
   const { formId, error: formIdError } = bacaFormId(formData)
   const active = String(formData.get("active") ?? "true") === "true"
 
@@ -143,7 +153,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
 }
 
 export type BuatFormResult =
-  | { ok: true; message: string; formId: string; editUrl: string }
+  | { ok: true; message: string; formId: string; editUrl: string; shareUrl: string }
   | { ok: false; message: string }
 
 // Bikin form kosong (judul saja) di akun Google pemilik token, lalu simpan
@@ -164,15 +174,16 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       return { ok: false, message: "Bank soal ini sudah punya Form ID. Kosongkan dulu kolom Form ID kalau mau membuat form baru." }
     }
 
-    const { formId, editUrl } = await buatFormKosong(`${bank.code} | ${bank.title}`)
+    const { formId, editUrl, responderUri } = await buatFormKosong(`${bank.code} | ${bank.title}`)
+    const shareUrl = responderUri || `https://docs.google.com/forms/d/${formId}/viewform`
 
     await db
       .update(questionBanks)
-      .set({ formId, googleFormUrl: editUrl, updatedAt: new Date() })
+      .set({ formId, googleFormUrl: shareUrl, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
 
     revalidatePath("/dashboard/bank-soal")
-    return { ok: true, message: "Form kosong dibuat. Isi soal lewat tombol buka form.", formId, editUrl }
+    return { ok: true, message: "Form kosong dibuat. Link siswa tersimpan; isi soal lewat tombol edit form.", formId, editUrl, shareUrl }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Gagal membuat form di Google." }
   }
