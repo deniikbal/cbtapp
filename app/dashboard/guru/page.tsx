@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { pdfAccess, questionBanks, teachers } from "@/lib/db/schema"
+import { questionBanks, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 export type TeacherRow = {
@@ -110,11 +110,10 @@ export default async function GuruPage() {
         id: teachers.id,
         name: teachers.name,
         nip: teachers.nip,
-        status: pdfAccess.status,
-        diaktifkanPada: pdfAccess.diaktifkanPada,
+        status: teachers.aksesPdf,
+        diaktifkanPada: teachers.aksesPdfPada,
       })
       .from(teachers)
-      .leftJoin(pdfAccess, eq(pdfAccess.teacherId, teachers.id))
       .orderBy(asc(teachers.name))
     aksesRows = akses.map((r) => ({
       id: r.id,

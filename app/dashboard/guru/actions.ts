@@ -9,7 +9,7 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
-import { pdfAccess, teachers } from "@/lib/db/schema"
+import { teachers } from "@/lib/db/schema"
 
 const PATH = "/dashboard/guru"
 
@@ -101,18 +101,13 @@ export async function setAksesPdf(teacherId: string, aktif: boolean): Promise<{ 
   if (!sesi) return { ok: false, message: "Sesi habis. Silakan login ulang." }
   try {
     await db
-      .insert(pdfAccess)
-      .values({
-        id: randomUUID(),
-        teacherId,
-        status: aktif ? "aktif" : "ditolak",
-        diaktifkanPada: aktif ? new Date() : null,
+      .update(teachers)
+      .set({
+        aksesPdf: aktif ? "aktif" : "ditolak",
+        aksesPdfPada: aktif ? new Date() : null,
         updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
-        target: pdfAccess.teacherId,
-        set: { status: aktif ? "aktif" : "ditolak", diaktifkanPada: aktif ? new Date() : null, updatedAt: new Date() },
-      })
+      .where(eq(teachers.id, teacherId))
     revalidatePath(PATH)
     revalidatePath("/guru/dashboard")
     return { ok: true, message: aktif ? "Akses unduh PDF diaktifkan." : "Akses unduh PDF ditolak." }

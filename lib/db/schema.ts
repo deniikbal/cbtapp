@@ -209,6 +209,10 @@ export const teachers = pgTable(
     birthDate: text("birthDate").notNull().default(""),
     passwordHash: text("passwordHash").notNull(),
     active: boolean("active").notNull().default(true),
+    /** Akses unduh PDF analisis butir (sekali bayar): belum | menunggu | aktif | ditolak */
+    aksesPdf: text("aksesPdf").notNull().default("belum"),
+    aksesPdfPada: timestamp("aksesPdfPada", { withTimezone: true }),
+    aksesPdfCatatan: text("aksesPdfCatatan").notNull().default(""),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -232,24 +236,6 @@ export const reportSettings = pgTable(
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("report_settings_teacher_idx").on(table.teacherId)],
-)
-
-/** Akses berbayar unduh PDF analisis butir: sekali bayar, aktif permanen. */
-export const pdfAccess = pgTable(
-  "pdf_access",
-  {
-    id: text("id").primaryKey(),
-    teacherId: text("teacherId")
-      .notNull()
-      .references(() => teachers.id, { onDelete: "cascade" }),
-    status: text("status").notNull().default("belum"), // belum | menunggu | aktif | ditolak
-    nominal: integer("nominal").notNull().default(5000),
-    catatan: text("catatan").notNull().default(""),
-    diaktifkanPada: timestamp("diaktifkanPada", { withTimezone: true }),
-    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [uniqueIndex("pdf_access_teacher_idx").on(table.teacherId)],
 )
 
 export const examAttempts = pgTable(

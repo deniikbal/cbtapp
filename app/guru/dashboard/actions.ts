@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
-import { pdfAccess, reportSettings, teachers } from "@/lib/db/schema"
+import { reportSettings, teachers } from "@/lib/db/schema"
 import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
 import { existsSync } from "node:fs"
 import path from "node:path"
@@ -108,7 +108,7 @@ export async function getAksesPdfGuru(): Promise<{
   return {
     ok: true,
     status: (baris?.status as "belum" | "menunggu" | "aktif" | "ditolak") ?? "belum",
-    nominal: baris?.nominal ?? NOMINAL_PDF,
+    nominal: NOMINAL_PDF,
     waAdmin: WA_ADMIN,
     qris: existsSync(path.join(process.cwd(), "public", QRIS_SRC.replace(/^\//, ""))) ? QRIS_SRC : "",
   }
@@ -122,17 +122,7 @@ export async function konfirmasiSudahBayar(): Promise<{ ok: boolean; message: st
     const lama = await ambilAkses(guru.id)
     if (lama?.status === "aktif") return { ok: true, message: "Akses unduh PDF sudah aktif." }
     if (lama?.status === "menunggu") return { ok: true, message: "Konfirmasi sudah dikirim. Menunggu verifikasi admin." }
-    const values = {
-      id: lama?.id ?? randomUUID(),
-      teacherId: guru.id,
-      status: "menunggu",
-      nominal: lama?.nominal ?? NOMINAL_PDF,
-      updatedAt: new Date(),
-    }
-    await db.insert(pdfAccess).values(values).onConflictDoUpdate({
-      target: pdfAccess.teacherId,
-      set: { status: values.status, updatedAt: values.updatedAt },
-    })
+    await db.update(teachers).set({ aksesPdf: "menunggu", updatedAt: new Date() }).where(eq(teachers.id, guru.id))
     revalidatePath("/guru/dashboard")
     revalidatePath("/dashboard/guru")
     return { ok: true, message: "Konfirmasi terkirim. Kirim bukti bayar ke WA admin, lalu tunggu verifikasi." }

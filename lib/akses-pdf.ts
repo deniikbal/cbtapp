@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { pdfAccess } from "@/lib/db/schema"
+import { teachers } from "@/lib/db/schema"
 
 /** Sekali bayar, nominal statis. */
 export const NOMINAL_PDF = 5000
@@ -12,12 +12,18 @@ export const QRIS_SRC = process.env.QRIS_SRC ?? "/qris.png"
 
 export type StatusAkses = "belum" | "menunggu" | "aktif" | "ditolak"
 
-export async function ambilAkses(teacherId: string) {
-  const [baris] = await db.select().from(pdfAccess).where(eq(pdfAccess.teacherId, teacherId)).limit(1)
-  return baris ?? null
+/** Status akses unduh PDF disimpan di baris guru (kolom aksesPdf*), tanpa tabel terpisah. */
+export async function ambilAkses(teacherId: string): Promise<{ status: StatusAkses; diaktifkanPada: Date | null } | null> {
+  const [baris] = await db
+    .select({ status: teachers.aksesPdf, diaktifkanPada: teachers.aksesPdfPada })
+    .from(teachers)
+    .where(eq(teachers.id, teacherId))
+    .limit(1)
+  if (!baris) return null
+  return { status: baris.status as StatusAkses, diaktifkanPada: baris.diaktifkanPada }
 }
 
 export async function bolehUnduhPdf(teacherId: string) {
-  const baris = await ambilAkses(teacherId)
-  return baris?.status === "aktif"
+  const akses = await ambilAkses(teacherId)
+  return akses?.status === "aktif"
 }
