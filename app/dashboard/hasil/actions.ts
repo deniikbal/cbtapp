@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto"
 
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 
@@ -54,10 +54,19 @@ async function jalankanSync(scheduleId: string): Promise<HasilSyncResult> {
   await db.update(questionBanks).set({ formItems: form.items, updatedAt: new Date() }).where(eq(questionBanks.id, jadwal[0].bankId))
 
   const respons = await ambilRespons(jadwal[0].formId)
+
+  // Satu form dipakai semua kelas yang dijadwalkan untuk bank ini: peserta dicocokkan
+  // lintas kelas, lalu hasilnya ditempel ke jadwal kelas siswa masing-masing.
+  const jadwalBank = await db
+    .select({ id: examSchedules.id, classroomId: examSchedules.classroomId })
+    .from(examSchedules)
+    .where(eq(examSchedules.questionBankId, jadwal[0].bankId))
+  const jadwalPerKelas = new Map(jadwalBank.map((j) => [j.classroomId, j.id]))
+
   const peserta = await db
-    .select({ id: students.id, nis: students.nis, name: students.name })
+    .select({ id: students.id, nis: students.nis, name: students.name, classroomId: students.classroomId })
     .from(students)
-    .where(eq(students.classroomId, jadwal[0].classroomId))
+    .where(inArray(students.classroomId, jadwalBank.map((j) => j.classroomId)))
   const peta = new Map(peserta.map((s) => [normNis(s.nis), s]))
 
   let cocok = 0
@@ -71,7 +80,7 @@ async function jalankanSync(scheduleId: string): Promise<HasilSyncResult> {
     }
     const n = hitungNilai(soal, r)
     const nilai = {
-      scheduleId,
+      scheduleId: jadwalPerKelas.get(siswa.classroomId) ?? scheduleId,
       studentId: siswa.id,
       nis: siswa.nis,
       nama: siswa.name,
@@ -126,27 +135,27 @@ export type HasilDetail = {
 
 export type HasilDetailResult = { ok: true; detail: HasilDetail } | Gagal
 
-export async function getHasilDetail(scheduleId: string): Promise<HasilDetailResult> {
+// Rincian dikelompokkan per bank soal: satu form dipakai semua kelas yang dijadwalkan.
+export async function getHasilDetail(bankId: string): Promise<HasilDetailResult> {
   const sesi = await wajibAdmin()
   if (sesi) return sesi
 
   try {
-    return { ok: true, detail: await bacaHasilDetail(scheduleId) }
+    return { ok: true, detail: await bacaHasilDetail(bankId) }
   } catch (error) {
     return { ok: false, message: pesanError(error, "Gagal mengambil rincian hasil.") }
   }
 }
 
-async function bacaHasilDetail(scheduleId: string): Promise<HasilDetail> {
+async function bacaHasilDetail(bankId: string): Promise<HasilDetail> {
   const jadwal = await db
-    .select({ judul: questionBanks.title, items: questionBanks.formItems, kelas: classrooms.name })
+    .select({ id: examSchedules.id, judul: questionBanks.title, items: questionBanks.formItems, kelas: classrooms.name })
     .from(examSchedules)
     .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
     .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
-    .where(eq(examSchedules.id, scheduleId))
-    .limit(1)
+    .where(eq(examSchedules.questionBankId, bankId))
 
-  if (!jadwal[0]) throw new Error("Jadwal tidak ditemukan.")
+  if (!jadwal[0]) throw new Error("Bank soal ini belum punya jadwal.")
 
   const soal = soalDariItems((jadwal[0].items as unknown[] | null) ?? [])
   const dinilai = soal.filter((s) => s.kunci.length > 0)
@@ -154,12 +163,12 @@ async function bacaHasilDetail(scheduleId: string): Promise<HasilDetail> {
   const rows = await db
     .select()
     .from(examResults)
-    .where(eq(examResults.scheduleId, scheduleId))
+    .where(inArray(examResults.scheduleId, jadwal.map((j) => j.id)))
     .orderBy(asc(examResults.nama))
 
   return {
     judul: jadwal[0].judul,
-    kelas: jadwal[0].kelas,
+    kelas: [...new Set(jadwal.map((j) => j.kelas))].sort().join(", "),
     adaSoal: dinilai.length > 0,
     soal: dinilai.map((s) => ({ qid: s.qid, judul: s.judul, dinilai: true })),
     siswa: rows.map((r) => {

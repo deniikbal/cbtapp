@@ -12,10 +12,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export type HasilRow = {
+  /** jadwal perwakilan bank soal; dipakai saat sync form */
   id: string
+  bankId: string
   title: string
   code: string
-  className: string
+  kelas: string
+  jumlahJadwal: number
   examDate: string
   startTime: string
   adaFormId: boolean
@@ -48,7 +51,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   function handleDetail(row: HasilRow) {
     setPendingId(row.id)
     startTransition(async () => {
-      const hasil = await getHasilDetail(row.id)
+      const hasil = await getHasilDetail(row.bankId)
       setPendingId(null)
       if (!hasil.ok) {
         toast.error(hasil.message)
@@ -63,15 +66,15 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
     <Card>
       <CardHeader>
         <CardTitle>Hasil Ujian dari Google Form</CardTitle>
-        <CardDescription>Sync menarik respons Google Form, mencocokkan NIS, lalu menghitung nilai dari kunci jawaban form.</CardDescription>
+        <CardDescription>Satu baris = satu bank soal (satu Google Form); respons semua kelas yang dijadwalkan digabung.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Bank Soal</TableHead>
-              <TableHead>Kelas</TableHead>
-              <TableHead>Jadwal</TableHead>
+              <TableHead>Kelas Terjadwal</TableHead>
+              <TableHead>Jadwal Awal</TableHead>
               <TableHead className="text-center">Soal Dinilai</TableHead>
               <TableHead className="text-center">Respons</TableHead>
               <TableHead className="text-center">Rata-rata</TableHead>
@@ -81,7 +84,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Belum ada jadwal ujian.</TableCell>
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Belum ada bank soal yang dijadwalkan.</TableCell>
               </TableRow>
             )}
             {rows.map((row) => (
@@ -92,7 +95,12 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                     <span className="text-xs text-muted-foreground">{row.title}</span>
                   </div>
                 </TableCell>
-                <TableCell>{row.className}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="text-sm">{row.kelas}</span>
+                    <span className="text-xs text-muted-foreground">{row.jumlahJadwal} jadwal</span>
+                  </div>
+                </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">{row.examDate} · {row.startTime.slice(0, 5)}</TableCell>
                 <TableCell className="text-center tabular-nums">
                   {row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" />tanpa Form ID</Badge>}

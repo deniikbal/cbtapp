@@ -44,6 +44,7 @@ export default async function HasilPage() {
       db
         .select({
           id: examSchedules.id,
+          bankId: questionBanks.id,
           examDate: examSchedules.examDate,
           startTime: examSchedules.startTime,
           title: questionBanks.title,
@@ -60,24 +61,38 @@ export default async function HasilPage() {
       db.select({ scheduleId: examResults.scheduleId, score: examResults.score }).from(examResults),
     ])
 
-    const perJadwal = new Map<string, number[]>()
+    // Satu baris = satu bank soal (satu Google Form), bukan per jadwal/kelas.
+    const bankDariJadwal = new Map(scheduleRows.map((s) => [s.id, s.bankId]))
+    const perBank = new Map<string, number[]>()
     for (const h of hasilRows) {
-      const list = perJadwal.get(h.scheduleId) ?? []
+      const bankId = bankDariJadwal.get(h.scheduleId)
+      if (!bankId) continue
+      const list = perBank.get(bankId) ?? []
       list.push(Number(h.score))
-      perJadwal.set(h.scheduleId, list)
+      perBank.set(bankId, list)
     }
 
-    rows = scheduleRows.map((s) => {
-      const nilai = perJadwal.get(s.id) ?? []
+    const kelompok = new Map<string, typeof scheduleRows>()
+    for (const s of scheduleRows) {
+      const list = kelompok.get(s.bankId) ?? []
+      list.push(s)
+      kelompok.set(s.bankId, list)
+    }
+
+    rows = [...kelompok.entries()].map(([bankId, jadwal]) => {
+      const utama = jadwal[0]
+      const nilai = perBank.get(bankId) ?? []
       return {
-        id: s.id,
-        title: s.title,
-        code: s.code,
-        className: s.className,
-        examDate: s.examDate,
-        startTime: s.startTime,
-        adaFormId: Boolean(s.formId),
-        soalDinilai: soalDariItems((s.formItems as unknown[] | null) ?? []).filter((soal) => soal.kunci.length > 0).length,
+        id: utama.id,
+        bankId,
+        title: utama.title,
+        code: utama.code,
+        kelas: [...new Set(jadwal.map((j) => j.className))].sort().join(", "),
+        jumlahJadwal: jadwal.length,
+        examDate: utama.examDate,
+        startTime: utama.startTime,
+        adaFormId: Boolean(utama.formId),
+        soalDinilai: soalDariItems((utama.formItems as unknown[] | null) ?? []).filter((soal) => soal.kunci.length > 0).length,
         respons: nilai.length,
         rataRata: nilai.length ? nilai.reduce((a, b) => a + b, 0) / nilai.length : null,
       }
@@ -104,8 +119,8 @@ export default async function HasilPage() {
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Jadwal" value={totalJadwal} description="Total jadwal ujian" icon={CalendarDays} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
-            <StatCard label="Ada hasil" value={adaHasil} description="Jadwal sudah punya respons" icon={CheckCircle2} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
+            <StatCard label="Bank Soal" value={totalJadwal} description="Bank soal berjadwal" icon={CalendarDays} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
+            <StatCard label="Ada hasil" value={adaHasil} description="Bank soal sudah punya respons" icon={CheckCircle2} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
             <StatCard label="Respons" value={totalRespons} description="Jawaban tersimpan" icon={FileText} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" ringClass="ring-pink-500/20" />
             <StatCard label="Rata-rata" value={Math.round(rataRata * 10) / 10} description="Nilai rata-rata keseluruhan" icon={Percent} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
           </section>
