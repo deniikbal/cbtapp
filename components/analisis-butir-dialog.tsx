@@ -1,10 +1,15 @@
 "use client"
 
-import { FileDown } from "lucide-react"
+import { useState, useTransition } from "react"
+import { CheckCircle2, FileDown, Loader2, MessageCircle } from "lucide-react"
+import { toast } from "sonner"
+
+import { konfirmasiSudahBayar } from "@/app/guru/dashboard/actions"
 
 import type { AnalisisBank } from "@/lib/analisis-data"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const baik = "gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
@@ -28,12 +33,15 @@ export function AnalisisButirDialog({
   judul,
   data,
   bankId,
+  akses,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   judul: string
   data: AnalisisBank | null
   bankId?: string
+  /** Status akses unduh PDF; undefined = admin (bebas unduh). */
+  akses?: { status: string; nominal: number; waAdmin: string; qris: string }
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,14 +51,7 @@ export function AnalisisButirDialog({
           <DialogDescription className="text-[11px]">
             Disusun seperti laporan cetak: identitas, ketuntasan, data siswa, statistik butir, dan distribusi jawaban.
           </DialogDescription>
-          {bankId ? (
-            <a
-              href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
-              className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-7 w-fit gap-1 px-2 text-[11px]" })}
-            >
-              <FileDown className="size-3.5" /> Unduh PDF
-            </a>
-          ) : null}
+          {bankId && akses ? <PanelUnduh bankId={bankId} akses={akses} /> : null}
         </DialogHeader>
 
         {!data ? (
@@ -271,5 +272,78 @@ export function AnalisisButirDialog({
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+function rupiah(n: number) {
+  return "Rp " + n.toLocaleString("id-ID")
+}
+
+function PanelUnduh({ bankId, akses }: { bankId: string; akses: { status: string; nominal: number; waAdmin: string; qris: string } }) {
+  const [status, setStatus] = useState(akses.status)
+  const [pending, startTransition] = useTransition()
+
+  if (status === "aktif") {
+    return (
+      <a
+        href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
+        className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-7 w-fit gap-1 px-2 text-[11px]" })}
+      >
+        <FileDown className="size-3.5" /> Unduh PDF
+      </a>
+    )
+  }
+
+  return (
+    <div className="mt-1 space-y-2 rounded-lg border bg-muted/30 p-2">
+      <p className="text-[11px] font-medium">Unduh PDF analisis butir — sekali bayar {rupiah(akses.nominal)}, unduh selamanya.</p>
+      {status === "menunggu" ? (
+        <p className="text-[11px] text-amber-600">Menunggu verifikasi admin. Kirim bukti bayar ke WA admin bila belum.</p>
+      ) : (
+        <div className="flex flex-wrap items-start gap-3">
+          {akses.qris ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={akses.qris} alt="QRIS pembayaran" className="h-28 w-28 rounded border bg-white object-contain" />
+          ) : null}
+          <div className="space-y-0.5 text-[11px] text-muted-foreground">
+            <p>1. Scan QRIS, bayar {rupiah(akses.nominal)}.</p>
+            <p>2. Kirim bukti bayar ke WA admin.</p>
+            <p>3. Admin mengaktifkan akses Anda.</p>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        {akses.waAdmin ? (
+          <a
+            href={`https://wa.me/${akses.waAdmin}?text=${encodeURIComponent("Bukti bayar PDF analisis butir CBT")}`}
+            target="_blank"
+            rel="noreferrer"
+            className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
+          >
+            <MessageCircle className="size-3.5" /> Kirim bukti via WA
+          </a>
+        ) : null}
+        {status === "belum" || status === "ditolak" ? (
+          <Button
+            size="sm"
+            className="h-7 gap-1 px-2 text-[11px]"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const hasil = await konfirmasiSudahBayar()
+                if (!hasil.ok) toast.error(hasil.message)
+                else {
+                  toast.success(hasil.message)
+                  setStatus("menunggu")
+                }
+              })
+            }
+          >
+            {pending ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+            Saya sudah bayar
+          </Button>
+        ) : null}
+      </div>
+    </div>
   )
 }

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
 import { ExternalLink, LogOut } from "lucide-react"
 
-import { getIdentitasLaporan } from "@/app/guru/dashboard/actions"
+import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { GuruIdentitasForm } from "@/components/guru-identitas-form"
@@ -46,6 +46,7 @@ export default async function GuruDashboardPage() {
     .orderBy(questionBanks.code)
 
   const identitas = await getIdentitasLaporan()
+  const aksesPdf = await getAksesPdfGuru()
   const bankIds = banks.map((b) => b.id)
 
   const jadwal = bankIds.length
@@ -212,7 +213,7 @@ export default async function GuruDashboardPage() {
                                 Edit form
                               </Button>
                             )}
-                            <GuruAnalisisButton bankId={bank.id} judul={bank.code} />
+                            <GuruAnalisisButton bankId={bank.id} judul={bank.code} akses={aksesPdf} />
                           </div>
                         </TableCell>
                       </TableRow>

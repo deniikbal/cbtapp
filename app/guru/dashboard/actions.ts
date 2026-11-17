@@ -7,8 +7,10 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
-import { reportSettings, teachers } from "@/lib/db/schema"
+import { getDatabaseErrorMessage } from "@/lib/db-error"
+import { pdfAccess, reportSettings, teachers } from "@/lib/db/schema"
 import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
+import { NOMINAL_PDF, QRIS_SRC, WA_ADMIN, ambilAkses } from "@/lib/akses-pdf"
 
 async function guruDariCookie() {
   const cookieStore = await cookies()
@@ -91,6 +93,52 @@ export async function simpanIdentitasLaporan(_prev: IdentitasResult, formData: F
 export type AnalisisGuruResult = { ok: true; data: AnalisisBank } | { ok: false; message: string }
 
 // Guru hanya boleh melihat analisis butir bank soalnya sendiri.
+export async function getAksesPdfGuru(): Promise<{
+  ok: true
+  status: "belum" | "menunggu" | "aktif" | "ditolak"
+  nominal: number
+  waAdmin: string
+  qris: string
+}> {
+  const guru = await guruDariCookie()
+  const baris = guru ? await ambilAkses(guru.id) : null
+  return {
+    ok: true,
+    status: (baris?.status as "belum" | "menunggu" | "aktif" | "ditolak") ?? "belum",
+    nominal: baris?.nominal ?? NOMINAL_PDF,
+    waAdmin: WA_ADMIN,
+    qris: QRIS_SRC,
+  }
+}
+
+/** Guru menandai sudah membayar; admin yang mengaktifkan. */
+export async function konfirmasiSudahBayar(): Promise<{ ok: boolean; message: string }> {
+  const guru = await guruDariCookie()
+  if (!guru) return { ok: false, message: "Sesi habis. Silakan login ulang." }
+  try {
+    const lama = await ambilAkses(guru.id)
+    if (lama?.status === "aktif") return { ok: true, message: "Akses unduh PDF sudah aktif." }
+    if (lama?.status === "menunggu") return { ok: true, message: "Konfirmasi sudah dikirim. Menunggu verifikasi admin." }
+    const values = {
+      id: lama?.id ?? randomUUID(),
+      teacherId: guru.id,
+      status: "menunggu",
+      nominal: lama?.nominal ?? NOMINAL_PDF,
+      updatedAt: new Date(),
+    }
+    await db.insert(pdfAccess).values(values).onConflictDoUpdate({
+      target: pdfAccess.teacherId,
+      set: { status: values.status, updatedAt: values.updatedAt },
+    })
+    revalidatePath("/guru/dashboard")
+    revalidatePath("/dashboard/guru")
+    return { ok: true, message: "Konfirmasi terkirim. Kirim bukti bayar ke WA admin, lalu tunggu verifikasi." }
+  } catch (error) {
+    console.error("Gagal konfirmasi bayar PDF:", error)
+    return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
+}
+
 export async function getAnalisisButirGuru(bankId: string): Promise<AnalisisGuruResult> {
   const guru = await guruDariCookie()
   if (!guru) return { ok: false, message: "Sesi habis. Silakan login ulang." }

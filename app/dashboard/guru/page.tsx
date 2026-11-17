@@ -15,11 +15,12 @@ import {
   Users,
   ShieldCheck,
   BarChart3 } from "lucide-react"
-import { asc, count, isNotNull } from "drizzle-orm"
+import { asc, count, eq, isNotNull } from "drizzle-orm"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { PdfAccessCard, type AksesRow } from "@/components/pdf-access-card"
 import { TeacherManagementCard } from "@/components/teacher-management-card"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
@@ -47,7 +48,7 @@ import {
 } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { questionBanks, teachers } from "@/lib/db/schema"
+import { pdfAccess, questionBanks, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
 export type TeacherRow = {
@@ -100,6 +101,30 @@ export default async function GuruPage() {
     }))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data guru."
+  }
+
+  let aksesRows: AksesRow[] = []
+  try {
+    const akses = await db
+      .select({
+        id: teachers.id,
+        name: teachers.name,
+        nip: teachers.nip,
+        status: pdfAccess.status,
+        diaktifkanPada: pdfAccess.diaktifkanPada,
+      })
+      .from(teachers)
+      .leftJoin(pdfAccess, eq(pdfAccess.teacherId, teachers.id))
+      .orderBy(asc(teachers.name))
+    aksesRows = akses.map((r) => ({
+      id: r.id,
+      name: r.name,
+      nip: r.nip,
+      status: r.status ?? "belum",
+      diaktifkanPada: r.diaktifkanPada ? r.diaktifkanPada.toISOString().slice(0, 10) : null,
+    }))
+  } catch (error) {
+    databaseError ??= error instanceof Error ? error.message : "Gagal mengambil data akses PDF."
   }
 
   const activeTeachers = teacherRows.filter((teacher) => teacher.active).length
@@ -167,6 +192,7 @@ export default async function GuruPage() {
             </Alert>
           )}
 
+          <PdfAccessCard rows={aksesRows} />
           <TeacherManagementCard teachers={teacherRows} />
         </main>
       </SidebarInset>

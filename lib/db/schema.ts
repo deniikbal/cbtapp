@@ -234,6 +234,24 @@ export const reportSettings = pgTable(
   (table) => [uniqueIndex("report_settings_teacher_idx").on(table.teacherId)],
 )
 
+/** Akses berbayar unduh PDF analisis butir: sekali bayar, aktif permanen. */
+export const pdfAccess = pgTable(
+  "pdf_access",
+  {
+    id: text("id").primaryKey(),
+    teacherId: text("teacherId")
+      .notNull()
+      .references(() => teachers.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("belum"), // belum | menunggu | aktif | ditolak
+    nominal: integer("nominal").notNull().default(5000),
+    catatan: text("catatan").notNull().default(""),
+    diaktifkanPada: timestamp("diaktifkanPada", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("pdf_access_teacher_idx").on(table.teacherId)],
+)
+
 export const examAttempts = pgTable(
   "exam_attempts",
   {

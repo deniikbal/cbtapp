@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import PDFDocument from "pdfkit"
 
 import { auth } from "@/lib/auth"
+import { bolehUnduhPdf } from "@/lib/akses-pdf"
 import { ambilAnalisisButir } from "@/lib/analisis-data"
 import { db } from "@/lib/db"
 import { teachers } from "@/lib/db/schema"
@@ -91,6 +92,9 @@ export async function GET(request: NextRequest) {
     const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, teacherCookie) })
     if (!guru || !guru.active) return new Response("Sesi habis. Silakan login ulang.", { status: 401 })
     teacherId = guru.id
+
+    // Unduh PDF untuk guru = fitur berbayar (sekali bayar, aktif permanen).
+    if (!(await bolehUnduhPdf(guru.id))) return new Response("Akses unduh PDF belum aktif.", { status: 402 })
   }
 
   const hasil = await ambilAnalisisButir(bankId, teacherId ? { teacherId } : {})

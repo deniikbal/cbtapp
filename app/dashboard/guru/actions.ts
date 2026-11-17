@@ -4,10 +4,12 @@ import { createHash, randomUUID } from "node:crypto"
 
 import { asc, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 
+import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
-import { teachers } from "@/lib/db/schema"
+import { pdfAccess, teachers } from "@/lib/db/schema"
 
 const PATH = "/dashboard/guru"
 
@@ -89,6 +91,33 @@ export async function updateTeacher(formData: FormData): Promise<{ ok: boolean; 
     }
   } catch (error) {
     console.error("Gagal memperbarui guru:", error)
+    return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
+}
+
+export async function setAksesPdf(teacherId: string, aktif: boolean): Promise<{ ok: boolean; message: string }> {
+  if (!teacherId) return { ok: false, message: "Guru tidak ditemukan." }
+  const sesi = await auth.api.getSession({ headers: await headers() })
+  if (!sesi) return { ok: false, message: "Sesi habis. Silakan login ulang." }
+  try {
+    await db
+      .insert(pdfAccess)
+      .values({
+        id: randomUUID(),
+        teacherId,
+        status: aktif ? "aktif" : "ditolak",
+        diaktifkanPada: aktif ? new Date() : null,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: pdfAccess.teacherId,
+        set: { status: aktif ? "aktif" : "ditolak", diaktifkanPada: aktif ? new Date() : null, updatedAt: new Date() },
+      })
+    revalidatePath(PATH)
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: aktif ? "Akses unduh PDF diaktifkan." : "Akses unduh PDF ditolak." }
+  } catch (error) {
+    console.error("Gagal mengubah akses PDF:", error)
     return { ok: false, message: getDatabaseErrorMessage(error) }
   }
 }
