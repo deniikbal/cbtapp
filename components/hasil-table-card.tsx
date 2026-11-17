@@ -6,7 +6,7 @@ import { ChartColumn, FileSearch, Loader2, RefreshCw, TriangleAlert } from "luci
 
 import { getAnalisisButir, getHasilDetail, syncHasil, type HasilDetail } from "@/app/dashboard/hasil/actions"
 import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
-import type { AnalisisButir } from "@/lib/analisis-butir"
+import type { AnalisisBank } from "@/lib/analisis-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,7 +33,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [detail, setDetail] = useState<HasilDetail | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [butir, setButir] = useState<AnalisisButir[]>([])
+  const [butir, setButir] = useState<AnalisisBank | null>(null)
   const [butirJudul, setButirJudul] = useState("")
   const [butirBankId, setButirBankId] = useState("")
   const [butirOpen, setButirOpen] = useState(false)
@@ -63,7 +63,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         toast.error(hasil.message)
         return
       }
-      setButir(hasil.butir)
+      setButir(hasil.data)
       setButirJudul(`${row.code} — ${row.title}`)
       setButirBankId(row.bankId)
       setButirOpen(true)
@@ -151,7 +151,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         </Table>
       </CardContent>
 
-      <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} butir={butir} bankId={butirBankId} />
+      <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} data={butir} bankId={butirBankId} />
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-4xl">

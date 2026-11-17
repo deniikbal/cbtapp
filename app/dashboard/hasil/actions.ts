@@ -12,7 +12,7 @@ import { auth } from "@/lib/auth"
 import { ambilForm, ambilRespons, cariNama, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { analisisButir, type AnalisisButir } from "@/lib/analisis-butir"
-import { ambilAnalisisButir } from "@/lib/analisis-data"
+import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
 
 // Server action mengembalikan {ok,message}: error yang dilempar tidak sampai ke
 // pengguna di build produksi (diganti digest generik).
@@ -149,7 +149,7 @@ export async function getHasilDetail(bankId: string): Promise<HasilDetailResult>
   }
 }
 
-export type AnalisisButirResult = { ok: true; butir: AnalisisButir[] } | Gagal
+export type AnalisisButirResult = { ok: true; data: AnalisisBank } | Gagal
 
 export async function getAnalisisButir(bankId: string): Promise<AnalisisButirResult> {
   const sesi = await wajibAdmin()
@@ -157,7 +157,7 @@ export async function getAnalisisButir(bankId: string): Promise<AnalisisButirRes
 
   try {
     const hasil = await ambilAnalisisButir(bankId)
-    return hasil.ok ? { ok: true, butir: hasil.data.butir } : hasil
+    return hasil.ok ? { ok: true, data: hasil.data } : hasil
   } catch (error) {
     return { ok: false, message: pesanError(error, "Gagal menghitung analisis butir soal.") }
   }

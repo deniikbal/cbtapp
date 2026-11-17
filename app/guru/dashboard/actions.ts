@@ -8,8 +8,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { reportSettings, teachers } from "@/lib/db/schema"
-import { type AnalisisButir } from "@/lib/analisis-butir"
-import { ambilAnalisisButir } from "@/lib/analisis-data"
+import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
 
 async function guruDariCookie() {
   const cookieStore = await cookies()
@@ -89,7 +88,7 @@ export async function simpanIdentitasLaporan(_prev: IdentitasResult, formData: F
   }
 }
 
-export type AnalisisGuruResult = { ok: true; butir: AnalisisButir[] } | { ok: false; message: string }
+export type AnalisisGuruResult = { ok: true; data: AnalisisBank } | { ok: false; message: string }
 
 // Guru hanya boleh melihat analisis butir bank soalnya sendiri.
 export async function getAnalisisButirGuru(bankId: string): Promise<AnalisisGuruResult> {
@@ -98,7 +97,7 @@ export async function getAnalisisButirGuru(bankId: string): Promise<AnalisisGuru
 
   try {
     const hasil = await ambilAnalisisButir(bankId, { teacherId: guru.id })
-    return hasil.ok ? { ok: true, butir: hasil.data.butir } : hasil
+    return hasil.ok ? { ok: true, data: hasil.data } : hasil
   } catch {
     return { ok: false, message: "Gagal menghitung analisis butir soal." }
   }

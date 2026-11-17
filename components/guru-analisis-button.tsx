@@ -7,11 +7,11 @@ import { toast } from "sonner"
 import { getAnalisisButirGuru } from "@/app/guru/dashboard/actions"
 import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
 import { Button } from "@/components/ui/button"
-import type { AnalisisButir } from "@/lib/analisis-butir"
+import type { AnalisisBank } from "@/lib/analisis-data"
 
 export function GuruAnalisisButton({ bankId, judul }: { bankId: string; judul: string }) {
   const [open, setOpen] = useState(false)
-  const [butir, setButir] = useState<AnalisisButir[]>([])
+  const [data, setData] = useState<AnalisisBank | null>(null)
   const [pending, startTransition] = useTransition()
 
   function buka() {
@@ -21,7 +21,7 @@ export function GuruAnalisisButton({ bankId, judul }: { bankId: string; judul: s
         toast.error(hasil.message)
         return
       }
-      setButir(hasil.butir)
+      setData(hasil.data)
       setOpen(true)
     })
   }
@@ -38,7 +38,7 @@ export function GuruAnalisisButton({ bankId, judul }: { bankId: string; judul: s
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChartColumn className="size-3.5" />}
         Analisis butir
       </Button>
-      <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} butir={butir} bankId={bankId} />
+      <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} data={data} bankId={bankId} />
     </>
   )
 }

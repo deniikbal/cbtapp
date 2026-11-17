@@ -4,7 +4,6 @@ import PDFDocument from "pdfkit"
 
 import { auth } from "@/lib/auth"
 import { ambilAnalisisButir } from "@/lib/analisis-data"
-import { APP_NAME } from "@/lib/brand"
 import { db } from "@/lib/db"
 import { teachers } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
@@ -12,12 +11,70 @@ import { eq } from "drizzle-orm"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const MARGIN = 34
-const LEBAR = 841.89 - MARGIN * 2 // A4 landscape
-const KOLOM = [22, 196, 30, 34, 40, 40, 30, 46, 30, 50, 80] // No, Butir, Jml, Benar, %Benar, Kosong, p, Ket, d, Ket, Pengecoh
+const MARGIN = 32
+const LEBAR = 595.28 - MARGIN * 2
+const TINGGI = 841.89
+const BAWAH = TINGGI - MARGIN - 22
+const TINGGI_BARIS = 12.5
 
-function angka(n: number, desimal = 2) {
-  return Number.isInteger(n) ? String(n) : n.toFixed(desimal)
+type Kolom = { lebar?: number; judul: string; rata?: "left" | "center" | "right" }
+
+const angka = (n: number, desimal = 3) => (Number.isInteger(n) ? String(n) : n.toFixed(desimal))
+const isi = (teks: string) => (teks && teks.trim() ? teks : "-")
+
+// Kolom terakhir menyerap sisa lebar supaya tabel selalu pas tanpa hitung manual.
+function rapikan(kolom: Kolom[]) {
+  const terpakai = kolom.reduce((s, k) => s + (k.lebar ?? 0), 0)
+  const sisa = kolom.filter((k) => !k.lebar).length
+  const lebarSisa = sisa ? Math.max(30, (LEBAR - terpakai) / sisa) : 0
+  return kolom.map((k) => ({ ...k, lebar: k.lebar ?? lebarSisa, rata: k.rata ?? ("center" as const) }))
+}
+
+// pdfkit tidak punya tabel: baris digambar sendiri + pindah halaman sendiri.
+function gambarTabel(doc: PDFKit.PDFDocument, kolomAwal: Kolom[], baris: string[][]) {
+  const kolom = rapikan(kolomAwal)
+  let y = doc.y
+  const gambarHeader = () => {
+    doc.rect(MARGIN, y, LEBAR, TINGGI_BARIS).fill("#e5e7eb")
+    doc.fillColor("#111827").font("Helvetica-Bold").fontSize(6.5)
+    let x = MARGIN
+    for (const k of kolom) {
+      doc.text(k.judul, x + 1, y + 3.2, { width: (k.lebar as number) - 2, align: k.rata, lineBreak: false })
+      x += k.lebar as number
+    }
+    y += TINGGI_BARIS
+    doc.fillColor("#000000").font("Helvetica").fontSize(6.5)
+  }
+
+  gambarHeader()
+  for (const [i, barisIsi] of baris.entries()) {
+    if (y + TINGGI_BARIS > BAWAH) {
+      doc.addPage()
+      y = MARGIN
+      gambarHeader()
+    }
+    if (i % 2 === 1) doc.rect(MARGIN, y, LEBAR, TINGGI_BARIS).fill("#f3f4f6").fillColor("#000000")
+    let x = MARGIN
+    for (const [j, k] of kolom.entries()) {
+      doc.text(barisIsi[j] ?? "", x + 1, y + 3.2, {
+        width: (k.lebar as number) - 2,
+        align: k.rata,
+        lineBreak: false,
+        ellipsis: true,
+      })
+      x += k.lebar as number
+    }
+    y += TINGGI_BARIS
+  }
+  doc.y = y + 8
+}
+
+function judulBagian(doc: PDFKit.PDFDocument, teks: string) {
+  if (doc.y + 32 > BAWAH) doc.addPage()
+  doc.moveDown(0.35)
+  doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text(teks, MARGIN, doc.y, { width: LEBAR })
+  doc.moveDown(0.15)
+  doc.font("Helvetica").fontSize(7)
 }
 
 export async function GET(request: NextRequest) {
@@ -39,169 +96,202 @@ export async function GET(request: NextRequest) {
   const hasil = await ambilAnalisisButir(bankId, teacherId ? { teacherId } : {})
   if (!hasil.ok) return new Response(hasil.message, { status: 400 })
 
-  const { bank, ringkasan, butir } = hasil.data
+  const { identitas, ketuntasan, statistik, siswa, butir } = hasil.data
+  const perluRevisi = butir.map((b, i) => ({ b, no: i + 1 })).filter((x) => x.b.status === "Soal Perlu Direvisi").map((x) => x.no)
 
   const pdf = await new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: MARGIN, bufferPages: true })
+    const doc = new PDFDocument({ size: "A4", layout: "portrait", margin: MARGIN, bufferPages: true })
     const potongan: Buffer[] = []
     doc.on("data", (c: Buffer) => potongan.push(c))
     doc.on("end", () => resolve(Buffer.concat(potongan)))
     doc.on("error", reject)
 
-    const garis = () => doc.moveTo(MARGIN, doc.y).lineTo(MARGIN + LEBAR, doc.y).strokeColor("#d4d4d8").stroke()
-
-    doc.font("Helvetica-Bold").fontSize(15).text("Analisis Butir Soal", MARGIN, MARGIN)
-    doc.font("Helvetica").fontSize(9).fillColor("#52525b").text(APP_NAME, MARGIN, MARGIN + 19)
-    doc.fillColor("#000000")
-
-    doc.font("Helvetica-Bold").fontSize(11).text(`${bank.code} — ${bank.title}`, MARGIN, MARGIN + 38, { width: LEBAR })
-    doc.font("Helvetica").fontSize(8.5).fillColor("#3f3f46").text(
-      [
-        `Mapel: ${bank.subjectName}`,
-        `Tingkat: ${bank.grade}`,
-        `Guru: ${bank.teacherName || "-"}`,
-        `Kelas: ${ringkasan.kelas.join(", ") || "-"}`,
-        `Jadwal: ${ringkasan.jumlahJadwal}`,
-        `Dicetak: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}`,
-      ].join("   •   "),
-      MARGIN,
-      doc.y + 2,
-      { width: LEBAR },
-    )
-    doc.fillColor("#000000")
-
-    doc.moveDown(0.4)
-    garis()
-    doc.moveDown(0.4)
-
-    doc.font("Helvetica-Bold").fontSize(9).text("Ringkasan", MARGIN, doc.y)
-    doc.font("Helvetica").fontSize(8.5).text(
-      `Respons dinilai: ${ringkasan.respons}   •   Butir dinilai: ${ringkasan.butirDinilai}   •   ` +
-        `Rata-rata kesukaran: ${angka(ringkasan.rataKesukaran, 3)}   •   Rata-rata daya beda: ${angka(ringkasan.rataDayaBeda, 3)}`,
-      MARGIN,
-      doc.y + 1,
-      { width: LEBAR },
-    )
-
-    doc.moveDown(0.6)
-    garis()
+    // ── Kop laporan
+    doc.font("Helvetica-Bold").fontSize(12).text("LAPORAN ANALISIS BUTIR SOAL", MARGIN, MARGIN, { align: "center", width: LEBAR })
+    doc.font("Helvetica").fontSize(8).text(`${identitas.kode} — ${identitas.judul}`, { align: "center", width: LEBAR })
     doc.moveDown(0.5)
 
-    // ---- Rekap butir ----
-    doc.font("Helvetica-Bold").fontSize(9).text("Rekap butir", MARGIN, doc.y)
-    doc.moveDown(0.3)
-
-    const kepala = ["No", "Butir soal", "Jml", "Benar", "% Benar", "Kosong", "p", "Kategori", "d", "Kategori", "Pengecoh"]
-    const mulaiKepala = doc.y
-    let x = MARGIN
-
-    doc.font("Helvetica-Bold").fontSize(7.5)
-    kepala.forEach((judul, i) => {
-      doc.text(judul, x, mulaiKepala, { width: KOLOM[i], align: i >= 2 ? "right" : "left" })
-      x += KOLOM[i]
-    })
-    doc.y = mulaiKepala + 12
-    garis()
-
-    butir.forEach((b, i) => {
-      const tinggiJudul = doc.font("Helvetica").fontSize(7.5).heightOfString(b.judul || "(tanpa judul)", {
-        width: KOLOM[1],
-      })
-      const tinggiBaris = Math.min(Math.max(tinggiJudul, 10), 24)
-
-      if (doc.y + tinggiBaris > 470) {
-        doc.addPage()
-        doc.y = MARGIN
+    // ── Identitas laporan: 2 pasang label/nilai per baris
+    const pasangan: [string, string][] = [
+      ["Nama Sekolah", identitas.sekolah],
+      ["Mata Pelajaran", identitas.mataPelajaran],
+      ["Nama Tes", isi(identitas.namaTes)],
+      ["Tanggal Tes", isi(identitas.tanggalTes)],
+      ["Tahun Pelajaran", isi(identitas.tahunPelajaran)],
+      ["Semester", isi(identitas.semester)],
+      ["Kelas", identitas.kelas],
+      ["KKM", String(identitas.kkm)],
+      ["Jumlah Soal", String(identitas.jumlahSoal)],
+      ["Jumlah Opsi", String(identitas.jumlahOpsi)],
+      ["Jumlah Siswa", String(identitas.jumlahSiswa)],
+      ["Guru Mata Pelajaran", `${identitas.guru}${identitas.nipGuru ? ` / ${identitas.nipGuru}` : ""}`],
+    ]
+    const lebarLabel = 76
+    const lebarNilai = LEBAR / 2 - lebarLabel
+    let y = doc.y
+    for (let i = 0; i < pasangan.length; i += 2) {
+      for (const [sisi, idx] of [[0, i], [1, i + 1]] as const) {
+        const p = pasangan[idx]
+        if (!p) continue
+        const x = MARGIN + sisi * (LEBAR / 2)
+        doc.font("Helvetica-Bold").fontSize(6.5).text(p[0], x, y + 1, { width: lebarLabel, lineBreak: false })
+        doc.font("Helvetica").fontSize(6.5).text(`: ${p[1]}`, x + lebarLabel, y + 1, { width: lebarNilai - 4, lineBreak: false, ellipsis: true })
       }
+      y += 11
+    }
+    doc.y = y + 4
 
-      const yAwal = doc.y
-      if (i % 2 === 1) {
-        doc.rect(MARGIN, yAwal - 1.5, LEBAR, tinggiBaris + 3).fillColor("#f4f4f5").fill()
-        doc.fillColor("#000000")
-      }
+    // ── Ketuntasan
+    judulBagian(doc, "KETUNTASAN (berdasarkan KKM)")
+    doc.fontSize(7).text(
+      `${ketuntasan.tuntas} siswa Tuntas (${angka(ketuntasan.persenTuntas, 1)}%)   ·   ${ketuntasan.belum} siswa Belum Tuntas (${angka(ketuntasan.persenBelum, 1)}%)`,
+      MARGIN,
+      doc.y,
+      { width: LEBAR },
+    )
 
-      const sel = [
+    // ── Data siswa
+    judulBagian(doc, "DATA SISWA")
+    gambarTabel(
+      doc,
+      [
+        { lebar: 20, judul: "No" },
+        { lebar: 128, judul: "Nama", rata: "left" },
+        { lebar: 46, judul: "Kelas", rata: "left" },
+        { lebar: Math.max(80, Math.min(180, identitas.jumlahSoal * 10)), judul: "Rincian Jawaban", rata: "left" },
+        { lebar: 22, judul: "B" },
+        { lebar: 22, judul: "S" },
+        { lebar: 32, judul: "Skor" },
+        { lebar: 38, judul: "Nilai" },
+        { judul: "Ket." },
+      ],
+      siswa.map((s) => [
+        String(s.no),
+        s.nama,
+        s.kelas,
+        s.rincian,
+        String(s.benar),
+        String(s.salah),
+        String(s.skor),
+        angka(s.nilai, 0),
+        s.ket,
+      ]),
+    )
+
+    // ── Statistik ringkas skor & nilai
+    judulBagian(doc, "STATISTIK SKOR DAN NILAI")
+    gambarTabel(
+      doc,
+      [
+        { lebar: 110, judul: "Ukuran", rata: "left" },
+        { judul: "Jumlah" },
+        { judul: "Terkecil" },
+        { judul: "Terbesar" },
+        { judul: "Rata-rata" },
+        { judul: "Simpangan Baku" },
+      ],
+      [
+        ["SKOR", angka(statistik.skor.jumlah, 2), angka(statistik.skor.terkecil, 2), angka(statistik.skor.terbesar, 2), angka(statistik.skor.rataRata, 2), angka(statistik.skor.simpanganBaku, 2)],
+        ["NILAI", angka(statistik.nilai.jumlah, 2), angka(statistik.nilai.terkecil, 2), angka(statistik.nilai.terbesar, 2), angka(statistik.nilai.rataRata, 2), angka(statistik.nilai.simpanganBaku, 2)],
+      ],
+    )
+
+    // ── Statistik butir
+    judulBagian(doc, "STATISTIK BUTIR SOAL")
+    gambarTabel(
+      doc,
+      [
+        { lebar: 20, judul: "No" },
+        { lebar: 40, judul: "Prop.Cor" },
+        { lebar: 36, judul: "D.Beda" },
+        { lebar: 82, judul: "T.Kesukaran" },
+        { lebar: 40, judul: "Pt.Biser" },
+        { lebar: 36, judul: "Biser" },
+        { lebar: 26, judul: "Kunci" },
+        { lebar: 138, judul: "Efek.Opsi", rata: "left" },
+        { judul: "Status", rata: "left" },
+      ],
+      butir.map((b, i) => [
         String(i + 1),
-        b.judul || "(tanpa judul)",
-        String(b.dikerjakan),
-        String(b.benar),
-        `${angka(b.benarPersen, 2)}%`,
-        String(b.kosong),
-        angka(b.kesukaran, 3),
-        b.kesukaranLabel,
+        angka(b.kesukaran),
         angka(b.dayaBeda, 2),
-        b.dayaBedaLabel,
-        `${b.distraksiMaks} (${b.distraksiLabel})`,
-      ]
+        `${b.kesukaranLabel} (${b.kesukaranLabel === "Mudah" ? "Easy" : b.kesukaranLabel === "Sedang" ? "Medium" : "Sukar"})`,
+        angka(b.ptBiser),
+        angka(b.biser),
+        b.opsiDetail.find((o) => o.kunci)?.label ?? "?",
+        b.efekOpsi,
+        b.status === "Soal Baik" ? "Soal Baik" : "Perlu Direvisi",
+      ]),
+    )
 
-      x = MARGIN
-      doc.font("Helvetica").fontSize(7.5)
-      sel.forEach((isi, j) => {
-        doc.text(isi, x, yAwal, {
-          width: KOLOM[j],
-          align: j >= 2 ? "right" : "left",
-          height: tinggiBaris,
-          ellipsis: true,
-          lineBreak: j === 1,
-        })
-        x += KOLOM[j]
-      })
-
-      doc.y = yAwal + tinggiBaris + 2
-    })
-
-    // ---- Sebaran jawaban & catatan ----
-    doc.addPage()
-    doc.y = MARGIN
-    doc.font("Helvetica-Bold").fontSize(9).text("Sebaran jawaban & tafsir per butir", MARGIN, doc.y, { width: LEBAR })
-    doc.moveDown(0.4)
-    garis()
-    doc.moveDown(0.4)
-
+    // ── Distribusi jawaban per soal
+    judulBagian(doc, `DISTRIBUSI JAWABAN PER SOAL (kunci: ${identitas.kunci})`)
+    doc.font("Helvetica-Oblique").fontSize(5.8).text("* = kunci jawaban", MARGIN, doc.y, { width: LEBAR })
     butir.forEach((b, i) => {
-      const sebaran = b.sebaran.length
-        ? b.sebaran.map((s) => `${s.jawaban}${s.kunci ? " (kunci)" : ""}: ${s.jumlah} siswa (${angka(s.persen, 2)}%)`).join("   |   ")
-        : "Belum ada jawaban."
-
-      const catatanTinggi = doc.font("Helvetica-Oblique").fontSize(7.5).heightOfString(b.catatan, { width: LEBAR - 20 })
-      const sebaranTinggi = doc.font("Helvetica").fontSize(7.5).heightOfString(sebaran, { width: LEBAR - 20 })
-      const total = 12 + 10 + sebaranTinggi + 3 + catatanTinggi + 10
-
-      if (doc.y + total > 545) {
-        doc.addPage()
-        doc.y = MARGIN
-      }
-
-      doc.font("Helvetica-Bold").fontSize(8).fillColor("#000000")
-      doc.text(`Butir ${i + 1}. ${b.judul || "(tanpa judul)"}`, MARGIN, doc.y, { width: LEBAR })
-      doc.font("Helvetica").fontSize(7.5).fillColor("#3f3f46")
-      doc.text(`Sebaran: ${sebaran}`, MARGIN + 10, doc.y + 1, { width: LEBAR - 20 })
-      doc.font("Helvetica-Oblique").fillColor("#52525b")
-      doc.text(b.catatan, MARGIN + 10, doc.y + 2, { width: LEBAR - 20 })
-      doc.fillColor("#000000").moveDown(0.7)
+      if (doc.y + 24 > BAWAH) doc.addPage()
+      const sebaran = b.opsiDetail.length
+        ? b.opsiDetail.map((o) => `${o.label} ${o.jumlah} (${angka(o.proporsi)})${o.kunci ? "*" : ""}`).join("   ")
+        : b.sebaran.map((s) => `${s.jawaban} ${s.jumlah} (${angka(s.persen / 100)})${s.kunci ? "*" : ""}`).join("   ")
+      doc.font("Helvetica-Bold").fontSize(6.5).text(`Soal ${i + 1}. `, MARGIN, doc.y, { continued: true, width: LEBAR })
+      doc.font("Helvetica").text(`${sebaran}${b.kosong ? `   · kosong ${b.kosong}` : ""}`, { width: LEBAR })
+      if (b.catatan) doc.fontSize(5.8).fillColor("#4b5563").text(b.catatan, MARGIN + 20, doc.y, { width: LEBAR - 20 }).fillColor("#000000")
     })
 
-    // ---- Footer semua halaman ----
+    // ── Rekomendasi
+    judulBagian(doc, "REKOMENDASI")
+    doc.fontSize(6.8).text(
+      perluRevisi.length
+        ? `Butir yang perlu direvisi: ${perluRevisi.join(", ")}. Butir dengan kesukaran ekstrem, daya beda rendah, atau pengecoh yang tidak berfungsi sebaiknya diperbaiki sebelum dipakai lagi.`
+        : "Semua butir berada pada rentang kesukaran dan daya beda yang wajar. Tidak ada butir yang wajib direvisi.",
+      MARGIN,
+      doc.y,
+      { width: LEBAR, align: "justify" },
+    )
+
+    // ── Tanda tangan
+    if (doc.y + 96 > BAWAH) doc.addPage()
+    const tanggalCetak = new Intl.DateTimeFormat("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }).format(new Date())
+    const yTtd = doc.y + 12
+    const setengah = LEBAR / 2
+    doc.font("Helvetica").fontSize(7)
+    doc.text(`Bantarujeg, ${tanggalCetak}`, MARGIN + setengah, yTtd, { width: setengah - 6 })
+    doc.text("Guru Mata Pelajaran", MARGIN, yTtd + 12, { width: setengah - 6 })
+    doc.text("Kepala Sekolah", MARGIN + setengah, yTtd + 12, { width: setengah - 6 })
+    doc.font("Helvetica-Bold").fontSize(7.5)
+    doc.text(identitas.guru, MARGIN, yTtd + 58, { width: setengah - 6 })
+    doc.text(isi(identitas.kepalaSekolah), MARGIN + setengah, yTtd + 58, { width: setengah - 6 })
+    doc.font("Helvetica").fontSize(7)
+    doc.text(identitas.nipGuru ? `NIP. ${identitas.nipGuru}` : "NIP. -", MARGIN, yTtd + 70, { width: setengah - 6 })
+    doc.text(identitas.nipKepalaSekolah ? `NIP. ${identitas.nipKepalaSekolah}` : "NIP. -", MARGIN + setengah, yTtd + 70, { width: setengah - 6 })
+
+    // ── Footer nomor halaman
     const rentang = doc.bufferedPageRange()
     for (let i = rentang.start; i < rentang.start + rentang.count; i += 1) {
       doc.switchToPage(i)
-      doc.font("Helvetica").fontSize(7).fillColor("#71717a").text(
-        `${bank.code} — Analisis butir soal   •   ${APP_NAME}   •   Halaman ${i + 1} dari ${rentang.count}`,
+      doc.font("Helvetica").fontSize(6).fillColor("#6b7280")
+      doc.text(
+        `${identitas.sekolah} · analisis butir ${identitas.kode} · halaman ${i + 1} dari ${rentang.count}`,
         MARGIN,
-        541,
-        { width: LEBAR, align: "center" },
+        TINGGI - MARGIN - 10,
+        { width: LEBAR, align: "right", lineBreak: false },
       )
+      doc.fillColor("#000000")
     }
 
     doc.end()
   })
 
-  const namaFile = `analisis-butir-${bank.code}-${new Date().toISOString().slice(0, 10)}.pdf`.replace(/[^a-zA-Z0-9._-]/g, "-")
+  const namaFile = `analisis-butir-${identitas.kode}-${new Date().toISOString().slice(0, 10)}.pdf`.replace(/[^a-zA-Z0-9._-]/g, "-")
 
   return new Response(new Uint8Array(pdf), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="${namaFile}"`,
+      "content-disposition": `inline; filename="${namaFile}"`,
       "cache-control": "no-store",
     },
   })

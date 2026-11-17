@@ -1,5 +1,13 @@
 // Google Forms: token, struktur form, dan respons. Hanya baca.
-export type Soal = { qid: string; judul: string; kunci: string[]; tipe: "text" | "choice" | "lain"; poin: number }
+export type Soal = {
+  qid: string
+  judul: string
+  kunci: string[]
+  tipe: "text" | "choice" | "lain"
+  poin: number
+  /** Daftar opsi pilihan ganda sesuai urutan form (A, B, C, …); kosong untuk butir teks. */
+  opsi: string[]
+}
 export type Respons = {
   responseId: string
   createTime?: string
@@ -159,7 +167,7 @@ type ButirForm = {
     question?: {
       questionId?: string
       textQuestion?: unknown
-      choiceQuestion?: unknown
+      choiceQuestion?: { options?: { value?: string }[] }
       grading?: { pointValue?: number; correctAnswers?: { answers?: { value?: string }[] } }
     }
   }
@@ -176,6 +184,7 @@ export function soalDariItems(items: unknown[]): Soal[] {
       kunci: (q.grading?.correctAnswers?.answers ?? []).map((a) => (a.value ?? "").trim().toLowerCase()).filter(Boolean),
       tipe: q.textQuestion ? "text" : q.choiceQuestion ? "choice" : "lain",
       poin: q.grading?.pointValue && q.grading.pointValue > 0 ? q.grading.pointValue : 1,
+      opsi: (q.choiceQuestion?.options ?? []).map((o: { value?: string }) => (o.value ?? "").trim()).filter(Boolean),
     })
   }
   return hasil

@@ -26,6 +26,16 @@ export type AnalisisButir = {
   sebaran: { jawaban: string; jumlah: number; persen: number; kunci: boolean }[]
   /** Kalimat tafsir singkat supaya guru tidak perlu menghafal tabel kategori. */
   catatan: string
+  /** Korelasi point-biserial skor butir vs skor total. */
+  ptBiser: number
+  /** Korelasi biserial (versi terkoreksi dari point-biserial). */
+  biser: number
+  /** Sebaran per opsi A, B, C, … sesuai urutan pilihan di form. */
+  opsiDetail: { label: string; teks: string; jumlah: number; proporsi: number; kunci: boolean }[]
+  /** Opsi mana yang paling banyak dipilih selain kunci. */
+  efekOpsi: "Dapat Membedakan" | "Ada option lain yang bekerja lebih baik" | "Pengecoh tidak berfungsi"
+  /** Putusan praktis: dipakai atau direvisi. */
+  status: "Soal Baik" | "Soal Perlu Direvisi"
 }
 
 export type ResponsDinilai = {
@@ -74,6 +84,40 @@ function catatan(p: number, d: number, distraksi: number, jumlahKunci: number) {
   return bagian.join(" ")
 }
 
+const HURUF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+export function labelOpsi(indeks: number) {
+  return HURUF[indeks] ?? String(indeks + 1)
+}
+
+// Invers distribusi normal (Acklam) — dipakai koreksi biserial.
+function zNormal(p: number) {
+  if (p <= 0) return -6
+  if (p >= 1) return 6
+  const a = [-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1, 2.506628277459239]
+  const b = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1]
+  const c = [-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783]
+  const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416]
+  const pRendah = 0.02425
+  let x: number
+  if (p < pRendah) {
+    const q = Math.sqrt(-2 * Math.log(p))
+    x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+  } else if (p <= 1 - pRendah) {
+    const q = p - 0.5
+    const r = q * q
+    x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+  } else {
+    const q = Math.sqrt(-2 * Math.log(1 - p))
+    x = -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+  }
+  return x
+}
+
+function bulat(n: number, desimal = 3) {
+  return Math.round(n * 10 ** desimal) / 10 ** desimal
+}
+
 function simpanganBaku(angka: number[]) {
   if (angka.length < 2) return 0
   const rata = angka.reduce((a, b) => a + b, 0) / angka.length
@@ -115,6 +159,41 @@ export function analisisButir(soal: Soal[], respons: ResponsDinilai[]): Analisis
     }
     const distraksiMaks = pengecoh.size ? Math.max(...pengecoh.values()) : 0
 
+    // Point-biserial: beda rata-rata skor total antara penjawab benar dan salah.
+    const pasangan = semua.map((j, i) => ({ poin: j.poin, total: respons[i].skorTotal }))
+    const rata = (angka: number[]) => (angka.length ? angka.reduce((a, b) => a + b, 0) / angka.length : 0)
+    const m1 = rata(pasangan.filter((x) => x.poin > 0).map((x) => x.total))
+    const m0 = rata(pasangan.filter((x) => x.poin === 0).map((x) => x.total))
+    const sdTotal = simpanganBaku(pasangan.map((x) => x.total))
+    const q = 1 - kesukaran
+    const ptBiser =
+      sdTotal > 0 && kesukaran > 0 && q > 0 ? bulat(((m1 - m0) / sdTotal) * Math.sqrt(kesukaran * q)) : 0
+    const z = zNormal(1 - kesukaran)
+    const ordinat = Math.exp(-(z * z) / 2) / Math.sqrt(2 * Math.PI)
+    const biser = sdTotal > 0 && ordinat > 0 ? bulat(((m1 - m0) / sdTotal) * ((kesukaran * q) / ordinat)) : 0
+
+    const opsiDetail = s.opsi.map((teks, i) => {
+      const kunciOpsi = s.kunci.includes(teks.toLowerCase())
+      const jumlah = semua.filter((j) => j.nilai.length === 1 && j.nilai[0] === teks.toLowerCase()).length
+      return {
+        label: labelOpsi(i),
+        teks,
+        jumlah,
+        proporsi: dikerjakan ? bulat(jumlah / dikerjakan) : 0,
+        kunci: kunciOpsi,
+      }
+    })
+
+    const pengecohTerbesar = Math.max(0, ...opsiDetail.filter((o) => !o.kunci).map((o) => o.proporsi))
+    const efekOpsi: AnalisisButir["efekOpsi"] =
+      pengecohTerbesar > kesukaran
+        ? "Ada option lain yang bekerja lebih baik"
+        : dayaBeda >= 0.4 && kesukaran < 0.9
+          ? "Dapat Membedakan"
+          : "Pengecoh tidak berfungsi"
+    const status: AnalisisButir["status"] =
+      kesukaran > 0.7 || kesukaran < 0.3 || dayaBeda < 0.2 ? "Soal Perlu Direvisi" : "Soal Baik"
+
     const sebaran = [...pengecoh.entries()]
       .map(([jawaban, jumlah]) => ({
         jawaban,
@@ -147,6 +226,11 @@ export function analisisButir(soal: Soal[], respons: ResponsDinilai[]): Analisis
       distraksiLabel: distraksiMaks > 0 ? "Baik" : "Kurang",
       sebaran,
       catatan: catatan(kesukaran, dayaBeda, distraksiMaks, s.kunci.length),
+      ptBiser,
+      biser,
+      opsiDetail,
+      efekOpsi,
+      status,
     }
   })
 }
