@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { parseSoalTeks } from "../lib/impor-docx.ts"
 
-const contoh = `Bacalah dengan teliti.
-1. Hasil dari 12 x 2 adalah ...
+// Format berhuruf
+const berhuruf = `1. Hasil dari 12 x 2 adalah ...
 a. 12   b. 18   c. 24   d. 30   e. 36
 Kunci: C
 2. Ibu kota Jawa Barat adalah
@@ -19,15 +19,33 @@ d. 5
 e. 6
 Kunci Jawaban: 1.C 2.A 3.C
 `
-const { soal, peringatan } = parseSoalTeks(contoh)
-assert.equal(soal.length, 3, "harus 3 soal")
-assert.equal(soal[0].no, 1)
-assert.equal(soal[0].opsi.length, 5, "soal 1 lima opsi (satu baris)")
-assert.equal(soal[0].opsi[2], "24")
-assert.equal(soal[0].kunci, "c")
-assert.equal(soal[0].pertanyaan, "Hasil dari 12 x 2 adalah ...", "kunci inline dibuang dari pertanyaan")
-assert.equal(soal[1].opsi[0], "Bandung", "penanda (kunci) dibuang dari teks opsi")
-assert.equal(soal[1].kunci, "a")
-assert.equal(soal[2].kunci, "c", "kunci dari daftar kunci massal")
-assert.deepEqual(peringatan.filter((p) => p.includes("belum ada")), [], "semua kunci terisi")
-console.log("OK: 3 soal, opsi terpisah & sebaris, kunci inline & massal")
+const a = parseSoalTeks(berhuruf)
+assert.equal(a.soal.length, 3)
+assert.equal(a.soal[0].opsi.length, 5, "opsi sebaris")
+assert.equal(a.soal[0].opsi[2], "24")
+assert.equal(a.soal[0].kunci, "c")
+assert.equal(a.soal[1].kunci, "a", "penanda (kunci)")
+assert.equal(a.soal[2].kunci, "c", "kunci massal")
+
+// Format tanpa huruf opsi (Google Form menomori sendiri)
+const polos = `1. Hasil dari 12 x 2 adalah ...
+12
+18
+24
+30
+36
+Kunci: C
+2. Ibu kota Provinsi Jawa Barat adalah
+Bandung
+Bogor   Bekasi   Depok
+Kunci: 1
+`
+const b = parseSoalTeks(polos)
+assert.equal(b.soal.length, 2)
+assert.equal(b.soal[0].opsi.length, 5, "lima opsi tanpa huruf")
+assert.deepEqual(b.soal[0].opsi, ["12", "18", "24", "30", "36"])
+assert.equal(b.soal[0].kunci, "c")
+assert.equal(b.soal[1].opsi.length, 4, "opsi sebaris tanpa huruf (2+ spasi)")
+assert.equal(b.soal[1].kunci, "a", "kunci angka 1 = opsi pertama")
+assert.deepEqual(b.peringatan, [], "format polos tanpa peringatan")
+console.log("OK: berhuruf 3 soal, polos 2 soal tanpa peringatan")

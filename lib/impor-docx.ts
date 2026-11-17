@@ -8,6 +8,8 @@ const RE_KUNCI = /^(?:kunci(?:\s+jawaban)?|jawaban)\s*[:\-]?\s*(.+)$/i
 function hurufDariTeks(teks: string) {
   const t = teks.trim().toLowerCase()
   if (/^[a-z]$/.test(t)) return t
+  // "Kunci: 3" = opsi ketiga
+  if (/^[1-9]$/.test(t)) return HURUF[Number(t) - 1]
   const m = t.match(/^([a-z])\s*[.)]/)
   return m ? m[1] : ""
 }
@@ -60,9 +62,9 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
     if (mSoal) {
       tutup()
       aktif = { no: Number(mSoal[1]), pertanyaan: mSoal[2].trim(), opsi: [], kunci: "" }
-      const inline = aktif.pertanyaan.match(/[\s(]*(?:kunci|jawaban)\s*[:\-]\s*([a-z])\s*\)?$/i)
+      const inline = aktif.pertanyaan.match(/[\s(]*(?:kunci|jawaban)\s*[:\-]\s*([a-z1-9])\s*\)?$/i)
       if (inline) {
-        aktif.kunci = inline[1].toLowerCase()
+        aktif.kunci = hurufDariTeks(inline[1])
         aktif.pertanyaan = aktif.pertanyaan.slice(0, inline.index).trim()
       }
       continue
@@ -88,8 +90,17 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
         aktif.opsi.push(teksOpsi)
       }
       if (adaOpsi) continue
-      // Baris lanjutan pertanyaan
-      if (aktif.opsi.length === 0) aktif.pertanyaan = `${aktif.pertanyaan} ${baris}`.trim()
+      // Opsi tanpa huruf (Google Form menomori sendiri): satu baris satu opsi,
+      // atau beberapa opsi dipisah 2+ spasi / tab / "|" / ";".
+      for (const bagian of baris.split(/\s{2,}|\t|\||;/)) {
+        let teksOpsi = bagian.trim()
+        if (!teksOpsi) continue
+        if (/\s*\(kunci\)\s*$/i.test(teksOpsi)) {
+          aktif.kunci = HURUF[aktif.opsi.length] ?? ""
+          teksOpsi = teksOpsi.replace(/\s*\(kunci\)\s*$/i, "").trim()
+        }
+        aktif.opsi.push(teksOpsi)
+      }
     }
   }
   tutup()

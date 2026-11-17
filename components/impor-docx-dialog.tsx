@@ -10,7 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import type { SoalImpor } from "@/lib/impor-docx"
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
-a. 12   b. 18   c. 24   d. 30   e. 36
+12
+18
+24
+30
+36
 Kunci: C`
 
 export function ImporDocxDialog({ bankId, kode, disabled, ikon }: { bankId: string; kode: string; disabled?: boolean; ikon?: boolean }) {
@@ -163,7 +167,11 @@ export function ImporDocxDialog({ bankId, kode, disabled, ikon }: { bankId: stri
             <div className="rounded-md bg-muted/60 px-2 py-1.5 text-[11px] text-muted-foreground">
               Format yang dikenali:
               <pre className="mt-1 whitespace-pre-wrap font-mono text-[11px] text-foreground">{CONTOH}</pre>
-              <p className="mt-1">Kunci boleh per soal atau dikumpulkan di akhir: &quot;Kunci Jawaban: 1.C 2.A&quot;.</p>
+              <p className="mt-1">
+                Tiap baris setelah pertanyaan = satu opsi. Google Form memberi huruf A–E sendiri, jadi tidak perlu menulis
+                &quot;a.&quot;, &quot;b.&quot; (tetap didukung bila ditulis). Kunci: <span className="font-mono">Kunci: C</span> per
+                soal, atau dikumpulkan di akhir <span className="font-mono">Kunci Jawaban: 1.C 2.A</span>.
+              </p>
             </div>
           ) : null}
         </div>
