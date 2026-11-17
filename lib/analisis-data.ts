@@ -183,7 +183,8 @@ export async function ambilAnalisisButir(
         kepalaSekolah: laporan.kepalaSekolah,
         nipKepalaSekolah: laporan.nipKepalaSekolah,
         jumlahSoal: dinilai.length,
-        jumlahOpsi: Math.max(0, ...dinilai.map((s) => s.opsi.length)),
+        // laporan gaya ANABUT mengasumsikan 5 opsi; bank dengan opsi lebih sedikit tetap ditulis 5
+        jumlahOpsi: Math.max(5, ...dinilai.map((s) => s.opsi.length)),
         jumlahSiswa: siswa.length,
         kunci: dinilai
           .map((s) => {
