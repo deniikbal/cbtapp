@@ -80,7 +80,10 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   if (!subjectId) return { ok: false, message: "Mapel wajib dipilih." }
   if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
-  if (!googleFormUrl) return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  // Link boleh kosong: form bisa dibuat belakangan lewat tombol "Buat form kosong".
+  if (String(formData.get("googleFormUrl") ?? "").trim() && !googleFormUrl) {
+    return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  }
   if (formIdError) return { ok: false, message: `${formIdError}. Kosongkan kolom Form ID bila belum ada.` }
 
   try {
@@ -95,7 +98,7 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
       teacherId: teacher.id,
       grade,
       subjectId,
-      googleFormUrl,
+      googleFormUrl: googleFormUrl ?? "",
       formId,
       active,
     })
@@ -121,13 +124,15 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   if (!subjectId) return { ok: false, message: "Mapel wajib dipilih." }
   if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
-  if (!googleFormUrl) return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  if (String(formData.get("googleFormUrl") ?? "").trim() && !googleFormUrl) {
+    return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
+  }
   if (formIdError) return { ok: false, message: `${formIdError}. Kosongkan kolom Form ID bila belum ada.` }
 
   try {
     await db
       .update(questionBanks)
-      .set({ subjectId, teacherName, teacherId: teacher.id, grade, googleFormUrl, formId, active, updatedAt: new Date() })
+      .set({ subjectId, teacherName, teacherId: teacher.id, grade, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
   } catch (error) {
     return { ok: false, message: getDatabaseErrorMessage(error, "Gagal mengubah bank soal.") }
