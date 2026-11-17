@@ -45,8 +45,8 @@ export function AnalisisButirDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[92dvh] flex-col gap-2 overflow-hidden p-4 sm:max-w-5xl">
+        <DialogHeader className="shrink-0 gap-1">
           <DialogTitle className="text-sm">Laporan analisis butir soal — {judul}</DialogTitle>
           <DialogDescription className="text-[11px]">
             Disusun seperti laporan cetak: identitas, ketuntasan, data siswa, statistik butir, dan distribusi jawaban.
@@ -57,7 +57,7 @@ export function AnalisisButirDialog({
         {!data ? (
           <p className="text-sm text-muted-foreground">Menyiapkan laporan…</p>
         ) : (
-          <div className="max-h-[72vh] space-y-4 overflow-auto pr-1 text-xs">
+          <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1 text-xs">
             {/* ── Identitas laporan */}
             <section className="rounded-lg border">
               <dl className="grid gap-x-4 gap-y-1 px-3 py-2 sm:grid-cols-2">
