@@ -1,4 +1,6 @@
+import type { ComponentType } from "react"
 import { asc } from "drizzle-orm"
+import { Clock, Download, ShieldCheck, Users } from "lucide-react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
@@ -6,6 +8,7 @@ import { PdfAccessCard, type AksesRow } from "@/components/pdf-access-card"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   SidebarInset,
   SidebarProvider,
@@ -15,6 +18,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { teachers } from "@/lib/db/schema"
 import { bolehKelolaUser } from "@/lib/peran"
+import { cn } from "@/lib/utils"
 
 function DashboardNavbar({
   title,
@@ -72,6 +76,9 @@ export default async function AksesPdfPage() {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data akses PDF."
   }
 
+  const aktif = aksesRows.filter((row) => row.status === "aktif").length
+  const menunggu = aksesRows.filter((row) => row.status === "menunggu").length
+
   return (
     <SidebarProvider>
       <DashboardSidebar active="/dashboard/akses-pdf" />
@@ -102,9 +109,82 @@ export default async function AksesPdfPage() {
             </Alert>
           )}
 
+          <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            <StatCard
+              label="Total Guru"
+              value={aksesRows.length}
+              description="Semua guru terdaftar"
+              icon={Users}
+              accent="from-sky-500/10 to-sky-500/0 text-sky-600"
+              ringClass="ring-sky-500/20"
+            />
+            <StatCard
+              label="Aktif"
+              value={aktif}
+              description="Boleh unduh PDF"
+              icon={ShieldCheck}
+              accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600"
+              ringClass="ring-emerald-500/20"
+            />
+            <StatCard
+              label="Menunggu"
+              value={menunggu}
+              description="Menunggu verifikasi"
+              icon={Clock}
+              accent="from-amber-500/10 to-amber-500/0 text-amber-600"
+              ringClass="ring-amber-500/20"
+            />
+            <StatCard
+              label="Belum Aktif"
+              value={aksesRows.length - aktif}
+              description="Belum punya akses"
+              icon={Download}
+              accent="from-zinc-500/10 to-zinc-500/0 text-zinc-600"
+              ringClass="ring-zinc-500/20"
+            />
+          </section>
+
           <PdfAccessCard rows={aksesRows} />
         </main>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+type StatCardProps = {
+  label: string
+  value: number
+  description: string
+  icon: ComponentType<{ className?: string }>
+  accent: string
+  ringClass: string
+}
+
+function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) {
+  return (
+    <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}>
+      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
+      <CardHeader className="relative">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
+              {value.toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div
+            className={cn(
+              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
+              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
+            )}
+          >
+            <Icon className="size-4" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="relative">
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
   )
 }
