@@ -279,7 +279,13 @@ function rupiah(n: number) {
   return "Rp " + n.toLocaleString("id-ID")
 }
 
-function PanelUnduh({ bankId, akses }: { bankId: string; akses: { status: string; nominal: number; waAdmin: string; qris: string } }) {
+function PanelUnduh({
+  bankId,
+  akses,
+}: {
+  bankId: string
+  akses: { status: string; nominal: number; waAdmin: string; qris: string }
+}) {
   const [status, setStatus] = useState(akses.status)
   const [pending, startTransition] = useTransition()
 
@@ -294,55 +300,98 @@ function PanelUnduh({ bankId, akses }: { bankId: string; akses: { status: string
     )
   }
 
+  const langkah = ["Scan QRIS dan bayar sesuai nominal.", "Kirim bukti bayar ke WA admin.", "Admin mengaktifkan akses Anda."]
+
   return (
-    <div className="mt-1 space-y-2 rounded-lg border bg-muted/30 p-2">
-      <p className="text-[11px] font-medium">Unduh PDF analisis butir — sekali bayar {rupiah(akses.nominal)}, unduh selamanya.</p>
-      {status === "menunggu" ? (
-        <p className="text-[11px] text-amber-600">Menunggu verifikasi admin. Kirim bukti bayar ke WA admin bila belum.</p>
-      ) : (
-        <div className="flex flex-wrap items-start gap-3">
+    <div className="mt-2 overflow-hidden rounded-xl border bg-muted/20">
+      <div className="flex flex-col gap-3 p-3 sm:flex-row">
+        <div className="shrink-0 self-center sm:self-start">
           {akses.qris ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={akses.qris} alt="QRIS pembayaran" className="h-28 w-28 rounded border bg-white object-contain" />
-          ) : null}
-          <div className="space-y-0.5 text-[11px] text-muted-foreground">
-            <p>1. Scan QRIS, bayar {rupiah(akses.nominal)}.</p>
-            <p>2. Kirim bukti bayar ke WA admin.</p>
-            <p>3. Admin mengaktifkan akses Anda.</p>
+            <a
+              href={akses.qris}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-40 rounded-lg border bg-white p-2 shadow-sm transition hover:shadow-md"
+              title="Buka QRIS ukuran penuh"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={akses.qris} alt="QRIS pembayaran" className="h-auto w-full object-contain" />
+              <span className="mt-1 block text-center text-[10px] text-muted-foreground">Klik untuk perbesar</span>
+            </a>
+          ) : (
+            <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed bg-muted/40 px-2 text-center text-[10px] leading-tight text-muted-foreground">
+              QRIS belum diatur admin
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Unduh PDF analisis butir
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">Sekali bayar, unduh sepuasnya tanpa batas.</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-primary px-2 py-1 text-sm font-semibold tabular-nums text-primary-foreground">
+              {rupiah(akses.nominal)}
+            </span>
+            {status === "menunggu" ? (
+              <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" variant="secondary">
+                Menunggu verifikasi
+              </Badge>
+            ) : status === "ditolak" ? (
+              <Badge className="gap-1 bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400" variant="secondary">
+                Ditolak
+              </Badge>
+            ) : null}
+          </div>
+
+          <ol className="space-y-0.5 text-[11px] text-muted-foreground">
+            {langkah.map((l, i) => (
+              <li key={l} className="flex gap-1.5">
+                <span className="mt-[1px] flex size-3.5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-foreground">
+                  {i + 1}
+                </span>
+                <span>{l}</span>
+              </li>
+            ))}
+          </ol>
+
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {akses.waAdmin ? (
+              <a
+                href={`https://wa.me/${akses.waAdmin}?text=${encodeURIComponent("Bukti bayar PDF analisis butir CBT")}`}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
+              >
+                <MessageCircle className="size-3.5" /> Kirim bukti via WA
+              </a>
+            ) : null}
+            {status === "belum" || status === "ditolak" ? (
+              <Button
+                size="sm"
+                className="h-7 gap-1 px-2 text-[11px]"
+                disabled={pending}
+                onClick={() =>
+                  startTransition(async () => {
+                    const hasil = await konfirmasiSudahBayar()
+                    if (!hasil.ok) toast.error(hasil.message)
+                    else {
+                      toast.success(hasil.message)
+                      setStatus("menunggu")
+                    }
+                  })
+                }
+              >
+                {pending ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+                Saya sudah bayar
+              </Button>
+            ) : null}
           </div>
         </div>
-      )}
-      <div className="flex flex-wrap gap-1.5">
-        {akses.waAdmin ? (
-          <a
-            href={`https://wa.me/${akses.waAdmin}?text=${encodeURIComponent("Bukti bayar PDF analisis butir CBT")}`}
-            target="_blank"
-            rel="noreferrer"
-            className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
-          >
-            <MessageCircle className="size-3.5" /> Kirim bukti via WA
-          </a>
-        ) : null}
-        {status === "belum" || status === "ditolak" ? (
-          <Button
-            size="sm"
-            className="h-7 gap-1 px-2 text-[11px]"
-            disabled={pending}
-            onClick={() =>
-              startTransition(async () => {
-                const hasil = await konfirmasiSudahBayar()
-                if (!hasil.ok) toast.error(hasil.message)
-                else {
-                  toast.success(hasil.message)
-                  setStatus("menunggu")
-                }
-              })
-            }
-          >
-            {pending ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
-            Saya sudah bayar
-          </Button>
-        ) : null}
       </div>
     </div>
   )

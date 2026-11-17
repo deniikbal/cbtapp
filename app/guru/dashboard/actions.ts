@@ -10,6 +10,9 @@ import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { pdfAccess, reportSettings, teachers } from "@/lib/db/schema"
 import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
+import { existsSync } from "node:fs"
+import path from "node:path"
+
 import { NOMINAL_PDF, QRIS_SRC, WA_ADMIN, ambilAkses } from "@/lib/akses-pdf"
 
 async function guruDariCookie() {
@@ -107,7 +110,7 @@ export async function getAksesPdfGuru(): Promise<{
     status: (baris?.status as "belum" | "menunggu" | "aktif" | "ditolak") ?? "belum",
     nominal: baris?.nominal ?? NOMINAL_PDF,
     waAdmin: WA_ADMIN,
-    qris: QRIS_SRC,
+    qris: existsSync(path.join(process.cwd(), "public", QRIS_SRC.replace(/^\//, ""))) ? QRIS_SRC : "",
   }
 }
 
