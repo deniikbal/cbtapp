@@ -9,6 +9,7 @@ import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { GuruIdentitasForm } from "@/components/guru-identitas-form"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { ImporDocxDialog } from "@/components/impor-docx-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -213,6 +214,7 @@ export default async function GuruDashboardPage() {
                                 Edit form
                               </Button>
                             )}
+                            <ImporDocxDialog bankId={bank.id} kode={bank.code} disabled={!bank.formId} />
                             <GuruAnalisisButton bankId={bank.id} judul={bank.code} akses={aksesPdf} />
                           </div>
                         </TableCell>

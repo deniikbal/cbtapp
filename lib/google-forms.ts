@@ -143,6 +143,43 @@ export function formIdDari(input: string) {
   return id
 }
 
+const HURUF_OPSI = "abcdefghijklmnopqrstuvwxyz"
+
+/**
+ * Tambahkan butir soal pilihan ganda (mode kuis) ke form yang sudah ada,
+ * lalu kembalikan `items` terbaru untuk disimpan di `question_banks.formItems`.
+ */
+export async function tambahSoalKeForm(
+  formId: string,
+  soal: { pertanyaan: string; opsi: string[]; kunci: string }[]
+) {
+  const { items } = await ambilForm(formId)
+  const mulai = items.length
+
+  const requests = soal.map((s, i) => {
+    const kunciTeks = s.opsi[HURUF_OPSI.indexOf(s.kunci.toLowerCase())] ?? s.opsi[0]
+    return {
+      createItem: {
+        item: {
+          title: s.pertanyaan,
+          questionItem: {
+            question: {
+              required: true,
+              choiceQuestion: { type: "RADIO", options: s.opsi.map((v) => ({ value: v })) },
+              grading: { pointValue: 1, correctAnswers: { answers: [{ value: kunciTeks }] } },
+            },
+          },
+        },
+        location: { index: mulai + i },
+      },
+    }
+  })
+
+  await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
+  const sesudah = await ambilForm(formId)
+  return sesudah.items
+}
+
 export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[] }> {
   const data = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
   return { title: data.info?.title ?? data.title ?? "", items: data.items ?? [] }
