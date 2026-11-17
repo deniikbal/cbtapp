@@ -112,7 +112,11 @@ export async function getAksesPdfGuru(): Promise<{
     status: (baris?.status as "belum" | "menunggu" | "aktif" | "ditolak") ?? "belum",
     nominal: nominalTagihan(NOMINAL_PDF, kode),
     waAdmin: WA_ADMIN,
-    qris: existsSync(path.join(process.cwd(), "public", QRIS_SRC.replace(/^\//, ""))) ? QRIS_SRC : "",
+    qris: process.env.QRIS_STATIS
+      ? `/api/qris?nominal=${nominalTagihan(NOMINAL_PDF, kode)}`
+      : existsSync(path.join(process.cwd(), "public", QRIS_SRC.replace(/^\//, "")))
+        ? QRIS_SRC
+        : "",
   }
 }
 
