@@ -1,7 +1,10 @@
 "use client"
 
+import { FileDown } from "lucide-react"
+
 import type { AnalisisButir } from "@/lib/analisis-butir"
 import { Badge } from "@/components/ui/badge"
+import { buttonVariants } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 function rupiah(n: number, desimal = 4) {
@@ -16,11 +19,13 @@ export function AnalisisButirDialog({
   onOpenChange,
   judul,
   butir,
+  bankId,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   judul: string
   butir: AnalisisButir[]
+  bankId?: string
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,6 +35,14 @@ export function AnalisisButirDialog({
           <DialogDescription>
             Dihitung dari respons Google Form yang sudah di-sync: {butir[0]?.dikerjakan ?? 0} pengerjaan, {butir.length} butir dinilai.
           </DialogDescription>
+          {bankId ? (
+            <a
+              href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
+              className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 w-fit gap-1 text-xs" })}
+            >
+              <FileDown className="size-3.5" /> Unduh PDF
+            </a>
+          ) : null}
         </DialogHeader>
 
         <div className="max-h-[65vh] space-y-4 overflow-auto pr-1">
@@ -77,7 +90,27 @@ export function AnalisisButirDialog({
                     </span>
                   }
                 />
+                <Baris label="Sebaran benar" nilai={`${b.sebaran.find((s) => s.kunci)?.persen.toLocaleString("id-ID") ?? 0}%`} />
               </dl>
+              {b.sebaran.length ? (
+                <div className="space-y-1 border-t px-3 py-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Sebaran jawaban</p>
+                  <ul className="grid gap-1 sm:grid-cols-2">
+                    {b.sebaran.map((s) => (
+                      <li key={s.jawaban} className="flex items-center justify-between gap-2 text-xs">
+                        <span className={s.kunci ? "font-medium text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}>
+                          {s.jawaban}
+                          {s.kunci ? " (kunci)" : ""}
+                        </span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {s.jumlah} · {s.persen.toLocaleString("id-ID")}%
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <p className="border-t bg-muted/30 px-3 py-2 text-xs italic text-muted-foreground">{b.catatan}</p>
             </div>
           ))}
         </div>

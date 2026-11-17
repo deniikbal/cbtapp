@@ -38,7 +38,7 @@ export function GuruAnalisisButton({ bankId, judul }: { bankId: string; judul: s
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChartColumn className="size-3.5" />}
         Analisis butir
       </Button>
-      <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} butir={butir} />
+      <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} butir={butir} bankId={bankId} />
     </>
   )
 }

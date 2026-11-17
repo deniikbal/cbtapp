@@ -35,6 +35,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   const [detailOpen, setDetailOpen] = useState(false)
   const [butir, setButir] = useState<AnalisisButir[]>([])
   const [butirJudul, setButirJudul] = useState("")
+  const [butirBankId, setButirBankId] = useState("")
   const [butirOpen, setButirOpen] = useState(false)
   const [, startTransition] = useTransition()
 
@@ -64,6 +65,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
       }
       setButir(hasil.butir)
       setButirJudul(`${row.code} — ${row.title}`)
+      setButirBankId(row.bankId)
       setButirOpen(true)
     })
   }
@@ -149,7 +151,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         </Table>
       </CardContent>
 
-      <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} butir={butir} />
+      <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} butir={butir} bankId={butirBankId} />
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-4xl">

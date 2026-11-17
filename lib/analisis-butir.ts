@@ -22,6 +22,10 @@ export type AnalisisButir = {
   dayaBedaLabel: "Baik sekali" | "Baik" | "Cukup" | "Jelek"
   distraksiMaks: number
   distraksiLabel: "Baik" | "Kurang"
+  /** Sebaran jawaban siswa per opsi/kunci — untuk melihat pengecoh mana yang menarik. */
+  sebaran: { jawaban: string; jumlah: number; persen: number; kunci: boolean }[]
+  /** Kalimat tafsir singkat supaya guru tidak perlu menghafal tabel kategori. */
+  catatan: string
 }
 
 export type ResponsDinilai = {
@@ -49,6 +53,25 @@ function kategoriDayaBeda(d: number): AnalisisButir["dayaBedaLabel"] {
   if (d >= 0.3) return "Baik"
   if (d >= 0.2) return "Cukup"
   return "Jelek"
+}
+
+// Tafsir singkat: dua kalimat, bahasa guru, tanpa istilah statistik tambahan.
+function catatan(p: number, d: number, distraksi: number, jumlahKunci: number) {
+  const bagian: string[] = []
+
+  if (p > 0.7) bagian.push("Soal tergolong mudah; pertimbangkan mengurangi petunjuk jawaban.")
+  else if (p >= 0.3) bagian.push("Tingkat kesukaran sudah pas.")
+  else bagian.push("Soal tergolong sukar; periksa apakah materi sudah diajarkan atau ada jawaban ganda.")
+
+  if (d >= 0.4) bagian.push("Daya beda baik sekali — soal membedakan siswa pandai dan lemah.")
+  else if (d >= 0.3) bagian.push("Daya beda baik.")
+  else if (d >= 0.2) bagian.push("Daya beda cukup; perlu perbaikan pilihan pengecoh.")
+  else bagian.push("Daya beda jelek; soal cenderung dijawab benar atau salah oleh semua kelompok.")
+
+  if (jumlahKunci > 1) bagian.push(`Kunci lebih dari satu jawaban (${jumlahKunci}); pastikan siswa tahu jawaban boleh lebih dari satu.`)
+  if (distraksi === 0) bagian.push("Tidak ada pengecoh yang dipilih siswa; pilihan jawaban salah perlu diganti.")
+
+  return bagian.join(" ")
 }
 
 function simpanganBaku(angka: number[]) {
@@ -92,6 +115,18 @@ export function analisisButir(soal: Soal[], respons: ResponsDinilai[]): Analisis
     }
     const distraksiMaks = pengecoh.size ? Math.max(...pengecoh.values()) : 0
 
+    const sebaran = [...pengecoh.entries()]
+      .map(([jawaban, jumlah]) => ({
+        jawaban,
+        jumlah,
+        persen: dikerjakan ? Math.round((jumlah / dikerjakan) * 10000) / 100 : 0,
+        kunci: false,
+      }))
+      .concat(
+        benar > 0 ? [{ jawaban: s.kunci.join(" | "), jumlah: benar, persen: dikerjakan ? Math.round((benar / dikerjakan) * 10000) / 100 : 0, kunci: true }] : [],
+      )
+      .sort((a, b) => b.jumlah - a.jumlah)
+
     return {
       qid: s.qid,
       judul: s.judul,
@@ -110,6 +145,8 @@ export function analisisButir(soal: Soal[], respons: ResponsDinilai[]): Analisis
       dayaBedaLabel: kategoriDayaBeda(dayaBeda),
       distraksiMaks,
       distraksiLabel: distraksiMaks > 0 ? "Baik" : "Kurang",
+      sebaran,
+      catatan: catatan(kesukaran, dayaBeda, distraksiMaks, s.kunci.length),
     }
   })
 }

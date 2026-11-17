@@ -12,6 +12,7 @@ import { auth } from "@/lib/auth"
 import { ambilForm, ambilRespons, cariNama, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { analisisButir, type AnalisisButir } from "@/lib/analisis-butir"
+import { ambilAnalisisButir } from "@/lib/analisis-data"
 
 // Server action mengembalikan {ok,message}: error yang dilempar tidak sampai ke
 // pengguna di build produksi (diganti digest generik).
@@ -153,36 +154,10 @@ export type AnalisisButirResult = { ok: true; butir: AnalisisButir[] } | Gagal
 export async function getAnalisisButir(bankId: string): Promise<AnalisisButirResult> {
   const sesi = await wajibAdmin()
   if (sesi) return sesi
-  if (!bankId) return { ok: false, message: "Bank soal tidak valid." }
 
   try {
-    const bank = await db
-      .select({ items: questionBanks.formItems })
-      .from(questionBanks)
-      .where(eq(questionBanks.id, bankId))
-      .limit(1)
-    if (!bank[0]) return { ok: false, message: "Bank soal tidak ditemukan." }
-
-    const jadwal = await db
-      .select({ id: examSchedules.id })
-      .from(examSchedules)
-      .where(eq(examSchedules.questionBankId, bankId))
-    if (!jadwal.length) return { ok: false, message: "Bank soal ini belum punya jadwal." }
-
-    const baris = await db
-      .select({ answers: examResults.answers, correct: examResults.correct })
-      .from(examResults)
-      .where(inArray(examResults.scheduleId, jadwal.map((j) => j.id)))
-    if (!baris.length) return { ok: false, message: "Belum ada respons untuk bank soal ini. Sync dulu di menu Hasil Ujian." }
-
-    const soal = soalDariItems((bank[0].items as unknown[] | null) ?? [])
-    const butir = analisisButir(
-      soal,
-      baris.map((b) => ({ answers: b.answers as never, skorTotal: b.correct })),
-    )
-    if (!butir.length) return { ok: false, message: "Form belum punya kunci jawaban. Aktifkan mode kuis lalu sync ulang." }
-
-    return { ok: true, butir }
+    const hasil = await ambilAnalisisButir(bankId)
+    return hasil.ok ? { ok: true, butir: hasil.data.butir } : hasil
   } catch (error) {
     return { ok: false, message: pesanError(error, "Gagal menghitung analisis butir soal.") }
   }
