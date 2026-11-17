@@ -13,7 +13,8 @@ import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
 import { existsSync } from "node:fs"
 import path from "node:path"
 
-import { NOMINAL_PDF, QRIS_SRC, WA_ADMIN, ambilAkses } from "@/lib/akses-pdf"
+import { NOMINAL_PDF, QRIS_SRC, WA_ADMIN, ambilAkses, ambilAtauBuatKode } from "@/lib/akses-pdf"
+import { nominalTagihan } from "@/lib/mutasi"
 
 async function guruDariCookie() {
   const cookieStore = await cookies()
@@ -105,10 +106,11 @@ export async function getAksesPdfGuru(): Promise<{
 }> {
   const guru = await guruDariCookie()
   const baris = guru ? await ambilAkses(guru.id) : null
+  const kode = guru && baris?.status !== "aktif" ? await ambilAtauBuatKode(guru.id) : (baris?.kode ?? 0)
   return {
     ok: true,
     status: (baris?.status as "belum" | "menunggu" | "aktif" | "ditolak") ?? "belum",
-    nominal: NOMINAL_PDF,
+    nominal: nominalTagihan(NOMINAL_PDF, kode),
     waAdmin: WA_ADMIN,
     qris: existsSync(path.join(process.cwd(), "public", QRIS_SRC.replace(/^\//, ""))) ? QRIS_SRC : "",
   }
@@ -122,10 +124,15 @@ export async function konfirmasiSudahBayar(): Promise<{ ok: boolean; message: st
     const lama = await ambilAkses(guru.id)
     if (lama?.status === "aktif") return { ok: true, message: "Akses unduh PDF sudah aktif." }
     if (lama?.status === "menunggu") return { ok: true, message: "Konfirmasi sudah dikirim. Menunggu verifikasi admin." }
+    const kode = await ambilAtauBuatKode(guru.id)
     await db.update(teachers).set({ aksesPdf: "menunggu", updatedAt: new Date() }).where(eq(teachers.id, guru.id))
+    revalidatePath("/dashboard/akses-pdf")
     revalidatePath("/guru/dashboard")
     revalidatePath("/dashboard/guru")
-    return { ok: true, message: "Konfirmasi terkirim. Kirim bukti bayar ke WA admin, lalu tunggu verifikasi." }
+    return {
+      ok: true,
+      message: `Konfirmasi terkirim. Bayar tepat Rp ${nominalTagihan(NOMINAL_PDF, kode).toLocaleString("id-ID")}, lalu tunggu verifikasi admin.`,
+    }
   } catch (error) {
     console.error("Gagal konfirmasi bayar PDF:", error)
     return { ok: false, message: getDatabaseErrorMessage(error) }
