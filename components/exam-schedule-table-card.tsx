@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useSyncExternalStore, useTransition } from "react"
-import { CalendarDays, Clock3, Loader2, RotateCcw, Search, Trash2 } from "lucide-react"
+import { CalendarDays, Loader2, RotateCcw, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { deleteExamSchedules } from "@/app/dashboard/jadwal/actions"
@@ -10,6 +10,7 @@ import { ExamScheduleRowActions } from "@/components/exam-schedule-row-actions"
 import { ExamScheduleStatusSwitch } from "@/components/exam-schedule-status-switch"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
 import type { TeacherOption } from "@/components/teacher-combobox"
+import { relWaktu } from "@/lib/utils"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,12 +27,15 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 const naturalClassroomCollator = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
 const subscribe = () => () => {}
 
-type ScheduleRow = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string; code: string; className: string; majorCode: string; subjectCode: string }
+type ScheduleRow = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string; code: string; className: string; majorCode: string; subjectCode: string; peserta: number; respons: number; syncedAt: string | null; status: "akan" | "berlangsung" | "selesai" }
 
-type ScheduleGroup = Omit<ScheduleRow, "id" | "classroomId" | "className" | "majorCode" | "active"> & {
+type ScheduleGroup = Omit<ScheduleRow, "id" | "classroomId" | "className" | "majorCode" | "active" | "peserta" | "respons" | "syncedAt"> & {
   key: string
   rows: ScheduleRow[]
   activeCount: number
+  peserta: number
+  respons: number
+  syncedAt: string | null
 }
 
 export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }: { rows: ScheduleRow[]; banks: ScheduleBankOption[]; classrooms: ScheduleClassroomOption[]; teachers?: TeacherOption[] }) {
@@ -217,14 +221,14 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
         {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border">
           <Table>
-            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua jadwal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Selesai</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua jadwal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Status</TableHead><TableHead>Respons</TableHead><TableHead className="w-24 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
                 <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
               ) : (
-                paginatedRows.map((group, index) => <TableRow key={group.key} data-state={selectedKeys.includes(group.key) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedKeys.includes(group.key)} onCheckedChange={() => toggleGroup(group.key)} aria-label={`Pilih ${group.title}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell>{formatDate(group.examDate)}</TableCell><TableCell><Clock3 className="mr-1 inline size-4 text-muted-foreground" />{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} menit</TableCell><TableCell>{calculateEndTime(group.startTime, group.durationMinutes)}</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
+                paginatedRows.map((group, index) => <TableRow key={group.key} data-state={selectedKeys.includes(group.key) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedKeys.includes(group.key)} onCheckedChange={() => toggleGroup(group.key)} aria-label={`Pilih ${group.title}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell className="whitespace-normal min-w-44"><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell><div className="flex flex-wrap items-center gap-1.5">{formatDate(group.examDate)}{group.status === "berlangsung" && <Badge className="border-token-respons bg-transparent px-1.5 text-[10px] font-normal text-amber-700">Live</Badge>}</div></TableCell><TableCell>{group.startTime.slice(0, 5)}</TableCell><TableCell>{group.durationMinutes} mnt</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex flex-col leading-tight"><span className="text-sm font-medium tabular-nums">{group.respons}/{group.peserta}</span><span className="text-xs text-muted-foreground">{group.syncedAt ? `sync ${relWaktu(group.syncedAt)}` : "belum sync"}</span></div></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
               )}
             </TableBody>
           </Table>
@@ -251,9 +255,12 @@ function groupScheduleRows(rows: ScheduleRow[]): ScheduleGroup[] {
     if (existing) {
       existing.rows.push(row)
       if (row.active) existing.activeCount += 1
+      existing.peserta += row.peserta
+      existing.respons += row.respons
+      if (row.syncedAt && (!existing.syncedAt || row.syncedAt > existing.syncedAt)) existing.syncedAt = row.syncedAt
       continue
     }
-    groups.set(key, { key, questionBankId: row.questionBankId, examDate: row.examDate, startTime: row.startTime, durationMinutes: row.durationMinutes, title: row.title, code: row.code, subjectCode: row.subjectCode, rows: [row], activeCount: row.active ? 1 : 0 })
+    groups.set(key, { key, questionBankId: row.questionBankId, examDate: row.examDate, startTime: row.startTime, durationMinutes: row.durationMinutes, title: row.title, code: row.code, subjectCode: row.subjectCode, status: row.status, rows: [row], activeCount: row.active ? 1 : 0, peserta: row.peserta, respons: row.respons, syncedAt: row.syncedAt })
   }
   return Array.from(groups.values()).map((group) => ({
     ...group,
@@ -279,4 +286,3 @@ function getTodayDateValue() {
 }
 
 function formatDate(value: string) { return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) }
-function calculateEndTime(startTime: string, durationMinutes: number) { const [h, m] = startTime.split(":").map(Number); const d = new Date(2000, 0, 1, h, m); d.setMinutes(d.getMinutes() + durationMinutes); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}` }
