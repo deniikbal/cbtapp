@@ -21,7 +21,7 @@ function hashPassword(password: string) {
 function buatPassword() {
   while (true) {
     let hasil = ""
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       const alfabet = randomInt(2) === 0 ? HURUF : ANGKA
       hasil += alfabet[randomInt(alfabet.length)]
     }
