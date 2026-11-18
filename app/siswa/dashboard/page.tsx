@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { and, asc, eq } from "drizzle-orm"
+import { and, asc, desc, eq, max } from "drizzle-orm"
 import {
   BookOpen,
   CalendarDays,
@@ -8,8 +8,8 @@ import {
   ExternalLink,
   Flame,
   GraduationCap,
+  RefreshCw,
   Trophy,
-  UserRound,
 } from "lucide-react"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -21,10 +21,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { db } from "@/lib/db"
-import { classrooms, examAttempts, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
+import {
+  classrooms,
+  examAttempts,
+  examResults,
+  examSchedules,
+  majors,
+  questionBanks,
+  students,
+  subjects,
+} from "@/lib/db/schema"
 import { canAccessStudentArea } from "@/lib/exam-browser"
 import { cn } from "@/lib/utils"
-
 
 export default async function SiswaDashboardPage() {
   const cookieStore = await cookies()
@@ -89,6 +97,37 @@ export default async function SiswaDashboardPage() {
     .from(examAttempts)
     .where(eq(examAttempts.studentId, student[0].id))
 
+  // Hasil yang masuk lewat sync Google Form (lib/sync-hasil.ts).
+  const hasilRows = await db
+    .select({
+      id: examResults.id,
+      score: examResults.score,
+      correct: examResults.correct,
+      wrong: examResults.wrong,
+      total: examResults.total,
+      submittedAt: examResults.submittedAt,
+      syncedAt: examResults.syncedAt,
+      title: questionBanks.title,
+      code: questionBanks.code,
+      subjectName: subjects.name,
+      subjectCode: subjects.code,
+      examDate: examSchedules.examDate,
+    })
+    .from(examResults)
+    .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
+    .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
+    .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
+    .where(eq(examResults.studentId, student[0].id))
+    .orderBy(desc(examResults.submittedAt))
+
+  // Waktu sync yang ditampilkan = sync terakhir yang menyentuh hasil siswa ini.
+  const syncBank = await db.select({ waktu: max(questionBanks.syncedAt) }).from(questionBanks)
+  const syncHasilSendiri = hasilRows.reduce<Date | null>(
+    (terakhir, baris) => (!terakhir || baris.syncedAt > terakhir ? baris.syncedAt : terakhir),
+    null
+  )
+  const syncTerakhir = syncHasilSendiri ?? syncBank[0]?.waktu ?? null
+
   const attemptBySchedule = new Map(attemptRows.map((attempt) => [attempt.scheduleId, attempt]))
   const today = getTodayInTimeZone("Asia/Jakarta")
   const visibleSchedules = schedules.filter(
@@ -98,88 +137,164 @@ export default async function SiswaDashboardPage() {
   const completedSchedules = attemptRows.filter((attempt) => attempt.submittedAt).length
   const activeNowSchedules = visibleSchedules.length
   const progressPercent = schedules.length > 0 ? Math.round((completedSchedules / schedules.length) * 100) : 0
+  const rataRata =
+    hasilRows.length > 0
+      ? hasilRows.reduce((jumlah, baris) => jumlah + Number(baris.score), 0) / hasilRows.length
+      : null
 
   return (
     <div className="min-h-svh bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-lg">
-        <div className="h-1 bg-gradient-to-r from-primary via-blue-400 to-primary/40" />
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-10 bg-brand text-brand-foreground">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold tracking-tight text-foreground">
-              SMANSABA<span className="text-primary">.</span>CBT
+            <p className="truncate text-sm font-semibold tracking-tight">
+              SMANSABA<span className="text-brand-foreground/70">.</span>CBT
+            </p>
+            <p className="truncate text-[11px] text-brand-foreground/85">
+              {student[0].name} · {student[0].className}
             </p>
           </div>
           <StudentLogoutButton />
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-8">
-        {/* Welcome Section */}
-        <section className="space-y-4 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 p-4 sm:p-5">
-          <div className="flex items-center gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <UserRound className="size-5 text-primary" />
-            </div>
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6">
+        {/* Ringkasan siswa + progres */}
+        <section className="space-y-2">
+          <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                 Halo, {student[0].name}
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 NIS {student[0].nis} · {student[0].className} · {student[0].majorCode}
               </p>
             </div>
-          </div>
-
-          {/* Progress */}
-          <div className="rounded-xl border bg-card p-4">
-            <div className="mb-2.5 flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Progress Ujian</span>
-              <span className="text-sm font-medium tabular-nums text-muted-foreground">{progressPercent}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {completedSchedules} dari {schedules.length} ujian selesai
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <RefreshCw className="size-3.5" aria-hidden="true" />
+              Sync terakhir: {syncTerakhir ? formatTanggalJam(syncTerakhir) : "belum pernah"}
             </p>
           </div>
+
+          <div className="rounded-sm border bg-card px-3 py-2">
+            <div className="mb-1.5 flex items-center justify-between text-xs">
+              <span className="font-medium text-foreground">Progres ujian</span>
+              <span className="font-medium tabular-nums text-muted-foreground">
+                {completedSchedules}/{schedules.length} · {progressPercent}%
+              </span>
+            </div>
+            <div
+              className="h-1.5 overflow-hidden rounded-sm bg-muted"
+              role="progressbar"
+              aria-valuenow={progressPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Progres ujian selesai"
+            >
+              <div className="h-full rounded-sm bg-brand" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </div>
         </section>
 
-        {/* Stat Cards */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Total Ujian" value={schedules.length} icon={CalendarDays} color="blue" />
-          <StatCard label="Hari Ini" value={todaySchedules} icon={Clock3} color="amber" />
-          <StatCard label="Berlangsung" value={activeNowSchedules} icon={Flame} color="rose" />
-          <StatCard label="Selesai" value={completedSchedules} icon={Trophy} color="green" />
+        {/* Metrik */}
+        <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <MetricCard label="Total ujian" value={String(schedules.length)} icon={CalendarDays} warna="bg-brand" />
+          <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} warna="bg-token-jadwal" />
+          <MetricCard label="Berlangsung" value={String(activeNowSchedules)} icon={Flame} warna="bg-token-respons" />
+          <MetricCard
+            label="Rata-rata nilai"
+            value={rataRata === null ? "-" : rataRata.toFixed(2)}
+            icon={Trophy}
+            warna="bg-card text-foreground border"
+          />
         </section>
 
-        {/* Exam List */}
+        {/* Hasil sync Google Form */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground">Jadwal Ujian</h2>
-            <span className="text-sm text-muted-foreground">{visibleSchedules.length} jadwal aktif</span>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Hasil ujian (sync Google Form)</h2>
+            <Badge variant="secondary" className="font-normal">
+              {hasilRows.length} hasil
+            </Badge>
           </div>
 
-          {visibleSchedules.length === 0 ? (
-            <Card>
-              <CardContent className="flex min-h-56 flex-col items-center justify-center gap-3 text-center">
-                <div className="rounded-xl bg-primary/10 p-3">
-                  <BookOpen className="size-6 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Belum ada jadwal yang bisa dikerjakan</p>
-                  <p className="max-w-xs text-sm text-muted-foreground">
-                    Jadwal ujian akan tampil otomatis sesuai tanggal dan jam yang diatur admin.
-                  </p>
-                </div>
+          {hasilRows.length === 0 ? (
+            <Card className="rounded-sm">
+              <CardContent className="flex items-center gap-3 px-3 py-3">
+                <RefreshCw className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <p className="text-xs text-muted-foreground">
+                  Belum ada jawaban tersinkron. Nilai muncul otomatis setelah panitia menjalankan sync hasil untuk
+                  ujian yang sudah selesai.
+                </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
+              {hasilRows.map((hasil) => (
+                <Card key={hasil.id} className="rounded-sm">
+                  <CardContent className="px-3 py-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="secondary" className="font-mono text-[10px]">
+                            {hasil.code}
+                          </Badge>
+                          <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                            {hasil.subjectName} ({hasil.subjectCode})
+                          </span>
+                        </div>
+                        <p className="line-clamp-2 text-sm font-medium text-foreground">{hasil.title}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Dikumpulkan {hasil.submittedAt ? formatTanggalJam(hasil.submittedAt) : "-"} · sync{" "}
+                          {formatTanggalJam(hasil.syncedAt)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xl font-semibold tabular-nums leading-none text-foreground">
+                          {Number(hasil.score).toFixed(2)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
+                      </div>
+                    </div>
+
+                    <Separator className="my-2" />
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
+                      <span className="text-emerald-700">
+                        Benar <span className="font-semibold tabular-nums">{hasil.correct}</span>
+                      </span>
+                      <span className="text-amber-700">
+                        Salah <span className="font-semibold tabular-nums">{hasil.wrong}</span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Jumlah soal <span className="font-semibold tabular-nums">{hasil.total}</span>
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Jadwal ujian */}
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Jadwal ujian</h2>
+            <span className="text-xs text-muted-foreground">{visibleSchedules.length} bisa dikerjakan</span>
+          </div>
+
+          {visibleSchedules.length === 0 ? (
+            <Card className="rounded-sm">
+              <CardContent className="flex items-center gap-3 px-3 py-3">
+                <BookOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <p className="text-xs text-muted-foreground">
+                  Belum ada jadwal yang bisa dikerjakan sekarang. Jadwal muncul sesuai tanggal dan jam dari panitia.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
               {visibleSchedules.map((schedule) => {
                 const isToday = schedule.examDate === today
                 const examStatus = getExamStatus(
@@ -195,41 +310,38 @@ export default async function SiswaDashboardPage() {
                     : "NOT_STARTED"
 
                 return (
-                  <Card key={schedule.id} className={cn(
-                    "border-l-[3px] transition-shadow hover:shadow-md",
-                    examStatus === "ACTIVE" ? "border-l-primary" : examStatus === "UPCOMING" ? "border-l-amber-400" : "border-l-muted-foreground/30"
-                  )}>
-                    <CardContent className="p-4 sm:p-5">
-                      {/* Top row: Title & Status */}
+                  <Card
+                    key={schedule.id}
+                    className={cn(
+                      "rounded-sm border-l-[3px]",
+                      examStatus === "ACTIVE" ? "border-l-brand" : "border-l-muted-foreground/30"
+                    )}
+                  >
+                    <CardContent className="px-3 py-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge variant="secondary" className="font-mono text-xs">
+                            <Badge variant="secondary" className="font-mono text-[10px]">
                               {schedule.code}
                             </Badge>
                             {isToday && (
-                              <Badge className="border-amber-200 bg-amber-100 text-xs text-amber-700 hover:bg-amber-100">
+                              <Badge variant="outline" className="border-token-respons text-[10px] text-amber-700">
                                 Hari ini
                               </Badge>
                             )}
                             <ExamStatusBadge status={examStatus} />
                           </div>
-                          <h3 className="text-base font-semibold leading-snug text-foreground">
-                            {schedule.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <h3 className="text-sm font-medium leading-snug text-foreground">{schedule.title}</h3>
+                          <p className="text-[11px] text-muted-foreground">
                             {schedule.subjectName} ({schedule.subjectCode})
                           </p>
                         </div>
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                          <GraduationCap className="size-4.5 text-primary" />
-                        </div>
+                        <GraduationCap className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                       </div>
 
-                      <Separator className="my-3" />
+                      <Separator className="my-2" />
 
-                      {/* Info Grid */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-4">
                         <InfoItem label="Tanggal" value={formatDate(schedule.examDate)} />
                         <InfoItem label="Mulai" value={schedule.startTime.slice(0, 5)} />
                         <InfoItem label="Durasi" value={`${schedule.durationMinutes} menit`} />
@@ -239,38 +351,35 @@ export default async function SiswaDashboardPage() {
                         />
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="mt-4">
+                      <div className="mt-2.5">
                         {attemptStatus === "SUBMITTED" ? (
-                          <Button variant="secondary" className="w-full gap-2" disabled>
-                            <CheckCircle2 className="size-4 text-primary" />
+                          <Button variant="secondary" className="h-11 w-full gap-2 sm:h-9" disabled>
+                            <CheckCircle2 className="size-4 text-brand" aria-hidden="true" />
                             Selesai dikerjakan
                           </Button>
                         ) : examStatus === "ACTIVE" ? (
                           <div className="grid gap-2">
                             <form action={startExam.bind(null, schedule.id)}>
-                              <Button type="submit" className="w-full gap-2">
-                                {attemptStatus === "STARTED" ? "Buka Lagi" : "Kerjakan Ujian"}
-                                <ExternalLink className="size-4" />
+                              <Button type="submit" className="h-11 w-full gap-2 bg-brand text-brand-foreground hover:bg-brand/90 sm:h-9">
+                                {attemptStatus === "STARTED" ? "Buka lagi" : "Kerjakan ujian"}
+                                <ExternalLink className="size-4" aria-hidden="true" />
                               </Button>
                             </form>
                             {attemptStatus === "STARTED" && (
                               <form action={submitExam.bind(null, schedule.id)}>
-                                <Button type="submit" className="w-full gap-2 bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40">
+                                <Button
+                                  type="submit"
+                                  className="h-11 w-full gap-2 bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40 sm:h-9"
+                                >
                                   Saya sudah selesai
                                 </Button>
                               </form>
                             )}
                           </div>
-                        ) : examStatus === "FINISHED" ? (
-                          <Button variant="outline" className="w-full gap-2" disabled>
-                            <Clock3 className="size-4" />
-                            Waktu ujian selesai
-                          </Button>
                         ) : (
-                          <Button variant="outline" className="w-full gap-2" disabled>
-                            <Clock3 className="size-4" />
-                            Belum bisa dikerjakan
+                          <Button variant="outline" className="h-11 w-full gap-2 sm:h-9" disabled>
+                            <Clock3 className="size-4" aria-hidden="true" />
+                            Waktu ujian selesai
                           </Button>
                         )}
                       </div>
@@ -289,7 +398,7 @@ export default async function SiswaDashboardPage() {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
       <p className="font-medium tabular-nums text-foreground">{value}</p>
     </div>
   )
@@ -298,14 +407,12 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 function ExamStatusBadge({ status }: { status: "UPCOMING" | "ACTIVE" | "FINISHED" }) {
   if (status === "ACTIVE") {
     return (
-      <Badge variant="default" className="text-xs">
-        Berlangsung
-      </Badge>
+      <Badge className="bg-brand text-[10px] text-brand-foreground hover:bg-brand/90">Berlangsung</Badge>
     )
   }
   if (status === "FINISHED") {
     return (
-      <Badge variant="secondary" className="text-xs">
+      <Badge variant="secondary" className="text-[10px]">
         Selesai
       </Badge>
     )
@@ -313,36 +420,25 @@ function ExamStatusBadge({ status }: { status: "UPCOMING" | "ACTIVE" | "FINISHED
   return null
 }
 
-const statColorMap = {
-  blue: { bg: "bg-blue-50", icon: "text-blue-500" },
-  amber: { bg: "bg-amber-50", icon: "text-amber-500" },
-  rose: { bg: "bg-rose-50", icon: "text-rose-500" },
-  green: { bg: "bg-emerald-50", icon: "text-emerald-500" },
-} as const
-
-function StatCard({
+function MetricCard({
   label,
   value,
   icon: Icon,
-  color,
+  warna,
 }: {
   label: string
-  value: number
-  icon: ComponentType<{ className?: string }>
-  color: keyof typeof statColorMap
+  value: string
+  icon: ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+  warna: string
 }) {
-  const colors = statColorMap[color]
+  const solid = warna.startsWith("bg-card") ? "" : "text-white"
   return (
-    <div className="rounded-xl border bg-card p-4 transition-shadow hover:shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className={cn("flex size-8 items-center justify-center rounded-lg", colors.bg)}>
-          <Icon className={cn("size-4", colors.icon)} />
-        </div>
+    <div className={cn("flex items-center justify-between gap-2 rounded-sm px-2.5 py-2", warna, solid)}>
+      <div className="min-w-0 leading-tight">
+        <p className="truncate text-[11px]">{label}</p>
+        <p className="text-lg font-semibold leading-none tabular-nums">{value}</p>
       </div>
-      <p className="mt-3 text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-        {value.toLocaleString("id-ID")}
-      </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+      <Icon className="size-5 shrink-0 opacity-90" aria-hidden="true" />
     </div>
   )
 }
@@ -355,6 +451,19 @@ function formatDate(value: string) {
     month: "short",
     year: "numeric",
   }).format(new Date(year, month - 1, day))
+}
+
+function formatTanggalJam(value: Date | string) {
+  const tanggal = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(tanggal.getTime())) return "-"
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  }).format(tanggal)
 }
 
 function calculateEndTime(startTime: string, durationMinutes: number) {

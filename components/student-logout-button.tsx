@@ -13,15 +13,15 @@ export function StudentLogoutButton() {
     <Button
       variant="outline"
       size="sm"
-      className="gap-2"
+      className="h-11 shrink-0 gap-1.5 border-brand-foreground/60 bg-transparent text-xs text-brand-foreground hover:bg-brand-foreground/15 hover:text-brand-foreground sm:h-8"
       onClick={async () => {
         await logoutStudent()
         router.replace("/")
         router.refresh()
       }}
     >
-      <LogOut className="size-4" />
-      <span className="hidden xs:inline">Logout</span>
+      <LogOut className="size-4" aria-hidden="true" />
+      <span>Keluar</span>
     </Button>
   )
 }
