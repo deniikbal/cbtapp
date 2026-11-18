@@ -95,14 +95,14 @@ export default async function KartuUjianPage({
                 key={siswa.id}
                 className="kartu-item break-inside-avoid rounded-sm border border-border border-l-[3px] border-l-brand bg-white p-3 text-[11px] leading-tight"
               >
-                <header className="flex items-start justify-between gap-2 border-b border-dashed border-border pb-1.5">
+                <header className="kartu-kop flex items-start justify-between gap-2 border-b border-dashed border-border pb-1.5">
                   <div>
-                    <p className="text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
+                    <p className="kartu-sekolah text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
                       {NAMA_SEKOLAH}
                     </p>
-                    <p className="text-[12px] font-semibold text-brand">{JUDUL_UJIAN}</p>
+                    <p className="kartu-judul text-[12px] font-semibold text-brand">{JUDUL_UJIAN}</p>
                   </div>
-                  <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                  <span className="kartu-kelas-badge rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
                     {namaKelas}
                   </span>
                 </header>
@@ -110,7 +110,7 @@ export default async function KartuUjianPage({
                 <dl className="mt-2 space-y-1">
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 text-muted-foreground">Nama</dt>
-                    <dd className="line-clamp-2 font-medium text-foreground">{siswa.name}</dd>
+                    <dd className="kartu-nama line-clamp-2 font-medium text-foreground">{siswa.name}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 text-muted-foreground">Kelas</dt>
@@ -122,13 +122,13 @@ export default async function KartuUjianPage({
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 text-muted-foreground">Password</dt>
-                    <dd className="font-mono text-sm font-semibold tracking-[0.15em] text-foreground">
+                    <dd className="kartu-password font-mono text-sm font-semibold tracking-[0.15em] text-foreground">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
                   </div>
                 </dl>
 
-                <p className="mt-2 border-t border-dashed border-border pt-1.5 text-[9px] text-muted-foreground">
+                <p className="kartu-catatan mt-2 border-t border-dashed border-border pt-1.5 text-[9px] text-muted-foreground">
                   Kartu ini bersifat pribadi. Jangan bagikan password ke siswa lain.
                 </p>
               </article>
