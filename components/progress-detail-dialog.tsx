@@ -79,12 +79,13 @@ export function ProgressDetailDialog({
                 <TableHead>Status</TableHead>
                 <TableHead>Mulai</TableHead>
                 <TableHead>Selesai</TableHead>
+                <TableHead className="text-right">Lama</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredStudents.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                     Tidak ada peserta pada filter ini.
                   </TableCell>
                 </TableRow>
@@ -96,6 +97,7 @@ export function ProgressDetailDialog({
                   <TableCell><StatusBadge status={student.status} /></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDateTime(student.startedAt)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{formatDateTime(student.submittedAt)}</TableCell>
+                  <TableCell className="text-right text-sm tabular-nums">{formatDurasi(student.startedAt, student.submittedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -144,4 +146,11 @@ function formatDateTime(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value))
+}
+
+function formatDurasi(startedAt: string | null, submittedAt: string | null) {
+  if (!startedAt) return "—"
+  const akhir = submittedAt ? new Date(submittedAt).getTime() : Date.now()
+  const menit = Math.max(1, Math.round((akhir - new Date(startedAt).getTime()) / 60_000))
+  return submittedAt ? `${menit} mnt` : `~${menit} mnt`
 }
