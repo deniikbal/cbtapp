@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, FileText, GraduationCap, Home, LayoutDashboard, Lock, Settings, UserCog, UserRound, Users } from "lucide-react"
+import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, FileText, GraduationCap, Home, IdCard, LayoutDashboard, Lock, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -25,6 +25,7 @@ const masterData = [
   { href: "/dashboard/kelas", label: "Kelas", icon: GraduationCap },
   { href: "/dashboard/guru", label: "Guru", icon: UserRound },
   { href: "/dashboard/peserta", label: "Peserta", icon: Users },
+  { href: "/dashboard/peserta/kartu", label: "Kartu Ujian", icon: IdCard },
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen },
 ]
 
@@ -48,7 +49,8 @@ export async function DashboardSidebar({ active }: { active: string }) {
   const menu = (await bolehKelolaUser())
     ? menuSistem
     : menuSistem.filter((item) => !khususSuperadmin.includes(item.href))
-  const masterAktif = masterData.some((item) => item.href === active)
+  // Sub-route (mis. /dashboard/peserta/kartu) tetap menandai grup Master Data aktif.
+  const masterAktif = masterData.some((item) => active === item.href || active.startsWith(`${item.href}/`))
 
   return (
     <Sidebar collapsible="icon">

@@ -225,4 +225,11 @@
   .kartu-footer-cetak {
     display: none !important;
   }
+
+  /* Sidebar & header aplikasi tidak ikut tercetak. */
+  [data-slot="sidebar"],
+  [data-sidebar="sidebar"],
+  [data-slot="sidebar-gap"] {
+    display: none !important;
+  }
 }

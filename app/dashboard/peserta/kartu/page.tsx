@@ -4,9 +4,12 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { KartuUjianControls } from "@/components/kartu-ujian-controls"
+import { UserNav } from "@/components/user-nav"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, majors, students } from "@/lib/db/schema"
@@ -55,6 +58,22 @@ export default async function KartuUjianPage({
   const tanpaPassword = peserta.filter((siswa) => !siswa.kartuPassword).length
 
   return (
+    <SidebarProvider>
+      <DashboardSidebar active="/dashboard/peserta/kartu" />
+      <SidebarInset className="bg-muted/30">
+        <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8 print:hidden">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <div>
+                <p className="text-sm font-medium">Kartu Ujian</p>
+                <p className="text-xs text-muted-foreground">Cetak kartu peserta per kelas</p>
+              </div>
+            </div>
+            <UserNav name={session.user.name} email={session.user.email} />
+          </div>
+        </header>
+
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 md:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
         <div className="space-y-1">
@@ -158,5 +177,7 @@ export default async function KartuUjianPage({
         Kembali
       </Button>
     </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
