@@ -17,7 +17,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
   const nilai = state.values ?? identitas
 
   return (
-    <form action={aksi} className="grid gap-3 px-3 pb-3 sm:grid-cols-2 lg:grid-cols-3">
+    <form action={aksi} className="grid gap-2 px-2.5 pb-2.5 sm:grid-cols-2 lg:grid-cols-3">
       <div className="grid gap-1">
         <Label htmlFor="namaTes" className="text-[11px]">
           Nama tes
@@ -27,7 +27,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           name="namaTes"
           defaultValue={nilai.namaTes}
           placeholder="Asesmen Sumatif Akhir Semester"
-          className="h-8 text-xs"
+          className="h-7 rounded-sm text-xs md:text-xs"
         />
       </div>
       <div className="grid gap-1">
@@ -39,7 +39,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           name="tahunPelajaran"
           defaultValue={nilai.tahunPelajaran}
           placeholder="2025/2026"
-          className="h-8 text-xs"
+          className="h-7 rounded-sm text-xs md:text-xs"
         />
       </div>
       <div className="grid gap-1">
@@ -47,7 +47,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           Semester
         </Label>
         <Select name="semester" defaultValue={nilai.semester || undefined}>
-          <SelectTrigger id="semester" size="sm" className="w-full text-xs">
+          <SelectTrigger id="semester" size="sm" className="h-7! w-full rounded-sm text-xs">
             <SelectValue placeholder="-" />
           </SelectTrigger>
           <SelectContent>
@@ -67,7 +67,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           min={0}
           max={100}
           defaultValue={nilai.kkm}
-          className="h-8 text-xs"
+          className="h-7 rounded-sm text-xs md:text-xs"
         />
       </div>
       <div className="grid gap-1">
@@ -79,7 +79,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           name="kepalaSekolah"
           defaultValue={nilai.kepalaSekolah}
           placeholder="Nama lengkap & gelar"
-          className="h-8 text-xs"
+          className="h-7 rounded-sm text-xs md:text-xs"
         />
       </div>
       <div className="grid gap-1">
@@ -91,12 +91,12 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           name="nipKepalaSekolah"
           defaultValue={nilai.nipKepalaSekolah}
           placeholder="197109291995121002"
-          className="h-8 text-xs"
+          className="h-7 rounded-sm text-xs md:text-xs"
         />
       </div>
 
       <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
-        <Button type="submit" size="sm" disabled={pending} className="h-7 gap-1 px-2 text-[11px]">
+        <Button type="submit" size="sm" disabled={pending} className="h-6 gap-1 rounded-sm px-2 text-[11px]">
           {pending ? <Loader2 className="size-3.5 animate-spin" /> : state.ok ? <Check className="size-3.5" /> : <Save className="size-3.5" />}
           Simpan identitas
         </Button>

@@ -104,14 +104,14 @@ export default async function GuruDashboardPage() {
   return (
     <main className="min-h-svh bg-muted/30">
       <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-3 py-2">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2.5 py-1.5">
           <div className="leading-tight">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Area Guru</p>
             <h1 className="text-sm font-semibold">{guru.name}</h1>
             <p className="text-[11px] text-muted-foreground">NIP {guru.nip}</p>
           </div>
           <form action={logoutGuru}>
-            <Button type="submit" variant="outline" size="sm">
+            <Button type="submit" variant="outline" size="sm" className="h-7 rounded-sm text-xs">
               <LogOut className="size-4" />
               Keluar
             </Button>
@@ -119,37 +119,37 @@ export default async function GuruDashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl space-y-3 px-3 py-3">
-        <div className="grid gap-2 sm:grid-cols-3">
+      <div className="mx-auto max-w-6xl space-y-2 px-2.5 py-2">
+        <div className="grid gap-1.5 sm:grid-cols-3">
           {[
             { label: "Bank soal milik saya", nilai: ringkas.length },
             { label: "Jadwal ujian", nilai: jadwal.length },
             { label: "Respons masuk", nilai: totalRespons },
           ].map((kartu) => (
-            <Card key={kartu.label} className="gap-0 py-0">
-              <CardHeader className="gap-0.5 px-3 py-2">
+            <Card key={kartu.label} className="gap-0 rounded-sm py-0">
+              <CardHeader className="gap-0 px-2.5 py-1.5">
                 <CardDescription className="text-[11px]">{kartu.label}</CardDescription>
-                <CardTitle className="text-base leading-none">{kartu.nilai}</CardTitle>
+                <CardTitle className="text-sm leading-none">{kartu.nilai}</CardTitle>
               </CardHeader>
             </Card>
           ))}
         </div>
 
-        <Card className="gap-0 py-0">
-          <CardHeader className="gap-0.5 px-3 py-2">
+        <Card className="gap-0 rounded-sm py-0">
+          <CardHeader className="gap-0 px-2.5 py-1.5">
             <CardTitle className="text-sm">Bank soal &amp; hasil</CardTitle>
             <CardDescription className="text-[11px]">
               Hanya bank soal yang terhubung ke akun Anda. Data hasil berasal dari sync Google Form oleh panitia.
             </CardDescription>
           </CardHeader>
-          <CardContent className="px-3 pb-2">
+          <CardContent className="px-2.5 pb-2">
             {ringkas.length === 0 ? (
               <p className="py-4 text-center text-xs text-muted-foreground">
                 Belum ada bank soal yang terhubung ke akun Anda. Hubungi panitia.
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="text-xs [&_th]:h-8 [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1">
+                <Table className="text-[11px] [&_th]:h-7 [&_th]:px-2 [&_th]:py-0 [&_td]:px-2 [&_td]:py-0.5">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Bank soal</TableHead>
@@ -175,11 +175,11 @@ export default async function GuruDashboardPage() {
                             <span className="text-[11px] text-muted-foreground">Belum dijadwalkan</span>
                           ) : (
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-normal">
+                              <Badge variant="secondary" className="h-4 rounded-sm px-1.5 text-[10px] font-normal">
                                 {bank.jumlahJadwal} jadwal
                               </Badge>
                               {bank.kelas.map((kelas) => (
-                                <Badge key={kelas} variant="outline" className="h-5 px-1.5 text-[10px] font-normal">
+                                <Badge key={kelas} variant="outline" className="h-4 rounded-sm px-1.5 text-[10px] font-normal">
                                   {kelas}
                                 </Badge>
                               ))}
@@ -197,7 +197,7 @@ export default async function GuruDashboardPage() {
                                 href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
+                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-6 gap-1 rounded-sm px-1.5 text-[11px]" })}
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form
@@ -208,7 +208,7 @@ export default async function GuruDashboardPage() {
                                 size="sm"
                                 disabled
                                 title="Form belum dibuat"
-                                className="h-7 gap-1 px-2 text-[11px]"
+                                className="h-6 gap-1 rounded-sm px-1.5 text-[11px]"
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form
@@ -227,8 +227,8 @@ export default async function GuruDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="gap-0 py-0">
-          <CardHeader className="gap-0.5 px-3 py-2">
+        <Card className="gap-0 rounded-sm py-0">
+          <CardHeader className="gap-0 px-2.5 py-1.5">
             <CardTitle className="text-sm">Identitas laporan</CardTitle>
             <CardDescription className="text-[11px]">
               Dipakai di header PDF analisis butir: nama tes, tahun pelajaran, semester, KKM, kepala sekolah.
