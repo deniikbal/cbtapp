@@ -188,6 +188,8 @@ export const students = pgTable(
     name: text("name").notNull(),
     nis: text("nis").notNull(),
     passwordHash: text("passwordHash").notNull(),
+    // Password asli khusus kartu ujian. Null = kartu belum dibuat ulang.
+    kartuPassword: text("kartuPassword"),
     active: boolean("active").notNull().default(true),
     classroomId: text("classroomId")
       .notNull()

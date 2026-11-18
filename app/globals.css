@@ -135,3 +135,24 @@
     letter-spacing: var(--tracking-normal);
     }
 }
+/* Kartu ujian: A4, 2 kolom, tiap kartu tidak terpotong antar halaman. */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .kartu-cetak {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+  }
+
+  .kartu-item {
+    box-shadow: none;
+  }
+}
