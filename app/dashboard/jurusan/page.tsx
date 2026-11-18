@@ -67,15 +67,11 @@ export default async function JurusanPage() {
             <MajorCreateDialog />
           </section>
 
-          <section>
-            <Card className="py-0">
-              <CardContent className="grid grid-cols-2 divide-x divide-border lg:grid-cols-4">
-                <Stat label="Total jurusan" value={rows.length} />
-                <Stat label="Terpakai" value={usedMajors} />
-                <Stat label="Belum terpakai" value={rows.length - usedMajors} muted={rows.length - usedMajors === 0} />
-                <Stat label="Total kelas" value={totalKelas} />
-              </CardContent>
-            </Card>
+          <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <Stat label="Total jurusan" value={rows.length} />
+            <Stat label="Terpakai" value={usedMajors} />
+            <Stat label="Belum terpakai" value={rows.length - usedMajors} muted={rows.length - usedMajors === 0} />
+            <Stat label="Total kelas" value={totalKelas} />
           </section>
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
@@ -139,9 +135,11 @@ function DashboardNavbar({ title, description, userName, userEmail }: { title: s
 
 function Stat({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 px-6 py-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={muted ? "text-3xl font-medium tabular-nums text-muted-foreground/60" : "text-3xl font-medium tabular-nums tracking-tight"}>{value.toLocaleString("id-ID")}</p>
-    </div>
+    <Card className="gap-1 rounded-xl py-5">
+      <CardContent className="px-6">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className={muted ? "text-3xl font-medium tabular-nums text-muted-foreground/60" : "text-3xl font-medium tabular-nums tracking-tight"}>{value.toLocaleString("id-ID")}</p>
+      </CardContent>
+    </Card>
   )
 }
