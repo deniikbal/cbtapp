@@ -149,7 +149,7 @@ export default async function KartuUjianPage({
         </p>
       )}
 
-      <div className="hidden print:block print:text-[9px] print:text-muted-foreground">
+      <div className="kartu-footer-cetak hidden print:block print:text-[9px] print:text-muted-foreground">
         Dicetak dari CBT {NAMA_SEKOLAH}
       </div>
 

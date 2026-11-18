@@ -135,7 +135,7 @@
     letter-spacing: var(--tracking-normal);
     }
 }
-/* Kartu ujian: A4, 4 x 4 = 16 kartu per lembar, kartu tidak terpotong antar halaman. */
+/* Kartu ujian: A4, 4 x 8 = 32 kartu per lembar, border 1pt penuh + jarak antar kartu. */
 @media print {
   @page {
     size: A4 portrait;
@@ -160,60 +160,69 @@
 
   .kartu-item {
     box-shadow: none;
-    height: 64mm;
-    padding: 2mm;
-    font-size: 6.5pt;
-    line-height: 1.2;
+    height: 32mm;
+    padding: 1.2mm;
+    border: 1pt solid #333 !important;
+    border-radius: 0 !important;
+    font-size: 5.5pt;
+    line-height: 1.15;
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
   .kartu-item .kartu-kop {
-    padding-bottom: 1mm;
+    padding-bottom: 0.8mm;
   }
 
   .kartu-item .kartu-sekolah {
-    font-size: 5.5pt;
+    font-size: 4.6pt;
   }
 
   .kartu-item .kartu-judul {
-    font-size: 7pt;
-  }
-
-  .kartu-item .kartu-kelas-badge {
-    font-size: 5.5pt;
-    padding: 0 1mm;
-  }
-
-  .kartu-item dl {
-    margin-top: 1mm;
-  }
-
-  .kartu-item dl > div {
-    gap: 1mm;
-  }
-
-  .kartu-item dt {
-    width: 11mm;
     font-size: 6pt;
   }
 
+  .kartu-item .kartu-kelas-badge {
+    font-size: 4.6pt;
+    padding: 0 0.8mm;
+  }
+
+  .kartu-item dl {
+    margin-top: 0.8mm;
+    gap: 0.3mm;
+  }
+
+  .kartu-item dl > div {
+    gap: 0.8mm;
+    margin-top: 0 !important;
+  }
+
+  .kartu-item dt {
+    width: 9mm;
+    font-size: 5pt;
+  }
+
   .kartu-item dd {
-    font-size: 6.5pt;
+    font-size: 5.5pt;
   }
 
   .kartu-item .kartu-nama {
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     display: -webkit-box;
-    font-size: 7pt;
+    font-size: 6pt;
+    overflow: hidden;
   }
 
   .kartu-item .kartu-password {
-    font-size: 9pt;
-    letter-spacing: 0.06em;
+    font-size: 8pt;
+    letter-spacing: 0.04em;
   }
 
   .kartu-item .kartu-catatan {
     display: none;
+  }
+
+  .kartu-footer-cetak {
+    display: none !important;
   }
 }
