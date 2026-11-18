@@ -10,6 +10,7 @@ import type { ProgressStudent } from "@/components/progress-detail-dialog"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
@@ -155,10 +156,10 @@ export default async function PengerjaanPage() {
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Target" value={totalStudents.toLocaleString("id-ID")} description="Total peserta terjadwal" icon={Users} warna="bg-card border" />
-            <StatCard label="Selesai" value={totalSubmitted.toLocaleString("id-ID")} description="Tombol selesai + respons form" icon={CheckCircle2} warna="bg-brand" />
-            <StatCard label="Sedang" value={totalStarted.toLocaleString("id-ID")} description="Sudah mulai, belum selesai" icon={Timer} warna="bg-token-jadwal" />
-            <StatCard label="Belum" value={totalNotStarted.toLocaleString("id-ID")} description="Belum mulai" icon={Clock3} warna="bg-token-respons" />
+            <StatCard label="Target" value={totalStudents.toLocaleString("id-ID")} description="Total peserta terjadwal" icon={Users} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" />
+            <StatCard label="Selesai" value={totalSubmitted.toLocaleString("id-ID")} description="Tombol selesai + respons form" icon={CheckCircle2} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" />
+            <StatCard label="Sedang" value={totalStarted.toLocaleString("id-ID")} description="Sudah mulai, belum selesai" icon={Timer} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" />
+            <StatCard label="Belum" value={totalNotStarted.toLocaleString("id-ID")} description="Belum mulai" icon={Clock3} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" />
           </section>
 
           {databaseError && (
@@ -202,20 +203,31 @@ function DashboardNavbar({ title, description, userName, userEmail }: { title: s
   )
 }
 
-type StatCardProps = { label: string; value: string; description: string; icon: ComponentType<{ className?: string }>; warna: string }
+type StatCardProps = { label: string; value: string; description: string; icon: ComponentType<{ className?: string }>; accent: string }
 
-function StatCard({ label, value, description, icon: Icon, warna }: StatCardProps) {
-  const solid = warna.startsWith("bg-card") ? "" : "text-white"
+function StatCard({ label, value, description, icon: Icon, accent }: StatCardProps) {
   return (
-    <div className={cn("rounded-sm px-3 py-2.5", warna, solid)}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[11px] leading-tight">{label}</p>
-          <p className="mt-0.5 truncate text-xl font-semibold leading-none tabular-nums md:text-2xl">{value}</p>
+    <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
+      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
+      <CardHeader className="relative">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value}</p>
+          </div>
+          <div
+            className={cn(
+              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
+              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
+            )}
+          >
+            <Icon className="size-4" />
+          </div>
         </div>
-        <Icon className="size-5 shrink-0 opacity-90" aria-hidden="true" />
-      </div>
-      <p className={cn("mt-1.5 truncate text-[11px]", solid ? "text-white/80" : "text-muted-foreground")}>{description}</p>
-    </div>
+      </CardHeader>
+      <CardContent className="relative">
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
   )
 }
