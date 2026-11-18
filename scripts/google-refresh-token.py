@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """Ambil refresh token Google dengan scope tulis (forms.body + drive.file).
 
-Pakai:
+Cara TERCEPAT (tanpa copy-paste):
+  python3 scripts/google-refresh-token.py auto
+      Cetak link otorisasi → buka di browser → setujui → script menangkap
+      redirect localhost sendiri, tukar token, dan LANGSUNG tulis ke .env
+      (file lama dibackup .env.bak-<waktu>). Selesai.
+
+Cara lama (kalau auto tidak bisa jalan):
   python3 scripts/google-refresh-token.py url
       Cetak link otorisasi. Buka di browser, setujui, lalu browser mendarat di
       http://localhost:53682/?code=... (halaman error — itu normal, yang penting
       URL di address bar).
 
-  python3 scripts/google-refresh-token.py tukar "<URL penuh atau kode>"
-      Tuker kode jadi refresh token, tampilkan, sekalian cek scope-nya.
-
-  python3 scripts/google-refresh-token.py tukar "<...>" --write
-      Sama, tapi langsung tulis ke .env (file lama dibackup .env.bak-<waktu>).
+  python3 scripts/google-refresh-token.py tukar "<URL penuh atau kode>" [--write]
+      Tuker kode jadi refresh token; --write langsung tulis ke .env.
 
 Syarat di Google Cloud Console → Credentials → OAuth client yang dipakai:
   - tipe "Desktop app": redirect localhost otomatis diizinkan, tidak perlu apa-apa.
   - tipe "Web application": tambahkan http://localhost:53682/ ke Authorized
     redirect URIs.
+  - OAuth consent screen → Publishing status "In production" — kalau masih
+    "Testing", refresh token mati tiap 7 hari dan langkah ini harus diulang.
 """
 
 import json
@@ -108,11 +113,56 @@ def tulis_env(refresh: str) -> None:
     print("Lalu: pm2 restart cbtapp --update-env")
 
 
+def jalankan_auto() -> None:
+    """Satu perintah: buka link → setuju → token langsung masuk .env. Tanpa copy-paste."""
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    hasil: dict[str, str] = {}
+
+    class Penangkap(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            if "code" in qs:
+                hasil["kode"] = qs["code"][0]
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"<h2>Berhasil.</h2><p>Token tersimpan ke .env. Boleh tutup tab ini.</p>")
+            else:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"<h2>Gagal.</h2><p>Google tidak mengirim ?code=. Coba lagi dari terminal.</p>")
+
+        def log_message(self, *args) -> None:
+            pass
+
+    server = HTTPServer(("127.0.0.1", 53682), Penangkap)
+    print("Buka link ini di browser (login akun Google pemilik form sekolah), lalu setujui:\n")
+    print(link_otorisasi())
+    print("\nMenunggu persetujuan... (Ctrl+C untuk batal)")
+    server.handle_request()  # satu request saja: redirect dari Google
+
+    if not hasil.get("kode"):
+        sys.exit("Kode tidak diterima. Ulangi perintah ini.")
+
+    data = tukar(hasil["kode"])
+    refresh = data.get("refresh_token")
+    if not refresh:
+        sys.exit("Google tidak mengirim refresh_token. Cabut akses app di https://myaccount.google.com/permissions lalu jalankan lagi perintah ini.")
+
+    print("\nScope yang didapat:\n" + scope_token(data.get("access_token", "")))
+    tulis_env(refresh)
+
+
 def main() -> None:
-    if len(sys.argv) < 2 or sys.argv[1] not in {"url", "tukar"}:
+    mode = sys.argv[1] if len(sys.argv) > 1 else None
+    if mode not in {"url", "tukar", "auto"}:
         sys.exit(__doc__)
 
-    if sys.argv[1] == "url":
+    if mode == "auto":
+        jalankan_auto()
+        return
+
+    if mode == "url":
         print("Buka link ini di browser (login akun Google pemilik form sekolah):\n")
         print(link_otorisasi())
         print("\nSetelah disetujui, browser mendarat di http://localhost:53682/?code=... dan")
