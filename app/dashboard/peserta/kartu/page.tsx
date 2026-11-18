@@ -114,13 +114,11 @@ export default async function KartuUjianPage({
                 key={siswa.id}
                 className="kartu-item break-inside-avoid rounded-sm border border-border border-l-[3px] border-l-brand bg-white p-3 text-[11px] leading-tight"
               >
-                <header className="kartu-kop flex items-start justify-between gap-2 border-b border-dashed border-border pb-1.5">
-                  <div>
-                    <p className="kartu-sekolah text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
-                      {NAMA_SEKOLAH}
-                    </p>
-                    <p className="kartu-judul text-[12px] font-semibold text-brand">{JUDUL_UJIAN}</p>
-                  </div>
+                <header className="kartu-kop flex flex-col items-center gap-0.5 border-b border-dashed border-border pb-1.5 text-center">
+                  <p className="kartu-sekolah text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
+                    {NAMA_SEKOLAH}
+                  </p>
+                  <p className="kartu-judul text-[12px] font-semibold text-brand">{JUDUL_UJIAN}</p>
                   <span className="kartu-kelas-badge rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
                     {namaKelas}
                   </span>
@@ -137,11 +135,11 @@ export default async function KartuUjianPage({
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 text-muted-foreground">Username</dt>
-                    <dd className="font-mono text-xs font-medium text-foreground">{siswa.nis}</dd>
+                    <dd className="font-mono text-xs font-bold text-foreground">{siswa.nis}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 text-muted-foreground">Password</dt>
-                    <dd className="kartu-password font-mono text-sm font-semibold tracking-[0.15em] text-foreground">
+                    <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em] text-foreground">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
                   </div>
