@@ -160,7 +160,7 @@
 
   .kartu-item {
     box-shadow: none;
-    height: 32mm;
+    /* Tinggi mengikuti isi kartu, tidak ada ruang kosong di bawah. */
     padding: 1.2mm;
     border: 1pt solid #333 !important;
     border-radius: 0 !important;
