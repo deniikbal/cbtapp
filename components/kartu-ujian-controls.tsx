@@ -41,6 +41,10 @@ export function KartuUjianControls({
   const [isPending, startTransition] = useTransition()
   const [konfirmasi, setKonfirmasi] = useState<"generate" | "hapus" | null>(null)
   const terpilih = classrooms.find((classroom) => classroom.id === classroomId)
+  // Urutan natural: X1, X2, ... X12 sebelum XI IPA 1, bukan X1, X10, X11, X2.
+  const urutNatural = [...classrooms].sort((a, b) =>
+    a.name.localeCompare(b.name, "id", { numeric: true, sensitivity: "base" })
+  )
 
   function pilihKelas(value: string | null) {
     if (!value) return
@@ -76,7 +80,7 @@ export function KartuUjianControls({
             <SelectValue>{terpilih ? `${terpilih.name} — ${terpilih.majorName}` : "Pilih kelas"}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {classrooms.map((classroom) => (
+            {urutNatural.map((classroom) => (
               <SelectItem key={classroom.id} value={classroom.id}>
                 {classroom.name} — {classroom.majorName}
               </SelectItem>
