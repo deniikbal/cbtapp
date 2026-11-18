@@ -50,8 +50,8 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         setPendingId(null)
         return
       }
-      const { cocok, tidakCocok, totalSoal } = hasil.info
-      toast.success(`${cocok} respons tercatat, ${tidakCocok} tidak cocok NIS, ${totalSoal} soal dinilai.`)
+      const { cocok, viaNama, tidakCocok, totalSoal } = hasil.info
+      toast.success(`${cocok} respons tercatat, ${viaNama} cocok via nama, ${tidakCocok} tidak terhubung, ${totalSoal} soal dinilai.`)
       setPendingId(null)
     })
   }

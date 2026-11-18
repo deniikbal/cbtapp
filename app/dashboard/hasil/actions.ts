@@ -4,7 +4,7 @@ import { asc, eq, inArray } from "drizzle-orm"
 import { headers } from "next/headers"
 
 import { db } from "@/lib/db"
-import { classrooms, examResults, examSchedules, questionBanks } from "@/lib/db/schema"
+import { classrooms, examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
 import { auth } from "@/lib/auth"
 import { hitungNilai, soalDariItems } from "@/lib/google-forms"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
@@ -30,6 +30,47 @@ export async function syncHasil(scheduleId: string): Promise<HasilSyncResult> {
     return await jalankanSync(scheduleId)
   } catch (error) {
     return { ok: false, message: pesanError(error, "Gagal sync hasil dari Google Form.") }
+  }
+}
+
+// Hubungkan respons yang NIS/namanya tidak cocok ke siswa yang benar (pilihan admin).
+// Jadwal ikut dipindah ke jadwal kelas siswa supaya nilainya muncul di rekap kelas itu.
+export async function hubungkanRespons(resultId: string, studentId: string): Promise<{ ok: boolean; message: string }> {
+  const sesi = await wajibAdmin()
+  if (sesi) return sesi
+  if (!resultId || !studentId) return { ok: false, message: "Pilihan tidak lengkap." }
+
+  try {
+    const baris = await db
+      .select({ scheduleId: examResults.scheduleId, bankId: examSchedules.questionBankId })
+      .from(examResults)
+      .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
+      .where(eq(examResults.id, resultId))
+      .limit(1)
+    if (!baris[0]) return { ok: false, message: "Respons tidak ditemukan." }
+
+    const siswa = await db
+      .select({ id: students.id, classroomId: students.classroomId })
+      .from(students)
+      .where(eq(students.id, studentId))
+      .limit(1)
+    if (!siswa[0]) return { ok: false, message: "Siswa tidak ditemukan." }
+
+    // Jadwal kelas siswa untuk bank ini (kalau ada) — nilainya ikut pindah ke sana.
+    const jadwalTujuan = await db
+      .select({ id: examSchedules.id, classroomId: examSchedules.classroomId })
+      .from(examSchedules)
+      .where(eq(examSchedules.questionBankId, baris[0].bankId))
+    const target = jadwalTujuan.find((j) => j.classroomId === siswa[0].classroomId)
+
+    await db
+      .update(examResults)
+      .set({ studentId, matchVia: "manual", ...(target ? { scheduleId: target.id } : {}) })
+      .where(eq(examResults.id, resultId))
+
+    return { ok: true, message: "Respons berhasil dihubungkan ke siswa." }
+  } catch (error) {
+    return { ok: false, message: pesanError(error, "Gagal menghubungkan respons.") }
   }
 }
 

@@ -301,6 +301,7 @@ export const examResults = pgTable(
     correct: integer("correct").notNull().default(0),
     wrong: integer("wrong").notNull().default(0),
     score: numeric("score", { precision: 6, scale: 2 }).notNull().default("0"),
+    matchVia: text("matchVia").notNull().default("nis"), // nis | nama | manual | belum
     syncedAt: timestamp("syncedAt", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

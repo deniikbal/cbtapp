@@ -5,10 +5,14 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
-import { ambilForm, ambilRespons, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
+import { ambilForm, ambilRespons, cariNama, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
 
-export type HasilSyncInfo = { respons: number; cocok: number; tidakCocok: number; totalSoal: number }
+export type HasilSyncInfo = { respons: number; cocok: number; viaNama: number; tidakCocok: number; totalSoal: number }
 export type HasilSyncResult = { ok: true; info: HasilSyncInfo } | { ok: false; message: string }
+
+function normNama(nama: string) {
+  return nama.toUpperCase().replace(/\s+/g, " ").trim()
+}
 
 // Inti sync: dipakai server action (klik manual) dan /api/sync-otomatis (cron).
 export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult> {
@@ -47,21 +51,43 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
     .where(inArray(students.classroomId, jadwalBank.map((j) => j.classroomId)))
   const peta = new Map(peserta.map((s) => [normNis(s.nis), s]))
 
+  // Cadangan pencocokan via nama: respons yang NIS-nya salah ketik dicocokkan lewat
+  // NAMA (butir identitas form) — hanya diterima kalau nama unik di semua kelas
+  // yang dijadwalkan untuk bank ini; kalau ambigu, dibiarkan "belum terhubung".
+  const petaNama = new Map<string, typeof peserta>()
+  for (const s of peserta) {
+    const kunci = normNama(s.name)
+    const list = petaNama.get(kunci) ?? []
+    list.push(s)
+    petaNama.set(kunci, list)
+  }
+
   let cocok = 0
+  let viaNama = 0
   let tidakCocok = 0
 
   for (const r of respons) {
-    const siswa = peta.get(normNis(cariNis(soal, r)))
-    if (!siswa) {
-      tidakCocok++
-      continue
+    const nisKetik = cariNis(soal, r)
+    const namaKetik = cariNama(soal, r)
+    let siswa = peta.get(normNis(nisKetik)) ?? null
+    let matchVia = siswa ? "nis" : "belum"
+    if (!siswa && namaKetik) {
+      const kandidat = petaNama.get(normNama(namaKetik)) ?? []
+      if (kandidat.length === 1) {
+        siswa = kandidat[0]
+        matchVia = "nama"
+      }
     }
+    if (!siswa) tidakCocok++
+    else if (matchVia === "nama") viaNama++
+    else cocok++
+
     const n = hitungNilai(soal, r)
     const nilai = {
-      scheduleId: jadwalPerKelas.get(siswa.classroomId) ?? scheduleId,
-      studentId: siswa.id,
-      nis: siswa.nis,
-      nama: siswa.name,
+      scheduleId: siswa ? (jadwalPerKelas.get(siswa.classroomId) ?? scheduleId) : scheduleId,
+      studentId: siswa?.id ?? null,
+      nis: siswa ? siswa.nis : nisKetik,
+      nama: siswa ? siswa.name : namaKetik,
       respondentEmail: r.respondentEmail ?? "",
       startedAt: r.createTime ? new Date(r.createTime) : null,
       submittedAt: r.lastSubmittedTime ? new Date(r.lastSubmittedTime) : null,
@@ -70,16 +96,18 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
       correct: n.benar,
       wrong: n.salah,
       score: String(n.skor),
+      matchVia,
       syncedAt: new Date(),
     }
 
+    // Respons yang belum terhubung TETAP disimpan (studentId null) supaya bisa
+    // diselamatkan lewat halaman "Respons tidak terhubung" — tidak dibuang.
     await db
       .insert(examResults)
       .values({ id: randomUUID(), responseId: r.responseId, ...nilai })
       .onConflictDoUpdate({ target: examResults.responseId, set: nilai })
-    cocok++
   }
 
   revalidatePath("/dashboard/hasil")
-  return { ok: true, info: { respons: respons.length, cocok, tidakCocok, totalSoal: soal.filter((s) => s.kunci.length > 0).length } }
+  return { ok: true, info: { respons: respons.length, cocok, viaNama, tidakCocok, totalSoal: soal.filter((s) => s.kunci.length > 0).length } }
 }

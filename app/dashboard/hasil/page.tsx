@@ -1,11 +1,12 @@
 import type { ComponentType } from "react"
-import { asc, eq } from "drizzle-orm"
+import { asc, desc, eq, isNull } from "drizzle-orm"
 import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, CheckCircle2, FileText, GraduationCap, Home, LayoutDashboard, Percent, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { HasilTableCard, type HasilRow } from "@/components/hasil-table-card"
+import { ResponsTakTerhubungCard, type ResponsTakTerhubung, type SiswaPilihan } from "@/components/respons-tak-terhubung-card"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -13,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { classrooms, examResults, examSchedules, questionBanks, subjects } from "@/lib/db/schema"
+import { classrooms, examResults, examSchedules, questionBanks, students, subjects } from "@/lib/db/schema"
 import { soalDariItems } from "@/lib/google-forms"
 import { cn } from "@/lib/utils"
 
@@ -88,6 +89,46 @@ export default async function HasilPage() {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data hasil ujian."
   }
 
+  // Respons yang NIS/namanya tidak cocok — dikumpulkan supaya bisa diselamatkan manual.
+  let takTerhubung: ResponsTakTerhubung[] = []
+  let kelasList: { id: string; name: string }[] = []
+  let siswaList: SiswaPilihan[] = []
+  try {
+    const [barisLiar, kelasRows, siswaRows] = await Promise.all([
+      db
+        .select({
+          id: examResults.id,
+          nis: examResults.nis,
+          nama: examResults.nama,
+          bank: questionBanks.title,
+          kelas: classrooms.name,
+          submittedAt: examResults.submittedAt,
+        })
+        .from(examResults)
+        .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
+        .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
+        .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
+        .where(isNull(examResults.studentId))
+        .orderBy(desc(examResults.submittedAt))
+        .limit(100),
+      db.select({ id: classrooms.id, name: classrooms.name }).from(classrooms),
+      db.select({ id: students.id, name: students.name, nis: students.nis, classroomId: students.classroomId }).from(students),
+    ])
+    takTerhubung = barisLiar.map((r) => ({
+      id: r.id,
+      nis: r.nis,
+      nama: r.nama,
+      bank: r.bank,
+      kelas: r.kelas,
+      kelasWaktu: r.kelas,
+      submittedAt: r.submittedAt ? new Date(r.submittedAt).toLocaleString("id-ID") : null,
+    }))
+    kelasList = kelasRows
+    siswaList = siswaRows
+  } catch {
+    takTerhubung = []
+  }
+
   const totalJadwal = rows.length
   const adaHasil = rows.filter((row) => row.respons > 0).length
   const totalRespons = rows.reduce((sum, row) => sum + row.respons, 0)
@@ -113,6 +154,8 @@ export default async function HasilPage() {
           </section>
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
+
+          <ResponsTakTerhubungCard rows={takTerhubung} kelasList={kelasList} siswaList={siswaList} />
 
           <HasilTableCard rows={rows} />
         </main>
