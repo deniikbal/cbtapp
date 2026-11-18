@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
-import { ExternalLink, LogOut } from "lucide-react"
+import { BookOpen, CalendarDays, ClipboardList, ExternalLink, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
@@ -103,16 +103,21 @@ export default async function GuruDashboardPage() {
 
   return (
     <main className="min-h-svh bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2.5 py-1.5">
+      <header className="bg-brand text-brand-foreground">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2.5 py-2">
           <div className="leading-tight">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Area Guru</p>
-            <h1 className="text-sm font-semibold">{guru.name}</h1>
-            <p className="text-[11px] text-muted-foreground">NIP {guru.nip}</p>
+            <p className="text-[11px]">Area Guru</p>
+            <p className="text-sm font-semibold">{guru.name}</p>
+            <p className="text-[11px]">NIP {guru.nip}</p>
           </div>
           <form action={logoutGuru}>
-            <Button type="submit" variant="outline" size="sm" className="h-7 rounded-sm text-xs">
-              <LogOut className="size-4" />
+            <Button
+              type="submit"
+              variant="outline"
+              size="sm"
+              className="h-11 rounded-sm border-brand-foreground/60 bg-transparent text-xs text-brand-foreground hover:bg-brand-foreground/15 hover:text-brand-foreground sm:h-7"
+            >
+              <LogOut className="size-4" aria-hidden="true" />
               Keluar
             </Button>
           </form>
@@ -120,18 +125,31 @@ export default async function GuruDashboardPage() {
       </header>
 
       <div className="mx-auto max-w-6xl space-y-2 px-2.5 py-2">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div className="leading-tight">
+            <h1 className="text-base font-semibold text-foreground">Dashboard guru</h1>
+            <p className="text-[11px] text-muted-foreground">
+              Ringkasan bank soal, jadwal, dan hasil ujian yang terhubung ke akun Anda.
+            </p>
+          </div>
+        </div>
+
         <div className="grid gap-1.5 sm:grid-cols-3">
           {[
-            { label: "Bank soal milik saya", nilai: ringkas.length },
-            { label: "Jadwal ujian", nilai: jadwal.length },
-            { label: "Respons masuk", nilai: totalRespons },
+            { label: "Bank soal saya", nilai: ringkas.length, ikon: BookOpen, warna: "bg-brand" },
+            { label: "Jadwal ujian", nilai: jadwal.length, ikon: CalendarDays, warna: "bg-token-jadwal" },
+            { label: "Respons masuk", nilai: totalRespons, ikon: ClipboardList, warna: "bg-token-respons" },
           ].map((kartu) => (
-            <Card key={kartu.label} className="gap-0 rounded-sm py-0">
-              <CardHeader className="gap-0 px-2.5 py-1.5">
-                <CardDescription className="text-[11px]">{kartu.label}</CardDescription>
-                <CardTitle className="text-sm leading-none">{kartu.nilai}</CardTitle>
-              </CardHeader>
-            </Card>
+            <div
+              key={kartu.label}
+              className={`flex items-center justify-between gap-2 rounded-sm px-2.5 py-2 text-white ${kartu.warna}`}
+            >
+              <div className="leading-tight">
+                <p className="text-[11px]">{kartu.label}</p>
+                <p className="text-lg leading-none font-semibold">{kartu.nilai}</p>
+              </div>
+              <kartu.ikon className="size-6 opacity-90" aria-hidden="true" />
+            </div>
           ))}
         </div>
 
@@ -149,7 +167,7 @@ export default async function GuruDashboardPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="text-[11px] [&_th]:h-7 [&_th]:px-2 [&_th]:py-0 [&_td]:px-2 [&_td]:py-0.5">
+                <Table className="overflow-hidden rounded-sm text-[11px] [&_tbody_tr:hover]:bg-muted/50 [&_th]:h-7 [&_th]:bg-muted/60 [&_th]:px-2 [&_th]:py-0 [&_td]:px-2 [&_td]:py-0.5">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Bank soal</TableHead>
@@ -188,7 +206,24 @@ export default async function GuruDashboardPage() {
                         </TableCell>
                         <TableCell className="text-right">{bank.respons}</TableCell>
                         <TableCell className="text-right">
-                          {bank.respons ? bank.rataRata.toFixed(2) : "-"}
+                          {bank.respons ? (
+                            <span
+                              className={
+                                bank.rataRata >= Number(identitas.kkm || 0)
+                                  ? "font-medium text-emerald-700"
+                                  : "font-medium text-amber-700"
+                              }
+                              title={
+                                bank.rataRata >= Number(identitas.kkm || 0)
+                                  ? `Di atas KKM ${identitas.kkm}`
+                                  : `Di bawah KKM ${identitas.kkm}`
+                              }
+                            >
+                              {bank.rataRata.toFixed(2)}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
@@ -197,7 +232,7 @@ export default async function GuruDashboardPage() {
                                 href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-6 gap-1 rounded-sm px-1.5 text-[11px]" })}
+                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6" })}
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form
@@ -208,7 +243,7 @@ export default async function GuruDashboardPage() {
                                 size="sm"
                                 disabled
                                 title="Form belum dibuat"
-                                className="h-6 gap-1 rounded-sm px-1.5 text-[11px]"
+                                className="h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6"
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form

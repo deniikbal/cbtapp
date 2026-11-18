@@ -41,7 +41,7 @@ export function GuruAnalisisButton({
         size="sm"
         onClick={buka}
         disabled={pending}
-        className="h-6 gap-1 rounded-sm px-1.5 text-[11px]"
+        className="h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6"
       >
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChartColumn className="size-3.5" />}
         Analisis butir

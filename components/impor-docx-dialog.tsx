@@ -92,7 +92,7 @@ export function ImporDocxDialog({ bankId, kode, disabled, ikon }: { bankId: stri
           size="sm"
           disabled={disabled}
           title={disabled ? "Buat form dulu" : "Impor soal dari Word"}
-          className="h-6 gap-1 rounded-sm px-1.5 text-[11px]"
+          className="h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6"
           onClick={() => setOpen(true)}
         >
           <FileUp className="size-3.5" />
