@@ -1,21 +1,20 @@
-import type { ComponentType } from "react"
 import { asc, eq } from "drizzle-orm"
-import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, CheckCircle2, Clock3, FileText, GraduationCap, Home, LayoutDashboard, Settings, Timer, UserCog, UserRound, Users } from "lucide-react"
-import Link from "next/link"
+import type { ComponentType } from "react"
+import { CheckCircle2, Clock3, RefreshCw, Timer, Users } from "lucide-react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { AutoRefresh } from "@/components/auto-refresh"
 import { ProgressTableCard } from "@/components/progress-table-card"
 import type { ProgressStudent } from "@/components/progress-detail-dialog"
 import { UserNav } from "@/components/user-nav"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, examAttempts, examResults, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
-import { cn } from "@/lib/utils"
+import { cn, relWaktu } from "@/lib/utils"
 
 type ScheduleRow = {
   id: string
@@ -46,6 +45,7 @@ export default async function PengerjaanPage() {
 
   let databaseError: string | null = null
   let rows: ProgressRow[] = []
+  let sinkronTerakhir: Date | null = null
 
   try {
     const [scheduleRows, studentRows, attemptRows, resultRows] = await Promise.all([
@@ -76,7 +76,7 @@ export default async function PengerjaanPage() {
       // Sync hasil Google Form hanya menulis exam_results, jadi progres harus
       // membaca dua sumber: tombol kerjakan siswa (exam_attempts) dan respons form.
       db
-        .select({ scheduleId: examResults.scheduleId, studentId: examResults.studentId, startedAt: examResults.startedAt, submittedAt: examResults.submittedAt })
+        .select({ scheduleId: examResults.scheduleId, studentId: examResults.studentId, startedAt: examResults.startedAt, submittedAt: examResults.submittedAt, syncedAt: examResults.syncedAt })
         .from(examResults),
     ])
 
@@ -88,6 +88,9 @@ export default async function PengerjaanPage() {
     }
 
     // Gabungkan dua sumber; satu siswa satu baris (submitted menang, started paling awal).
+    for (const result of resultRows) {
+      if (result.syncedAt && (!sinkronTerakhir || result.syncedAt > sinkronTerakhir)) sinkronTerakhir = result.syncedAt
+    }
     const attemptsBySchedule = new Map<string, Map<string, { studentId: string; startedAt: Date | null; submittedAt: Date | null }>>()
     for (const attempt of [...attemptRows, ...resultRows]) {
       if (!attempt.studentId) continue
@@ -137,22 +140,33 @@ export default async function PengerjaanPage() {
   return (
     <SidebarProvider>
       <DashboardSidebar active="/dashboard/pengerjaan" />
-      <SidebarInset className="bg-muted/30">
+      <SidebarInset className="min-w-0 bg-muted/30">
         <DashboardNavbar title="Pengerjaan" description="Pantau status pengerjaan assesmen" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
-          <section className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Progress Pengerjaan</h1>
-            <p className="text-sm text-muted-foreground">Data berasal dari tombol Kerjakan Ujian dan Saya sudah selesai di dashboard siswa, ditambah respons Google Form yang sudah di-sync di menu Hasil Ujian.</p>
+          <section className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Progress Pengerjaan</h1>
+              <p className="text-sm text-muted-foreground">Respons Google Form ditarik otomatis tiap 5 menit selama ujian berlangsung.</p>
+            </div>
+            <div className="flex flex-col items-start gap-1 md:items-end">
+              <AutoRefresh intervalMs={60_000} />
+              <p className="text-xs text-muted-foreground">Sync gform terakhir: {sinkronTerakhir ? `${relWaktu(sinkronTerakhir.toISOString())} • ${jamWIB(sinkronTerakhir.toISOString())} WIB` : "belum ada"}</p>
+            </div>
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Target" value={totalStudents} description="Total peserta terjadwal" icon={Users} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
-            <StatCard label="Selesai" value={totalSubmitted} description="Klik selesai" icon={CheckCircle2} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
-            <StatCard label="Sedang" value={totalStarted} description="Sudah mulai" icon={Timer} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" ringClass="ring-pink-500/20" />
-            <StatCard label="Belum" value={totalNotStarted} description="Belum mulai" icon={Clock3} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
+            <StatCard label="Target" value={totalStudents.toLocaleString("id-ID")} description="Total peserta terjadwal" icon={Users} warna="bg-card border" />
+            <StatCard label="Selesai" value={totalSubmitted.toLocaleString("id-ID")} description="Tombol selesai + respons form" icon={CheckCircle2} warna="bg-brand" />
+            <StatCard label="Sedang" value={totalStarted.toLocaleString("id-ID")} description="Sudah mulai, belum selesai" icon={Timer} warna="bg-token-jadwal" />
+            <StatCard label="Belum" value={totalNotStarted.toLocaleString("id-ID")} description="Belum mulai" icon={Clock3} warna="bg-token-respons" />
           </section>
 
-          {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
+          {databaseError && (
+            <Alert variant="destructive">
+              <AlertTitle>Database belum siap</AlertTitle>
+              <AlertDescription>{databaseError}</AlertDescription>
+            </Alert>
+          )}
 
           <ProgressTableCard rows={rows} />
         </main>
@@ -167,6 +181,41 @@ function pilihAwal(a: Date | null, b: Date | null) {
   return a < b ? a : b
 }
 
-function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) { return <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8"><div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4"><div className="flex items-center gap-3"><SidebarTrigger /><div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{description}</p></div></div><UserNav name={userName} email={userEmail} /></div></header> }
-type StatCardProps = { label: string; value: number; description: string; icon: ComponentType<{ className?: string }>; accent: string; ringClass: string }
-function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) { return <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}><div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} /><CardHeader className="relative"><div className="flex items-start justify-between gap-2"><div className="space-y-1"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p><p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value.toLocaleString("id-ID")}</p></div><div className={cn("flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur", accent.split(" ").find((className) => className.startsWith("text-")) ?? "")}><Icon className="size-4" /></div></div></CardHeader><CardContent className="relative"><p className="text-xs text-muted-foreground">{description}</p></CardContent></Card> }
+function jamWIB(iso: string): string {
+  return new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso)).replace(".", ":")
+}
+
+function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) {
+  return (
+    <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <SidebarTrigger />
+          <div>
+            <p className="text-sm font-medium">{title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        <UserNav name={userName} email={userEmail} />
+      </div>
+    </header>
+  )
+}
+
+type StatCardProps = { label: string; value: string; description: string; icon: ComponentType<{ className?: string }>; warna: string }
+
+function StatCard({ label, value, description, icon: Icon, warna }: StatCardProps) {
+  const solid = warna.startsWith("bg-card") ? "" : "text-white"
+  return (
+    <div className={cn("rounded-sm px-3 py-2.5", warna, solid)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] leading-tight">{label}</p>
+          <p className="mt-0.5 truncate text-xl font-semibold leading-none tabular-nums md:text-2xl">{value}</p>
+        </div>
+        <Icon className="size-5 shrink-0 opacity-90" aria-hidden="true" />
+      </div>
+      <p className={cn("mt-1.5 truncate text-[11px]", solid ? "text-white/80" : "text-muted-foreground")}>{description}</p>
+    </div>
+  )
+}
