@@ -1,17 +1,31 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Filter, RotateCcw, Search, Users } from "lucide-react"
+import { useMemo, useState, useTransition } from "react"
+import { Filter, RotateCcw, Search, Trash2, Users, X } from "lucide-react"
+import { toast } from "sonner"
+
+import { deleteStudents } from "@/app/dashboard/peserta/actions"
 
 import { SeedMasterDataButton } from "@/components/seed-master-data-button"
 import { StudentCreateDialog } from "@/components/student-create-dialog"
 import { StudentImportDialog } from "@/components/student-import-dialog"
 import { StudentNisImportDialog } from "@/components/student-nis-import-dialog"
 import { StudentRowActions } from "@/components/student-row-actions"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -57,6 +71,9 @@ export function StudentManagementCard({
   const [status, setStatus] = useState("ALL")
   const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const selectedClassroom = classrooms.find((classroom) => classroom.id === classroomId)
   const hasActiveFilter = search.trim() !== "" || classroomId !== "ALL" || status !== "ALL"
 
@@ -83,6 +100,40 @@ export function StudentManagementCard({
   const paginatedStudents = filteredStudents.slice(startIndex, startIndex + pageSize)
   const from = filteredStudents.length === 0 ? 0 : startIndex + 1
   const to = Math.min(startIndex + pageSize, filteredStudents.length)
+
+  const pageIds = paginatedStudents.map((student) => student.id)
+  const selectedOnPage = pageIds.filter((id) => selectedIds.includes(id)).length
+  const allPageSelected = pageIds.length > 0 && selectedOnPage === pageIds.length
+  const somePageSelected = selectedOnPage > 0 && !allPageSelected
+  const selectedStudents = students.filter((student) => selectedIds.includes(student.id))
+  const filterIds = filteredStudents.map((student) => student.id)
+
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
+  }
+
+  function togglePage() {
+    setSelectedIds((prev) =>
+      allPageSelected ? prev.filter((id) => !pageIds.includes(id)) : [...new Set([...prev, ...pageIds])]
+    )
+  }
+
+  function selectAllFiltered() {
+    setSelectedIds((prev) => [...new Set([...prev, ...filterIds])])
+  }
+
+  function handleBulkDelete() {
+    startTransition(async () => {
+      try {
+        const hasil = await deleteStudents(selectedIds)
+        toast.success(`${hasil.jumlah} peserta dihapus.`)
+        setSelectedIds([])
+        setConfirmOpen(false)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Gagal menghapus peserta.")
+      }
+    })
+  }
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -176,10 +227,46 @@ export function StudentManagementCard({
       </CardHeader>
 
       <CardContent>
+        {selectedIds.length > 0 && (
+          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm">
+              <span className="font-medium">{selectedIds.length} peserta</span> dipilih
+              {filteredStudents.length > pageIds.length && selectedIds.length < filteredStudents.length && (
+                <Button variant="link" className="h-auto px-2 py-0 text-sm" onClick={selectAllFiltered}>
+                  Pilih semua {filteredStudents.length} hasil filter
+                </Button>
+              )}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-8" onClick={() => setSelectedIds([])}>
+                <X className="size-4" aria-hidden="true" />Batalkan
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-11 gap-1.5 sm:h-8"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" aria-hidden="true" />Hapus {selectedIds.length} peserta
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected}
+                    onCheckedChange={togglePage}
+                    disabled={pageIds.length === 0}
+                    aria-label="Pilih semua peserta di halaman ini"
+                    className="after:-inset-x-3.5 after:-inset-y-3.5"
+                  />
+                </TableHead>
                 <TableHead className="w-12 text-center">#</TableHead>
                 <TableHead>Nama</TableHead>
                 <TableHead>Username</TableHead>
@@ -193,7 +280,7 @@ export function StudentManagementCard({
             <TableBody>
               {filteredStudents.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={8} className="h-48 text-center">
+                  <TableCell colSpan={9} className="h-48 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                       <div className="rounded-full bg-muted p-4"><Users className="size-7" /></div>
                       <div className="space-y-1">
@@ -205,7 +292,15 @@ export function StudentManagementCard({
                   </TableCell>
                 </TableRow>
               ) : paginatedStudents.map((student, index) => (
-                <TableRow key={student.id} className="transition-colors hover:bg-muted/40">
+                <TableRow key={student.id} data-state={selectedIds.includes(student.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40">
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.includes(student.id)}
+                      onCheckedChange={() => toggleOne(student.id)}
+                      aria-label={`Pilih ${student.name}`}
+                      className="after:-inset-x-3.5 after:-inset-y-3.5"
+                    />
+                  </TableCell>
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
                   <TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-blue-500/15 text-xs font-medium text-blue-700 dark:text-blue-300">{getInitials(student.name)}</AvatarFallback></Avatar><span className="font-medium">{student.name}</span></div></TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
@@ -288,6 +383,42 @@ export function StudentManagementCard({
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedIds.length} peserta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Akun login peserta berikut dihapus permanen. Riwayat hasil ujian tetap tersimpan, tetapi
+              tidak lagi terhubung ke peserta. Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border bg-muted/40 p-2 text-sm">
+            {selectedStudents.slice(0, 8).map((student) => (
+              <li key={student.id} className="flex items-center justify-between gap-3">
+                <span className="truncate font-medium">{student.name}</span>
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">{student.nis}</span>
+              </li>
+            ))}
+            {selectedStudents.length > 8 && (
+              <li className="text-xs text-muted-foreground">+{selectedStudents.length - 8} peserta lain</li>
+            )}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isPending}
+              onClick={(event) => {
+                event.preventDefault()
+                handleBulkDelete()
+              }}
+              className="gap-1.5 bg-destructive text-white hover:bg-destructive/90"
+            >
+              {isPending ? "Menghapus..." : `Ya, hapus ${selectedIds.length} peserta`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

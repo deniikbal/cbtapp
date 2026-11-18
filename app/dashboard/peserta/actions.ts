@@ -71,6 +71,27 @@ export async function deleteStudent(id: string) {
   revalidatePath("/dashboard/peserta")
 }
 
+export async function deleteStudents(ids: string[]) {
+  const unik = [...new Set((ids ?? []).filter(Boolean))]
+
+  if (unik.length === 0) {
+    throw new Error("Tidak ada peserta yang dipilih.")
+  }
+
+  if (unik.length > 2000) {
+    throw new Error("Maksimal 2000 peserta sekali hapus.")
+  }
+
+  const terhapus = await db
+    .delete(students)
+    .where(inArray(students.id, unik))
+    .returning({ id: students.id })
+
+  revalidatePath("/dashboard/peserta")
+
+  return { jumlah: terhapus.length }
+}
+
 export async function seedInitialMasterData() {
   const existingMajor = await db.query.majors.findFirst()
 
