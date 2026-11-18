@@ -194,13 +194,27 @@ export const students = pgTable(
     classroomId: text("classroomId")
       .notNull()
       .references(() => classrooms.id, { onDelete: "restrict" }),
+    // Ruangan ujian (opsional): satu ruangan boleh berisi kelas campuran.
+    roomId: text("roomId").references((): AnyPgColumn => examRooms.id, { onDelete: "set null" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("students_nis_idx").on(table.nis),
     index("students_classroomId_idx").on(table.classroomId),
+    index("students_roomId_idx").on(table.roomId),
   ],
+)
+
+export const examRooms = pgTable(
+  "exam_rooms",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("exam_rooms_name_idx").on(table.name)],
 )
 
 export const teachers = pgTable(

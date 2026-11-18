@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, FileText, GraduationCap, Home, IdCard, LayoutDashboard, Lock, Settings, UserCog, UserRound, Users } from "lucide-react"
+import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, ChevronRight, Database, DoorOpen, FileText, GraduationCap, Home, IdCard, LayoutDashboard, Lock, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -26,6 +26,7 @@ const masterData = [
   { href: "/dashboard/guru", label: "Guru", icon: UserRound },
   { href: "/dashboard/peserta", label: "Peserta", icon: Users },
   { href: "/dashboard/peserta/kartu", label: "Kartu Ujian", icon: IdCard },
+  { href: "/dashboard/ruangan", label: "Ruangan", icon: DoorOpen },
   { href: "/dashboard/mapel", label: "Mapel", icon: BookOpen },
 ]
 
