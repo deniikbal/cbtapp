@@ -4,9 +4,9 @@ import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "cn"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -510,15 +510,10 @@ function SidebarMenuButton({
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
   } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const { isMobile, state } = useSidebar()
-  const tooltipId =
-    typeof tooltip === "string"
-      ? `sidebar-menu-${tooltip.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
-      : undefined
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
       {
-        id: tooltipId,
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
       },
       props
