@@ -1,5 +1,4 @@
 import { asc, avg, count, eq, sql } from "drizzle-orm"
-import type { ComponentType } from "react"
 import { CalendarClock, FileText, Percent, RefreshCw } from "lucide-react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -15,6 +14,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, examResults, examSchedules, majors, questionBanks, students, subjects, teachers } from "@/lib/db/schema"
 import { cn, relWaktu } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 type StatusJadwal = "akan" | "berlangsung" | "selesai"
 
@@ -155,21 +155,19 @@ export default async function JadwalPage() {
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Berlangsung" value={String(berlangsung)} description="Jadwal dalam jam ujian" icon={CalendarClock} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" />
-            <StatCard label="Respons masuk" value={totalRespons.toLocaleString("id-ID")} description="Tersinkron dari Google Form" icon={FileText} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" />
+            <StatCard label="Berlangsung" value={String(berlangsung)} description="Jadwal dalam jam ujian" icon={CalendarClock} />
+            <StatCard label="Respons masuk" value={totalRespons.toLocaleString("id-ID")} description="Tersinkron dari Google Form" icon={FileText} />
             <StatCard
               label="Sinkron terakhir"
               value={relWaktu(sinkronTerakhir)}
               description={sinkronTerakhir ? `${jamWIB(sinkronTerakhir)} WIB` : "Belum ada sync"}
               icon={RefreshCw}
-              accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400"
             />
             <StatCard
               label="Rata-rata nilai"
               value={rataRata === null ? "-" : (Math.round(rataRata * 10) / 10).toLocaleString("id-ID")}
               description="Dari respons tersinkron"
               icon={Percent}
-              accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400"
             />
           </section>
 
@@ -222,31 +220,3 @@ function DashboardNavbar({ title, description, userName, userEmail }: { title: s
   )
 }
 
-type StatCardProps = { label: string; value: string; description: string; icon: ComponentType<{ className?: string }>; accent: string }
-
-function StatCard({ label, value, description, icon: Icon, accent }: StatCardProps) {
-  return (
-    <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
-      <CardHeader className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-            <p className={cn("truncate text-2xl font-semibold tracking-tight tabular-nums md:text-3xl", value.length > 6 && "text-lg md:text-xl")}>{value}</p>
-          </div>
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
-              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
-            )}
-          >
-            <Icon className="size-4" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="relative">
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}

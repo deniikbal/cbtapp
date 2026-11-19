@@ -1,4 +1,3 @@
-import type { ComponentType } from "react"
 import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, FileText, GraduationCap, Home, KeyRound, LayoutDashboard, Settings, ShieldCheck, UserCog, UserRound, Users } from "lucide-react"
 import { asc, eq } from "drizzle-orm"
 import Link from "next/link"
@@ -35,6 +34,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, majors, students } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 const naturalClassroomCollator = new Intl.Collator("id-ID", {
   numeric: true,
@@ -140,32 +140,24 @@ export default async function PesertaPage() {
               value={studentRows.length}
               description="Semua peserta terdaftar"
               icon={Users}
-              accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400"
-              ringClass="ring-sky-500/20"
             />
             <StatCard
               label="Aktif"
               value={activeStudents}
               description="Bisa login ujian"
               icon={ShieldCheck}
-              accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400"
-              ringClass="ring-blue-500/20"
             />
             <StatCard
               label="Tidak Aktif"
               value={inactiveStudents}
               description="Akses login dimatikan"
               icon={KeyRound}
-              accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400"
-              ringClass="ring-pink-500/20"
             />
             <StatCard
               label="Kelas"
               value={totalClasses}
               description="Kelas berisi peserta"
               icon={GraduationCap}
-              accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400"
-              ringClass="ring-emerald-500/20"
             />
           </section>
 
@@ -210,46 +202,6 @@ function DashboardNavbar({
         <UserNav name={userName} email={userEmail} />
       </div>
     </header>
-  )
-}
-
-type StatCardProps = {
-  label: string
-  value: number
-  description: string
-  icon: ComponentType<{ className?: string }>
-  accent: string
-  ringClass: string
-}
-
-function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) {
-  return (
-    <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}>
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
-      <CardHeader className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {label}
-            </p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
-              {value.toLocaleString("id-ID")}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
-              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
-            )}
-          >
-            <Icon className="size-4" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="relative">
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
   )
 }
 

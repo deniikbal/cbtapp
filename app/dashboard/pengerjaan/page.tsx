@@ -1,5 +1,4 @@
 import { asc, eq } from "drizzle-orm"
-import type { ComponentType } from "react"
 import { CheckCircle2, Clock3, RefreshCw, Timer, Users } from "lucide-react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -16,6 +15,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, examAttempts, examResults, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
 import { cn, relWaktu } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 type ScheduleRow = {
   id: string
@@ -156,10 +156,10 @@ export default async function PengerjaanPage() {
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Target" value={totalStudents.toLocaleString("id-ID")} description="Total peserta terjadwal" icon={Users} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" />
-            <StatCard label="Selesai" value={totalSubmitted.toLocaleString("id-ID")} description="Tombol selesai + respons form" icon={CheckCircle2} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" />
-            <StatCard label="Sedang" value={totalStarted.toLocaleString("id-ID")} description="Sudah mulai, belum selesai" icon={Timer} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" />
-            <StatCard label="Belum" value={totalNotStarted.toLocaleString("id-ID")} description="Belum mulai" icon={Clock3} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" />
+            <StatCard label="Target" value={totalStudents.toLocaleString("id-ID")} description="Total peserta terjadwal" icon={Users} />
+            <StatCard label="Selesai" value={totalSubmitted.toLocaleString("id-ID")} description="Tombol selesai + respons form" icon={CheckCircle2} />
+            <StatCard label="Sedang" value={totalStarted.toLocaleString("id-ID")} description="Sudah mulai, belum selesai" icon={Timer} />
+            <StatCard label="Belum" value={totalNotStarted.toLocaleString("id-ID")} description="Belum mulai" icon={Clock3} />
           </section>
 
           {databaseError && (
@@ -203,31 +203,3 @@ function DashboardNavbar({ title, description, userName, userEmail }: { title: s
   )
 }
 
-type StatCardProps = { label: string; value: string; description: string; icon: ComponentType<{ className?: string }>; accent: string }
-
-function StatCard({ label, value, description, icon: Icon, accent }: StatCardProps) {
-  return (
-    <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
-      <CardHeader className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value}</p>
-          </div>
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
-              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
-            )}
-          >
-            <Icon className="size-4" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="relative">
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}

@@ -1,4 +1,3 @@
-import type { ComponentType } from "react"
 import {
   BookOpen,
   BookOpenCheck,
@@ -49,6 +48,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 export type TeacherRow = {
   id: string
@@ -129,32 +129,24 @@ export default async function GuruPage() {
               value={teacherRows.length}
               description="Semua guru terdaftar"
               icon={Users}
-              accent="from-sky-500/10 to-sky-500/0 text-sky-600"
-              ringClass="ring-sky-500/20"
             />
             <StatCard
               label="Aktif"
               value={activeTeachers}
               description="Bisa login"
               icon={ShieldCheck}
-              accent="from-blue-500/10 to-blue-500/0 text-blue-600"
-              ringClass="ring-blue-500/20"
             />
             <StatCard
               label="Tidak Aktif"
               value={teacherRows.length - activeTeachers}
               description="Akses login dimatikan"
               icon={KeyRound}
-              accent="from-pink-500/10 to-pink-500/0 text-pink-600"
-              ringClass="ring-pink-500/20"
             />
             <StatCard
               label="Punya Password"
               value={teacherRows.filter((teacher) => teacher.hasPassword).length}
               description="Siap dipakai login"
               icon={UserRound}
-              accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600"
-              ringClass="ring-emerald-500/20"
             />
           </section>
 
@@ -201,45 +193,4 @@ function DashboardNavbar({
     </header>
   )
 }
-
-type StatCardProps = {
-  label: string
-  value: number
-  description: string
-  icon: ComponentType<{ className?: string }>
-  accent: string
-  ringClass: string
-}
-
-function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) {
-  return (
-    <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}>
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
-      <CardHeader className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {label}
-            </p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
-              {value.toLocaleString("id-ID")}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
-              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
-            )}
-          >
-            <Icon className="size-4" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="relative">
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
 

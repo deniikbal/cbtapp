@@ -1,4 +1,3 @@
-import type { ComponentType } from "react"
 import { Activity, BookOpenCheck, CalendarDays, CheckCircle2, Clock3, Settings, Users } from "lucide-react"
 import Link from "next/link"
 import { desc, eq } from "drizzle-orm"
@@ -35,6 +34,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { classrooms, examSchedules, questionBanks, students, subjects } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 type RecentExam = {
   id: string
@@ -358,37 +358,6 @@ function DashboardNavbar({
         <UserNav name={userName} email={userEmail} />
       </div>
     </header>
-  )
-}
-
-/* ─── Stat card: flat, neutral, one green accent ─── */
-
-function StatCard({
-  label,
-  value,
-  description,
-  icon: Icon,
-}: {
-  label: string
-  value: number
-  description: string
-  icon: ComponentType<{ className?: string }>
-}) {
-  return (
-    <Card className="gap-0 rounded-sm py-4">
-      <CardHeader className="px-4 pb-0">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <Icon className="size-4 shrink-0 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent className="px-4 pt-1">
-        <p className="text-2xl font-semibold tabular-nums md:text-3xl">
-          {value.toLocaleString("id-ID")}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
   )
 }
 

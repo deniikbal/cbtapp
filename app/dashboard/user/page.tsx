@@ -1,4 +1,3 @@
-import type { ComponentType } from "react"
 import { asc } from "drizzle-orm"
 import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, FileText, GraduationCap, Home, LayoutDashboard, Settings, ShieldCheck, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
@@ -31,6 +30,7 @@ import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema"
 import { bolehKelolaUser } from "@/lib/peran"
 import { cn } from "@/lib/utils"
+import { StatCard } from "@/components/stat-card"
 
 export default async function UserPage() {
   const currentSession = await auth.api.getSession({ headers: await headers() })
@@ -76,10 +76,10 @@ export default async function UserPage() {
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Data User</h1><p className="text-sm text-muted-foreground">Kelola akun admin dan operator yang dapat mengakses dashboard.</p></section>
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Total User" value={rows.length} description="Akun dashboard" icon={Users} accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400" ringClass="ring-sky-500/20" />
-            <StatCard label="User Baru" value={newUsersThisMonth} description="Dibuat bulan ini" icon={ShieldCheck} accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400" ringClass="ring-blue-500/20" />
-            <StatCard label="Domain Email" value={uniqueDomains} description="Domain email unik" icon={UserCog} accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400" ringClass="ring-pink-500/20" />
-            <StatCard label="Akun Dashboard" value={rows.length} description="Akses admin/operator" icon={BookOpenCheck} accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400" ringClass="ring-emerald-500/20" />
+            <StatCard label="Total User" value={rows.length} description="Akun dashboard" icon={Users} />
+            <StatCard label="User Baru" value={newUsersThisMonth} description="Dibuat bulan ini" icon={ShieldCheck} />
+            <StatCard label="Domain Email" value={uniqueDomains} description="Domain email unik" icon={UserCog} />
+            <StatCard label="Akun Dashboard" value={rows.length} description="Akses admin/operator" icon={BookOpenCheck} />
           </section>
 
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
@@ -92,5 +92,3 @@ export default async function UserPage() {
 }
 
 function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) { return <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8"><div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4"><div className="flex items-center gap-3"><SidebarTrigger /><div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{description}</p></div></div><UserNav name={userName} email={userEmail} /></div></header> }
-type StatCardProps = { label: string; value: number; description: string; icon: ComponentType<{ className?: string }>; accent: string; ringClass: string }
-function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) { return <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}><div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} /><CardHeader className="relative"><div className="flex items-start justify-between gap-2"><div className="space-y-1"><p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p><p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">{value.toLocaleString("id-ID")}</p></div><div className={cn("flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur", accent.split(" ").find((className) => className.startsWith("text-")) ?? "")}><Icon className="size-4" /></div></div></CardHeader><CardContent className="relative"><p className="text-xs text-muted-foreground">{description}</p></CardContent></Card> }
