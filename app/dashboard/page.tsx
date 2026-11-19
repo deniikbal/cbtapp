@@ -375,7 +375,7 @@ function StatCard({
   icon: ComponentType<{ className?: string }>
 }) {
   return (
-    <Card className="gap-0 py-4">
+    <Card className="gap-0 rounded-sm py-4">
       <CardHeader className="px-4 pb-0">
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
