@@ -76,7 +76,7 @@ export default async function BlockedPage() {
               render={<a href={downloadUrl} target="_blank" rel="noreferrer" />}
             >
               <Download className="size-4" />
-              Buka Play Store
+              Download ExamBro
             </Button>
           </div>
 
