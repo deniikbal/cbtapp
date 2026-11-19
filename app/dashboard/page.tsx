@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { Activity, BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, CheckCircle2, Clock3, FileText, Filter, GraduationCap, Home, LayoutDashboard, RotateCcw, Search, Settings, UserCog, UserRound, Users } from "lucide-react"
+import { Activity, BookOpenCheck, CalendarDays, CheckCircle2, Clock3, Settings, Users } from "lucide-react"
 import Link from "next/link"
 import { desc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
@@ -18,29 +18,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import {
@@ -118,14 +98,14 @@ export default async function DashboardPage() {
     totalStudents = studentRows.length
     activeSessions = scheduleRows.filter((row) => getScheduleStatus(row) === "Aktif").length
     finishedSessions = scheduleRows.filter((row) => getScheduleStatus(row) === "Selesai").length
-    recentExams = scheduleRows.slice(0, 10).map((row) => ({ 
+    recentExams = scheduleRows.slice(0, 10).map((row) => ({
       id: row.id,
       name: row.title,
       code: row.code,
       subjectCode: row.subjectCode,
       participants: participantByClassroom.get(row.classroomId) ?? 0,
       status: getScheduleStatus(row),
-      schedule: `${row.className} • ${formatDate(row.examDate)} ${row.startTime.slice(0, 5)}`,
+      schedule: `${row.className} · ${formatDate(row.examDate)} ${row.startTime.slice(0, 5)}`,
     }))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data dashboard."
@@ -134,7 +114,7 @@ export default async function DashboardPage() {
   return (
     <SidebarProvider>
       <DashboardSidebar active="/dashboard" />
-      <SidebarInset className="bg-muted/30">
+      <SidebarInset className="min-w-0 bg-muted/30">
         <DashboardNavbar
           title="Dashboard"
           description="Ringkasan aktivitas SMANSABA Assesmen"
@@ -148,43 +128,16 @@ export default async function DashboardPage() {
               Dashboard Assesmen
             </h1>
             <p className="text-sm text-muted-foreground">
-              Ringkasan data berdasarkan peserta, bank soal, dan jadwal yang tersimpan.
+              Ringkasan peserta, bank soal, dan jadwal ujian.
             </p>
           </section>
 
+          {/* Stat cards: flat, neutral, green icon as the only accent */}
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Bank Soal"
-              value={totalQuestionBanks}
-              description="Bank assesmen tersedia"
-              icon={BookOpenCheck}
-              accent="from-sky-500/10 to-sky-500/0 text-sky-600 dark:text-sky-400"
-              ringClass="ring-sky-500/20"
-            />
-            <StatCard
-              label="Peserta"
-              value={totalStudents}
-              description="Peserta terdaftar"
-              icon={Users}
-              accent="from-blue-500/10 to-blue-500/0 text-blue-600 dark:text-blue-400"
-              ringClass="ring-blue-500/20"
-            />
-            <StatCard
-              label="Sesi Aktif"
-              value={activeSessions}
-              description="Assesmen sedang berjalan"
-              icon={Activity}
-              accent="from-pink-500/10 to-pink-500/0 text-pink-600 dark:text-pink-400"
-              ringClass="ring-pink-500/20"
-            />
-            <StatCard
-              label="Selesai"
-              value={finishedSessions}
-              description="Sesi assesmen selesai"
-              icon={CheckCircle2}
-              accent="from-emerald-500/10 to-emerald-500/0 text-emerald-600 dark:text-emerald-400"
-              ringClass="ring-emerald-500/20"
-            />
+            <StatCard label="Bank Soal" value={totalQuestionBanks} description="Bank assesmen tersedia" icon={BookOpenCheck} />
+            <StatCard label="Peserta" value={totalStudents} description="Peserta terdaftar" icon={Users} />
+            <StatCard label="Sesi Aktif" value={activeSessions} description="Sedang berjalan" icon={Activity} />
+            <StatCard label="Selesai" value={finishedSessions} description="Sesi telah selesai" icon={CheckCircle2} />
           </section>
 
           {databaseError && (
@@ -196,91 +149,37 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader className="border-b">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <CardTitle>Jadwal Assesmen Terbaru</CardTitle>
+                    <CardTitle>Jadwal Terbaru</CardTitle>
                     <Badge variant="secondary" className="font-normal">
-                      {recentExams.length} hasil
+                      {recentExams.length}
                     </Badge>
                   </div>
                   <CardDescription>
-                    Pantau jadwal, status, dan jumlah peserta per kelas secara real-time.
+                    10 jadwal assesmen terakhir berdasarkan tanggal.
                   </CardDescription>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
-                  <Button nativeButton={false} className="gap-2" render={<Link href="/dashboard/jadwal" />}>
-                    <CalendarDays className="size-4" />
-                    Kelola Jadwal
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-12">
-                <div className="relative md:col-span-5">
-                  <Label htmlFor="search-exam" className="sr-only">
-                    Cari ujian
-                  </Label>
-                  <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="search-exam" placeholder="Cari nama atau kode assesmen..." className="pl-8" />
-                </div>
-                <div className="md:col-span-3">
-                  <Label htmlFor="filter-status" className="sr-only">
-                    Filter status
-                  </Label>
-                  <Select defaultValue="ALL">
-                    <SelectTrigger id="filter-status" className="w-full">
-                      <div className="flex items-center gap-2 truncate">
-                        <Filter className="size-4 text-muted-foreground" />
-                        <SelectValue placeholder="Semua status" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent align="start">
-                      <SelectItem value="ALL">Semua status</SelectItem>
-                      <SelectItem value="SCHEDULED">Terjadwal</SelectItem>
-                      <SelectItem value="ACTIVE">Aktif</SelectItem>
-                      <SelectItem value="DONE">Selesai</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="filter-period" className="sr-only">
-                    Filter periode
-                  </Label>
-                  <Select defaultValue="ALL">
-                    <SelectTrigger id="filter-period" className="w-full">
-                      <div className="flex items-center gap-2 truncate">
-                        <CalendarDays className="size-4 text-muted-foreground" />
-                        <SelectValue placeholder="Semua periode" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent align="start">
-                      <SelectItem value="ALL">Semua periode</SelectItem>
-                      <SelectItem value="ACTIVE">Periode aktif</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <Button variant="outline" className="w-full gap-2" disabled>
-                    <RotateCcw className="size-4" />
-                    Reset
-                  </Button>
-                </div>
+                <Button nativeButton={false} size="sm" className="gap-2" render={<Link href="/dashboard/jadwal" />}>
+                  <CalendarDays className="size-4" />
+                  Kelola Jadwal
+                </Button>
               </div>
             </CardHeader>
 
             <CardContent>
-              <div className="overflow-hidden rounded-lg border">
+              <div className="overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="w-12 text-center">#</TableHead>
+                      <TableHead className="w-10 text-center">#</TableHead>
                       <TableHead>Nama Assesmen</TableHead>
                       <TableHead>Kode</TableHead>
-                      <TableHead>Peserta</TableHead>
+                      <TableHead className="text-right">Peserta</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Jadwal</TableHead>
-                      <TableHead className="w-32 text-right">Aksi</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -288,12 +187,10 @@ export default async function DashboardPage() {
                       <TableRow className="hover:bg-transparent">
                         <TableCell colSpan={7} className="h-48 text-center">
                           <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
-                            <div className="rounded-full bg-muted p-4">
-                              <CalendarDays className="size-7" />
-                            </div>
+                            <CalendarDays className="size-8 text-muted-foreground/60" />
                             <div className="space-y-1">
                               <div className="font-medium text-foreground">Belum ada jadwal</div>
-                              <p className="text-sm">Jadwal assesmen akan tampil setelah dibuat di menu Jadwal.</p>
+                              <p className="text-sm">Buat jadwal pertama di menu Jadwal untuk melihatnya di sini.</p>
                             </div>
                             <Button nativeButton={false} size="sm" render={<Link href="/dashboard/jadwal" />}>
                               Kelola Jadwal
@@ -309,20 +206,20 @@ export default async function DashboardPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="size-8">
-                              <AvatarFallback className="bg-sky-500/15 text-xs font-medium text-sky-700 dark:text-sky-300">
+                              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
                                 {getInitials(exam.name)}
                               </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
                               <p className="truncate font-medium">{exam.name}</p>
-                              <p className="text-xs text-muted-foreground">SMANSABA Assesmen</p>
+                              <p className="text-xs text-muted-foreground">{exam.subjectCode}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {exam.code}
                         </TableCell>
-                        <TableCell className="tabular-nums">{exam.participants}</TableCell>
+                        <TableCell className="text-right tabular-nums">{exam.participants}</TableCell>
                         <TableCell>
                           <Badge
                             variant="secondary"
@@ -331,9 +228,9 @@ export default async function DashboardPage() {
                             {exam.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{exam.schedule}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{exam.schedule}</TableCell>
                         <TableCell>
-                          <div className="flex justify-end gap-1.5">
+                          <div className="flex justify-end gap-1">
                             <Button nativeButton={false} variant="ghost" size="icon-sm" render={<Link href="/dashboard/jadwal" />}>
                               <Clock3 className="size-4" />
                               <span className="sr-only">Detail</span>
@@ -349,17 +246,6 @@ export default async function DashboardPage() {
                   </TableBody>
                 </Table>
               </div>
-
-              <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
-                <p className="text-sm text-muted-foreground">
-                  Menampilkan <span className="font-medium text-foreground">{recentExams.length ? 1 : 0}</span>–
-                  <span className="font-medium text-foreground">{recentExams.length}</span> dari{" "}
-                  <span className="font-medium text-foreground">{recentExams.length}</span> entri
-                </p>
-                <Button variant="outline" size="sm" disabled>
-                  Halaman 1
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </main>
@@ -367,6 +253,8 @@ export default async function DashboardPage() {
     </SidebarProvider>
   )
 }
+
+/* ─── Helpers ─── */
 
 function getScheduleStatus(schedule: {
   active: boolean
@@ -392,22 +280,20 @@ function getScheduleStatus(schedule: {
 }
 
 function getStatusBadgeClass(status: RecentExam["status"]) {
-  if (status === "Aktif") return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-  if (status === "Selesai") return "bg-sky-500/10 text-sky-700 dark:text-sky-300"
-  if (status === "Nonaktif") return "bg-rose-500/10 text-rose-700 dark:text-rose-300"
-  return "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+  if (status === "Aktif") return "bg-primary/10 text-primary"
+  if (status === "Selesai") return "bg-muted text-muted-foreground"
+  if (status === "Nonaktif") return "bg-destructive/10 text-destructive"
+  return "bg-amber-500/10 text-amber-700"
 }
 
 function getDateTimeValue(dateValue: string, timeValue: string) {
   const [year, month, day] = dateValue.split("-").map(Number)
   const [hours, minutes] = timeValue.split(":").map(Number)
-
   return Number(`${year}${pad2(month)}${pad2(day)}${pad2(hours)}${pad2(minutes)}`)
 }
 
 function formatDate(value: string) {
   const [year, month, day] = value.split("-").map(Number)
-
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -435,7 +321,6 @@ function getDateTimePartsInTimeZone(timeZone: string) {
   const parts = Object.fromEntries(
     formatter.formatToParts(new Date()).map((part) => [part.type, part.value])
   )
-
   return {
     year: Number(parts.year),
     month: Number(parts.month),
@@ -448,7 +333,6 @@ function getDateTimePartsInTimeZone(timeZone: string) {
 function pad2(value: number) {
   return String(value).padStart(2, "0")
 }
-
 
 function DashboardNavbar({
   title,
@@ -477,41 +361,32 @@ function DashboardNavbar({
   )
 }
 
-type StatCardProps = {
+/* ─── Stat card: flat, neutral, one green accent ─── */
+
+function StatCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+}: {
   label: string
   value: number
   description: string
   icon: ComponentType<{ className?: string }>
-  accent: string
-  ringClass: string
-}
-
-function StatCard({ label, value, description, icon: Icon, accent, ringClass }: StatCardProps) {
+}) {
   return (
-    <Card className={cn("relative overflow-hidden transition-shadow hover:shadow-md", ringClass)}>
-      <div className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br opacity-100", accent)} />
-      <CardHeader className="relative">
+    <Card className="gap-0 py-4">
+      <CardHeader className="px-4 pb-0">
         <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {label}
-            </p>
-            <p className="text-2xl font-semibold tracking-tight tabular-nums md:text-3xl">
-              {value.toLocaleString("id-ID")}
-            </p>
-          </div>
-          <div
-            className={cn(
-              "flex size-9 items-center justify-center rounded-lg bg-background/80 ring-1 ring-foreground/5 backdrop-blur",
-              accent.split(" ").find((className) => className.startsWith("text-")) ?? ""
-            )}
-          >
-            <Icon className="size-4" />
-          </div>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <Icon className="size-4 shrink-0 text-primary" />
         </div>
       </CardHeader>
-      <CardContent className="relative">
-        <p className="text-xs text-muted-foreground">{description}</p>
+      <CardContent className="px-4 pt-1">
+        <p className="text-2xl font-semibold tabular-nums md:text-3xl">
+          {value.toLocaleString("id-ID")}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   )
