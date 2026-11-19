@@ -75,13 +75,13 @@
     --color-brand-foreground: oklch(0.9911 0 0);
     --color-token-jadwal: oklch(0.4244 0.1202 254.6);
     --color-token-respons: oklch(0.4551 0.0985 62.3);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-sm: 0.25rem;
+    --radius-md: 0.25rem;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.25rem;
+    --radius-2xl: 0.25rem;
+    --radius-3xl: 0.25rem;
+    --radius-4xl: 0.25rem;
 }
 
 :root {
