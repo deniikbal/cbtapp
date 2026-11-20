@@ -29,7 +29,7 @@ export default async function KartuUjianPage({
   const { kelas } = await searchParams
   let galat: string | null = null
   let opsiKelas: { id: string; name: string; majorName: string }[] = []
-  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null; roomName: string | null }[] = []
+  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null; roomName: string | null; session: number }[] = []
   let namaKelas = ""
 
   try {
@@ -48,6 +48,7 @@ export default async function KartuUjianPage({
           nis: students.nis,
           kartuPassword: students.kartuPassword,
           roomName: examRooms.name,
+          session: students.session,
         })
         .from(students)
         .leftJoin(examRooms, eq(students.roomId, examRooms.id))
@@ -160,7 +161,11 @@ export default async function KartuUjianPage({
                   </div>
                 </dl>
 
-                <footer className="mt-auto border-t border-border pt-2 text-[9px]">
+                <footer className="mt-auto flex items-end justify-between gap-4 border-t border-border pt-2 text-[9px]">
+                  <div className="w-fit rounded-sm border border-border px-3 py-1.5 text-center leading-tight">
+                    <p className="text-muted-foreground">SESI</p>
+                    <p className="text-sm font-semibold">{siswa.session ?? 1}</p>
+                  </div>
                   <div className="ml-auto w-fit text-center">
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
                     <div className="relative mx-auto mt-2 h-12 w-44">
