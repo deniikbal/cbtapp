@@ -157,9 +157,13 @@ export default async function KartuUjianPage({
 
                 <footer className="mt-2 border-t border-border pt-2 text-center text-[9px]">
                   <p className="text-muted-foreground">Kepala Sekolah,</p>
-                  <p className="font-semibold">{cardSettings.principalName || "—"}</p>
-                  <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
-                  {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto mt-1 h-14 object-contain" />}
+                  <div className="relative mx-auto mt-1 inline-block">
+                    {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="relative z-10 mx-auto h-16 object-contain" />}
+                    <div className="-mt-4">
+                      <p className="font-semibold">{cardSettings.principalName || "—"}</p>
+                      <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
+                    </div>
+                  </div>
                 </footer>
               </article>
             ))}
