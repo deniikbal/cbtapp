@@ -159,7 +159,7 @@ export default async function KartuUjianPage({
                   <div className="ml-auto w-fit text-center">
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
                     <div className="relative mx-auto mt-2 h-12 w-44">
-                      <div className="absolute bottom-0 left-0 text-left">
+                      <div className="absolute bottom-0 left-0 text-left" style={{ transform: `translateX(${cardSettings.nameX}px)` }}>
                         <p className="font-semibold">{cardSettings.principalName || "—"}</p>
                         <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
                       </div>

@@ -17,6 +17,7 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
   const [sigX, setSigX] = useState(settings.sigX)
   const [sigY, setSigY] = useState(settings.sigY)
   const [sigSize, setSigSize] = useState(settings.sigSize)
+  const [nameX, setNameX] = useState(settings.nameX)
 
   function handleSubmit(formData: FormData) {
     formData.set("existingLogoUrl", settings.logoUrl)
@@ -24,6 +25,7 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
     formData.set("sigX", String(sigX))
     formData.set("sigY", String(sigY))
     formData.set("sigSize", String(sigSize))
+    formData.set("nameX", String(nameX))
     startTransition(async () => {
       await saveCardSettings(formData)
       toast.success("Pengaturan kartu disimpan.")
@@ -90,13 +92,17 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
               <Label className="text-xs">Ukuran TTD: {sigSize}px</Label>
               <input type="range" min={24} max={96} value={sigSize} onChange={(e) => setSigSize(Number(e.target.value))} className="w-full" />
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={() => { setSigX(0); setSigY(0); setSigSize(48) }}>Reset posisi</Button>
+            <div className="space-y-1">
+              <Label className="text-xs">Geser Nama+NIP (X): {nameX}px</Label>
+              <input type="range" min={-60} max={60} value={nameX} onChange={(e) => setNameX(Number(e.target.value))} className="w-full" />
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => { setSigX(0); setSigY(0); setSigSize(48); setNameX(0) }}>Reset posisi</Button>
           </div>
           {/* preview */}
           <div className="w-44 rounded-sm border bg-white p-2 text-[9px]">
             <p className="text-center text-muted-foreground">Kepala Sekolah,</p>
             <div className="relative mx-auto mt-2 h-24 w-40">
-              <div className="absolute bottom-0 left-0 text-left">
+              <div className="absolute bottom-0 left-0 text-left" style={{ transform: `translateX(${nameX}px)` }}>
                 <p className="font-semibold">{settings.principalName || "Nama Kepsek"}</p>
                 <p className="text-[8px] text-muted-foreground">NIP. {settings.principalNip || "—"}</p>
               </div>
