@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Textarea } from "@/components/ui/textarea"
 import type { SoalImpor } from "@/lib/impor-docx"
 
@@ -202,28 +202,32 @@ export function ImporSoalPage({
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 py-4">
-          <Tabs
-            defaultValue="docx"
+          <ToggleGroup
+            variant="outline"
+            multiple={false}
+            value={[sumber]}
             onValueChange={(v) => {
-              setSumber(v as "docx" | "teks")
+              if (!v.length) return
+              setSumber(v[0] as "docx" | "teks")
               setSoal(null)
               setPeringatan([])
               setError(null)
               setHasil(null)
             }}
+            className="w-full sm:w-fit"
           >
-            <TabsList>
-              <TabsTrigger value="docx">
-                <FileUp data-icon="inline-start" />
-                File Word (.docx)
-              </TabsTrigger>
-              <TabsTrigger value="teks">
-                <FileText data-icon="inline-start" />
-                Tempel teks
-              </TabsTrigger>
-            </TabsList>
+            <ToggleGroupItem value="docx" className="flex-1 gap-1.5 sm:flex-none">
+              <FileUp data-icon="inline-start" />
+              File Word (.docx)
+            </ToggleGroupItem>
+            <ToggleGroupItem value="teks" className="flex-1 gap-1.5 sm:flex-none">
+              <FileText data-icon="inline-start" />
+              Tempel teks
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-            <TabsContent value="docx" className="mt-3">
+          {sumber === "docx" ? (
+            <div className="mt-3">
               <label
                 className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-sm border border-dashed border-border bg-muted/40 px-4 py-10 text-center transition-colors hover:bg-muted"
                 onDragOver={(e) => e.preventDefault()}
@@ -246,9 +250,9 @@ export function ImporSoalPage({
                   onChange={(e) => pilihFile(e.target.files?.[0] ?? null)}
                 />
               </label>
-            </TabsContent>
-
-            <TabsContent value="teks" className="mt-3 space-y-2">
+            </div>
+          ) : (
+            <div className="mt-3 space-y-2">
               <Textarea
                 value={teks}
                 onChange={(e) => setTeks(e.target.value)}
@@ -265,8 +269,8 @@ export function ImporSoalPage({
                 {pending ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
                 Periksa format
               </Button>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
 
           <Separator className="my-4" />
 
