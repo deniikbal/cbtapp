@@ -111,31 +111,10 @@ export async function buatFormKosong(
     }
   }
 
-  // Bagian soal pilihan ganda: halaman terpisah + 30 soal PG kosong bernomor 1-30.
-  // Guru tinggal mengganti isi soal & opsi A-E; soal default tidak wajib (required diatur guru).
+  // Bagian soal pilihan ganda: cukup halaman terpisah, soal diisi lewat Impor Word/tempel teks.
   requests.push({
     createItem: { item: { title: "SOAL PILIHAN GANDA", description: "Isi soal di bagian ini.", pageBreakItem: {} }, location: { index: index++ } },
   })
-  for (let nomor = 1; nomor <= 30; nomor++) {
-    requests.push({
-      createItem: {
-        item: {
-          title: String(nomor),
-          questionItem: {
-            question: {
-              required: true,
-              grading: { pointValue: 1 },
-              choiceQuestion: {
-                type: "RADIO",
-                options: ["A", "B", "C", "D", "E"].map((huruf) => ({ value: huruf })),
-              },
-            },
-          },
-        },
-        location: { index: index++ },
-      },
-    })
-  }
 
   await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
 
