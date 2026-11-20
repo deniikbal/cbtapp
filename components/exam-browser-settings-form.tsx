@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { Loader2, Settings } from "lucide-react"
+import { Copy, Loader2, RefreshCw, Settings } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
-import { updateExamBrowserSettings } from "@/app/dashboard/pengaturan/actions"
+import { updateExamBrowserSettings, generateExamConfigCode } from "@/app/dashboard/pengaturan/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,9 +21,12 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [isGenerating, startGenerate] = useTransition()
+  const [code, setCode] = useState(settings.configCode || "")
 
   function handleSubmit(formData: FormData) {
     setError(null)
+    formData.set("configCode", code)
     startTransition(async () => {
       try {
         await updateExamBrowserSettings(formData)
@@ -37,13 +40,55 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
     })
   }
 
+  function handleGenerate() {
+    startGenerate(async () => {
+      const newCode = await generateExamConfigCode()
+      setCode(newCode)
+      toast.success(`Kode baru: ${newCode} — bagikan ke siswa.`)
+      router.refresh()
+    })
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(code)
+    toast.success("Kode disalin!")
+  }
+
   return (
     <form
-      key={`${settings.forceExamBrowser}-${settings.allowedUserAgentPattern}-${settings.blockedMessage}-${settings.downloadUrl}`}
+      key={`${settings.forceExamBrowser}-${settings.allowedUserAgentPattern}-${settings.blockedMessage}-${settings.downloadUrl}-${settings.configCode}`}
       action={handleSubmit}
       className="space-y-5"
     >
-      <div className="flex items-start gap-3 rounded-xl border bg-muted/30 p-4">
+      {/* ─── Access Code Section ─── */}
+      <div className="rounded-sm border bg-muted/30 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-base font-semibold">Kode Akses ExamBro</Label>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Siswa masukkan 4 angka ini di app ExamBro (Mode Peserta → Access Code) untuk mengambil konfigurasi otomatis.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-sm border bg-background px-4 py-2">
+            <span className="font-mono text-2xl font-bold tracking-[0.3em]">{code || "----"}</span>
+          </div>
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleCopy} disabled={!code}>
+            <Copy className="size-3.5" /> Salin
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleGenerate} disabled={isGenerating}>
+            {isGenerating ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            Generate Kode Baru
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Klik &quot;Generate Kode Baru&quot; untuk membuat kode acak. Kode lama langsung tidak berlaku. Bagikan kode ke siswa via WA, papan tulis, atau lisan.
+        </p>
+      </div>
+
+      {/* ─── Force Exam Browser ─── */}
+      <div className="flex items-start gap-3 rounded-sm border bg-muted/30 p-4">
         <input id="forceExamBrowser" name="forceExamBrowser" type="checkbox" defaultChecked={settings.forceExamBrowser} disabled={isPending} className="mt-1 size-4 rounded border-border" />
         <div className="space-y-1">
           <Label htmlFor="forceExamBrowser">Wajib menggunakan ExamBro</Label>
@@ -53,18 +98,18 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
 
       <div className="space-y-2">
         <Label htmlFor="allowedUserAgentPattern">Pola User-Agent yang diizinkan</Label>
-        <Textarea id="allowedUserAgentPattern" name="allowedUserAgentPattern" defaultValue={settings.allowedUserAgentPattern} placeholder="Contoh: exambro&#10;exam browser" rows={5} disabled={isPending} />
-        <p className="text-xs text-muted-foreground">Bisa lebih dari satu, pisahkan dengan baris baru atau koma. Gunakan keyword unik, jangan User-Agent lengkap.</p>
+        <Textarea id="allowedUserAgentPattern" name="allowedUserAgentPattern" defaultValue={settings.allowedUserAgentPattern} placeholder={"Contoh: exambro\nexam browser"} rows={3} disabled={isPending} />
+        <p className="text-xs text-muted-foreground">Pisahkan dengan baris baru atau koma. Gunakan keyword unik.</p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="blockedMessage">Pesan saat diblokir</Label>
-        <Textarea id="blockedMessage" name="blockedMessage" defaultValue={settings.blockedMessage} rows={3} disabled={isPending} />
+        <Textarea id="blockedMessage" name="blockedMessage" defaultValue={settings.blockedMessage} rows={2} disabled={isPending} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="downloadUrl">Link Play Store ExamBro</Label>
-        <Input id="downloadUrl" name="downloadUrl" defaultValue={settings.downloadUrl} placeholder="https://play.google.com/store/apps/details?id=..." disabled={isPending} />
+        <Label htmlFor="downloadUrl">Link Download ExamBro (APK)</Label>
+        <Input id="downloadUrl" name="downloadUrl" defaultValue={settings.downloadUrl} placeholder="https://sman1bantarujeg.sch.id/ExamBro-SMANSABA-v4.0.apk" disabled={isPending} />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

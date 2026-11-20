@@ -11,6 +11,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
   const allowedUserAgentPattern = String(formData.get("allowedUserAgentPattern") ?? "").trim()
   const blockedMessage = String(formData.get("blockedMessage") ?? "").trim()
   const downloadUrl = String(formData.get("downloadUrl") ?? "").trim()
+  const configCode = String(formData.get("configCode") ?? "").trim()
 
   if (forceExamBrowser && !allowedUserAgentPattern) {
     throw new Error("Isi minimal satu pola User-Agent sebelum mode wajib ExamBro diaktifkan.")
@@ -27,6 +28,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
       blockedMessage:
         blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
       downloadUrl,
+      configCode,
     })
     .onConflictDoUpdate({
       target: examBrowserSettings.id,
@@ -36,6 +38,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
         blockedMessage:
           blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
         downloadUrl,
+        configCode,
         updatedAt: new Date(),
       },
     })
@@ -44,4 +47,17 @@ export async function updateExamBrowserSettings(formData: FormData) {
   revalidatePath("/")
   revalidatePath("/siswa/dashboard")
   revalidatePath("/blocked")
+}
+
+export async function generateExamConfigCode() {
+  const code = String(Math.floor(1000 + Math.random() * 9000))
+  await ensureExamBrowserSettingsTable()
+  await db
+    .insert(examBrowserSettings)
+    .values({ id: EXAM_BROWSER_SETTING_ID, configCode: code })
+    .onConflictDoUpdate({
+      target: examBrowserSettings.id,
+      set: { configCode: code, updatedAt: new Date() },
+    })
+  return code
 }
