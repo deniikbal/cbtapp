@@ -130,7 +130,7 @@ export default async function KartuUjianPage({
                   {cardSettings.logoUrl && <div className="size-10" />}
                 </header>
 
-                <dl className="mt-3 space-y-1.5">
+                <dl className="mt-2 space-y-1">
                   <div className="flex gap-2">
                     <dt className="w-20 shrink-0 text-muted-foreground">Nama :</dt>
                     <dd className="kartu-nama line-clamp-2 font-medium">{siswa.name}</dd>
@@ -158,7 +158,7 @@ export default async function KartuUjianPage({
                 <footer className="mt-auto border-t border-border pt-2 text-[9px]">
                   <div className="ml-auto w-fit text-center">
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
-                    <div className="relative mx-auto mt-4 h-16 w-44">
+                    <div className="relative mx-auto mt-2 h-12 w-44">
                       <div className="absolute bottom-0 left-0 text-left">
                         <p className="font-semibold">{cardSettings.principalName || "—"}</p>
                         <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
