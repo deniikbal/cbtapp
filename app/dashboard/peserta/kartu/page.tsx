@@ -158,7 +158,7 @@ export default async function KartuUjianPage({
                 <footer className="mt-auto border-t border-border pt-2 text-[9px]">
                   <div className="ml-auto w-fit text-center">
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
-                    <div className="relative mt-1 inline-block px-2 py-1">
+                    <div className="relative mt-4 inline-block px-3 py-3">
                       <div className="text-left">
                         <p className="font-semibold">{cardSettings.principalName || "—"}</p>
                         <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
