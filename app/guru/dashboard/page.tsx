@@ -174,23 +174,17 @@ export default async function GuruDashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="w-10 text-center">#</TableHead>
                       <TableHead>Bank Soal</TableHead>
-                      <TableHead>Mapel</TableHead>
-                      <TableHead>Tingkat</TableHead>
+                      <TableHead>Mapel / Tingkat</TableHead>
                       <TableHead className="text-center">Soal</TableHead>
                       <TableHead>Jadwal</TableHead>
-                      <TableHead className="text-right">Respons</TableHead>
-                      <TableHead className="text-right">Rata-rata</TableHead>
+                      <TableHead className="text-right">Respons / Rata-rata</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {ringkas.map((bank, index) => (
                       <TableRow key={bank.id} className="transition-colors hover:bg-muted/40">
-                        <TableCell className="text-center text-sm text-muted-foreground tabular-nums">
-                          {index + 1}
-                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="size-8 rounded-sm">
@@ -204,8 +198,12 @@ export default async function GuruDashboardPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">{bank.subjectName ?? "-"}</TableCell>
-                        <TableCell className="text-sm">{bank.grade}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-sm">
+                            <span>{bank.subjectName ?? "-"}</span>
+                            <span className="text-xs text-muted-foreground">{bank.grade}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-center tabular-nums">
                           {bank.formId ? hitungSoal(bank.formItems) : <span className="text-muted-foreground">-</span>}
                         </TableCell>
@@ -221,26 +219,28 @@ export default async function GuruDashboardPage() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{bank.respons}</TableCell>
                         <TableCell className="text-right">
-                          {bank.respons ? (
-                            <span
-                              className={
-                                bank.rataRata >= Number(identitas.kkm || 0)
-                                  ? "font-medium text-emerald-700"
-                                  : "font-medium text-amber-700"
-                              }
-                              title={
-                                bank.rataRata >= Number(identitas.kkm || 0)
-                                  ? `Di atas KKM ${identitas.kkm}`
-                                  : `Di bawah KKM ${identitas.kkm}`
-                              }
-                            >
-                              {bank.rataRata.toFixed(2)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm tabular-nums">{bank.respons} respons</span>
+                            {bank.respons ? (
+                              <span
+                                className={
+                                  bank.rataRata >= Number(identitas.kkm || 0)
+                                    ? "font-medium text-emerald-700"
+                                    : "font-medium text-amber-700"
+                                }
+                                title={
+                                  bank.rataRata >= Number(identitas.kkm || 0)
+                                    ? `Di atas KKM ${identitas.kkm}`
+                                    : `Di bawah KKM ${identitas.kkm}`
+                                }
+                              >
+                                Rata-rata {bank.rataRata.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Belum ada</span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-1">
