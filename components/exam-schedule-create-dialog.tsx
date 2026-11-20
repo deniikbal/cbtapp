@@ -200,7 +200,10 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
             <div className="space-y-2"><Label htmlFor="startTime">Jam Mulai</Label><Input id="startTime" name="startTime" type="time" required /></div>
             <div className="space-y-2"><Label htmlFor="durationMinutes">Durasi</Label><Input id="durationMinutes" name="durationMinutes" type="number" min="1" placeholder="90" required /></div>
           </div>
-          <div className="space-y-2"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2"><Label htmlFor="session">Sesi</Label><Select name="session" defaultValue="1"><SelectTrigger id="session" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan Jadwal"}</Button></DialogFooter>
         </form>

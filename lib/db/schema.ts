@@ -154,6 +154,8 @@ export const examSchedules = pgTable(
     startTime: time("startTime").notNull(),
     durationMinutes: integer("durationMinutes").notNull(),
     active: boolean("active").notNull().default(true),
+    // Sesi ujian: jadwal per (kelas + sesi). Siswa sesi N hanya melihat jadwal sesi N.
+    session: integer("session").notNull().default(1),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -197,6 +199,8 @@ export const students = pgTable(
       .references(() => classrooms.id, { onDelete: "restrict" }),
     // Ruangan ujian (opsional): satu ruangan boleh berisi kelas campuran.
     roomId: text("roomId").references((): AnyPgColumn => examRooms.id, { onDelete: "set null" }),
+    // Sesi ujian (1, 2, ...): siswa hanya melihat jadwal dengan sesi yang sama.
+    session: integer("session").notNull().default(1),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },

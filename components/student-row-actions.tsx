@@ -41,6 +41,7 @@ export type StudentRowActionData = {
   nis: string
   active: boolean
   classroomId: string
+  session?: number
 }
 
 export type StudentClassroomOption = {
@@ -157,6 +158,20 @@ export function StudentRowActions({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={`session-${student.id}`}>Sesi</Label>
+              <Select name="session" defaultValue={String(student.session ?? 1)}>
+                <SelectTrigger id={`session-${student.id}`} className="w-full">
+                  <SelectValue>{`Sesi ${student.session ?? 1}`}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Sesi 1</SelectItem>
+                  <SelectItem value="2">Sesi 2</SelectItem>
+                  <SelectItem value="3">Sesi 3</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

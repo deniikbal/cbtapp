@@ -50,6 +50,7 @@ type StudentRow = {
   classroomId: string
   majorName: string
   kartuPassword: string | null
+  session: number
 }
 
 type ClassroomOption = {
@@ -82,6 +83,7 @@ export default async function PesertaPage() {
         classroomId: classrooms.id,
         majorName: majors.name,
         kartuPassword: students.kartuPassword,
+        session: students.session,
       })
       .from(students)
       .innerJoin(classrooms, eq(students.classroomId, classrooms.id))

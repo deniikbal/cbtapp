@@ -55,6 +55,7 @@ export default async function SiswaDashboardPage() {
       className: classrooms.name,
       majorName: majors.name,
       majorCode: majors.code,
+      session: students.session,
     })
     .from(students)
     .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
@@ -82,6 +83,7 @@ export default async function SiswaDashboardPage() {
     .where(
       and(
         eq(examSchedules.classroomId, student[0].classroomId),
+        eq(examSchedules.session, student[0].session),
         eq(examSchedules.active, true),
         eq(questionBanks.active, true)
       )

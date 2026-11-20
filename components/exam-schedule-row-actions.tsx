@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, Loader2, Trash2 } from "lucide-react"
+import { Copy, Edit, Loader2, Trash2 } from "lucide-react"
 
-import { deleteExamSchedules, updateExamScheduleGroup } from "@/app/dashboard/jadwal/actions"
+import { deleteExamSchedules, duplicateExamScheduleToNextSession, updateExamScheduleGroup } from "@/app/dashboard/jadwal/actions"
 import type { ScheduleBankOption, ScheduleClassroomOption } from "@/components/exam-schedule-create-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-export type ScheduleRowActionData = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; title: string }
+export type ScheduleRowActionData = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; session?: number; title: string }
 
 export function ExamScheduleRowActions({
   schedule,
@@ -47,6 +47,15 @@ export function ExamScheduleRowActions({
 
   function toggleAllClassrooms() {
     setSelectedClassroomIds(allSelected ? [] : classrooms.map((classroom) => classroom.id))
+  }
+
+  function handleDuplicate() {
+    if (!window.confirm(`Duplikat jadwal ini ke Sesi ${(schedule.session ?? 1) + 1}? Jam mulai otomatis digeser 30 menit setelah sesi ini selesai.`)) return
+    startTransition(async () => {
+      const result = await duplicateExamScheduleToNextSession(schedule.id)
+      if (result.ok) toast.success(result.message)
+      else toast.error(result.message)
+    })
   }
 
   function handleUpdate(formData: FormData) {
@@ -101,6 +110,10 @@ export function ExamScheduleRowActions({
 
   return (
     <div className="flex justify-end gap-1.5">
+      <Button variant="ghost" size="icon-sm" disabled={isPending} onClick={handleDuplicate} title="Duplikat ke sesi berikutnya">
+        {isPending ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
+        <span className="sr-only">Duplikat ke sesi berikutnya</span>
+      </Button>
       <Dialog
         open={editOpen}
         onOpenChange={(nextOpen) => {
@@ -149,7 +162,7 @@ export function ExamScheduleRowActions({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Tanggal</Label><Input name="examDate" type="date" defaultValue={schedule.examDate} required /></div><div className="space-y-2"><Label>Jam Mulai</Label><Input name="startTime" type="time" defaultValue={schedule.startTime.slice(0, 5)} required /></div><div className="space-y-2"><Label>Durasi</Label><Input name="durationMinutes" type="number" min="1" defaultValue={schedule.durationMinutes} required /></div></div>
-            <div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div></div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
           </form>

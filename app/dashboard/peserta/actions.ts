@@ -32,6 +32,7 @@ export async function createStudent(formData: FormData) {
     kartuPassword: password,
     active,
     classroomId,
+    session: Math.max(1, Number(formData.get("session") ?? 1) || 1),
   })
 
   revalidatePath("/dashboard/peserta")
@@ -56,6 +57,7 @@ export async function updateStudent(formData: FormData) {
       nis,
       classroomId,
       active,
+      session: Math.max(1, Number(formData.get("session") ?? 1) || 1),
       ...(password ? { passwordHash: hashPassword(password) } : {}),
       updatedAt: new Date(),
     })
@@ -432,4 +434,22 @@ function lastThreeDigits(value: string) {
 
 function normalizeKey(value: string) {
   return value.trim().toLowerCase()
+}
+
+export async function setStudentsSession(ids: string[], session: number) {
+  const unik = [...new Set((ids ?? []).map((value) => String(value).trim()).filter(Boolean))]
+  const safeSession = Math.max(1, Number(session) || 1)
+
+  if (unik.length === 0) {
+    throw new Error("Tidak ada peserta yang dipilih.")
+  }
+
+  await db
+    .update(students)
+    .set({ session: safeSession, updatedAt: new Date() })
+    .where(inArray(students.id, unik))
+
+  revalidatePath("/dashboard/peserta")
+
+  return { jumlah: unik.length, session: safeSession }
 }

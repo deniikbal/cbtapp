@@ -38,12 +38,14 @@ async function findScheduleForStudent(scheduleId: string, studentId: string) {
       googleFormUrl: questionBanks.googleFormUrl,
       scheduleActive: examSchedules.active,
       bankActive: questionBanks.active,
+      scheduleSession: examSchedules.session,
+      studentSession: students.session,
     })
     .from(examSchedules)
     .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
     .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
     .innerJoin(students, eq(students.classroomId, classrooms.id))
-    .where(and(eq(examSchedules.id, scheduleId), eq(students.id, studentId), eq(students.active, true)))
+    .where(and(eq(examSchedules.id, scheduleId), eq(students.id, studentId), eq(students.active, true), eq(examSchedules.session, students.session)))
     .limit(1)
 
   return rows[0]
@@ -81,7 +83,7 @@ export async function startExam(scheduleId: string) {
   }
 
   revalidatePath("/siswa/dashboard")
-  redirect(schedule.googleFormUrl)
+  redirect(`/ujian/${scheduleId}`)
 }
 
 export async function submitExam(scheduleId: string) {

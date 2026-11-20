@@ -14,13 +14,14 @@ function readScheduleBaseForm(formData: FormData) {
   const examDate = String(formData.get("examDate") ?? "").trim()
   const startTime = String(formData.get("startTime") ?? "").trim()
   const durationMinutes = Number(formData.get("durationMinutes") ?? 0)
+  const session = Math.max(1, Number(formData.get("session") ?? 1) || 1)
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!questionBankId || !examDate || !startTime || !durationMinutes) {
     throw new Error("Bank soal, tanggal, jam mulai, dan durasi wajib diisi.")
   }
 
-  return { questionBankId, examDate, startTime, durationMinutes, active }
+  return { questionBankId, examDate, startTime, durationMinutes, active, session }
 }
 
 
@@ -47,7 +48,8 @@ export async function createExamSchedule(formData: FormData) {
           eq(examSchedules.questionBankId, base.questionBankId),
           eq(examSchedules.classroomId, classroomId),
           eq(examSchedules.examDate, base.examDate),
-          eq(examSchedules.startTime, base.startTime)
+          eq(examSchedules.startTime, base.startTime),
+          eq(examSchedules.session, base.session)
         )
       )
       .limit(1)
@@ -138,7 +140,8 @@ export async function updateExamScheduleGroup(formData: FormData) {
           eq(examSchedules.questionBankId, base.questionBankId),
           eq(examSchedules.classroomId, classroomId),
           eq(examSchedules.examDate, base.examDate),
-          eq(examSchedules.startTime, base.startTime)
+          eq(examSchedules.startTime, base.startTime),
+          eq(examSchedules.session, base.session)
         )
       )
       .limit(1)
@@ -205,4 +208,57 @@ export async function deleteExamSchedules(ids: string[]): Promise<{ ok: boolean;
     console.error("Gagal menghapus jadwal:", error)
     return { ok: false, message: getDatabaseErrorMessage(error) }
   }
+}
+
+
+export async function duplicateExamScheduleToNextSession(id: string): Promise<{ ok: boolean; message: string }> {
+  if (!id) return { ok: false, message: "ID jadwal tidak valid." }
+
+  const rows = await db.select().from(examSchedules).where(eq(examSchedules.id, id)).limit(1)
+  const source = rows[0]
+  if (!source) return { ok: false, message: "Jadwal tidak ditemukan." }
+
+  const nextSession = source.session + 1
+  const [h, m] = source.startTime.split(":").map(Number)
+  const start = new Date(2000, 0, 1, h, m)
+  start.setMinutes(start.getMinutes() + source.durationMinutes + 30) // sesi berikut: 30 menit setelah sesi sebelumnya selesai
+  const newStartTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
+
+  const duplicate = await db
+    .select({ id: examSchedules.id })
+    .from(examSchedules)
+    .where(
+      and(
+        eq(examSchedules.questionBankId, source.questionBankId),
+        eq(examSchedules.classroomId, source.classroomId),
+        eq(examSchedules.examDate, source.examDate),
+        eq(examSchedules.startTime, newStartTime),
+        eq(examSchedules.session, nextSession)
+      )
+    )
+    .limit(1)
+
+  if (duplicate.length > 0) {
+    return { ok: false, message: `Sesi ${nextSession} untuk jadwal ini sudah ada.` }
+  }
+
+  try {
+    await db.insert(examSchedules).values({
+      id: randomUUID(),
+      questionBankId: source.questionBankId,
+      classroomId: source.classroomId,
+      examDate: source.examDate,
+      startTime: newStartTime,
+      durationMinutes: source.durationMinutes,
+      active: source.active,
+      session: nextSession,
+    })
+  } catch (error) {
+    return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
+
+  revalidatePath("/dashboard/jadwal")
+  revalidatePath("/siswa/dashboard")
+
+  return { ok: true, message: `Jadwal sesi ${nextSession} dibuat pukul ${newStartTime}. Assign siswa ke sesi ${nextSession} di halaman Peserta.` }
 }

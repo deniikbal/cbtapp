@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { Filter, RotateCcw, Search, Trash2, Users, X } from "lucide-react"
+import { Filter, RotateCcw, Search, Trash2, Users, X, UsersRound } from "lucide-react"
 import { toast } from "sonner"
 
-import { deleteStudents } from "@/app/dashboard/peserta/actions"
+import { deleteStudents, setStudentsSession } from "@/app/dashboard/peserta/actions"
 
 import { SeedMasterDataButton } from "@/components/seed-master-data-button"
 import { StudentCreateDialog } from "@/components/student-create-dialog"
@@ -50,6 +50,7 @@ export type StudentManagementRow = {
   classroomId: string
   majorName: string
   kartuPassword: string | null
+  session: number
 }
 
 export type StudentManagementClassroom = {
@@ -73,6 +74,7 @@ export function StudentManagementCard({
   const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkSession, setBulkSession] = useState("1")
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const selectedClassroom = classrooms.find((classroom) => classroom.id === classroomId)
@@ -121,6 +123,18 @@ export function StudentManagementCard({
 
   function selectAllFiltered() {
     setSelectedIds((prev) => [...new Set([...prev, ...filterIds])])
+  }
+
+  function handleBulkSession() {
+    startTransition(async () => {
+      try {
+        const result = await setStudentsSession(selectedIds, Number(bulkSession))
+        toast.success(`Sesi ${result.session} diterapkan ke ${result.jumlah} peserta.`)
+        setSelectedIds([])
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Gagal menetapkan sesi.")
+      }
+    })
   }
 
   function handleBulkDelete() {
@@ -239,6 +253,17 @@ export function StudentManagementCard({
               )}
             </p>
             <div className="flex items-center gap-2">
+              <Select value={bulkSession} onValueChange={(value: string | null) => setBulkSession(value ?? "1")}>
+                <SelectTrigger className="h-11 w-[110px] sm:h-8"><span>Sesi {bulkSession}</span></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Sesi 1</SelectItem>
+                  <SelectItem value="2">Sesi 2</SelectItem>
+                  <SelectItem value="3">Sesi 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-8" disabled={isPending} onClick={handleBulkSession}>
+                <UsersRound className="size-4" aria-hidden="true" />Tetapkan sesi
+              </Button>
               <Button variant="outline" size="sm" className="h-11 gap-1.5 sm:h-8" onClick={() => setSelectedIds([])}>
                 <X className="size-4" aria-hidden="true" />Batalkan
               </Button>
@@ -273,6 +298,7 @@ export function StudentManagementCard({
                 <TableHead>Username</TableHead>
                 <TableHead>Password</TableHead>
                 <TableHead>Kelas</TableHead>
+                <TableHead>Sesi</TableHead>
                 <TableHead>Jurusan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-32 text-right">Aksi</TableHead>
@@ -281,7 +307,7 @@ export function StudentManagementCard({
             <TableBody>
               {filteredStudents.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={9} className="h-48 text-center">
+                  <TableCell colSpan={10} className="h-48 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                       <div className="rounded-full bg-muted p-4"><Users className="size-7" /></div>
                       <div className="space-y-1">
@@ -307,6 +333,7 @@ export function StudentManagementCard({
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
                   <TableCell className="font-mono text-xs">{student.kartuPassword || "—"}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal">{student.className}</Badge></TableCell>
+                  <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{student.session ?? 1}</TableCell>
                   <TableCell className="text-muted-foreground">{student.majorName}</TableCell>
                   <TableCell><Badge variant="secondary" className={cn("font-normal", student.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{student.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell>
                   <TableCell><div className="flex justify-end gap-1.5"><StudentRowActions student={student} classrooms={classrooms} /></div></TableCell>
