@@ -84,7 +84,7 @@ export async function buatFormKosong(
 
   // Pastikan deskripsi terpasang (fallback bila create tidak menerimanya).
   if (deskripsi) {
-    requests.push({ updateFormInfo: { info: { description: deskripsi }, updateMask: "info.description" } })
+    requests.push({ updateFormInfo: { info: { description: deskripsi }, updateMask: "description" } })
   }
 
   if (kuis) {
