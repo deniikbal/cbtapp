@@ -2,13 +2,13 @@
 
 import { randomUUID } from "node:crypto"
 
-import { eq, inArray } from "drizzle-orm"
+import { eq, inArray , ne } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { getExamBrowserSettings } from "@/lib/exam-browser"
-import { daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
+import { ambilForm, daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
 import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
@@ -242,6 +242,42 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
     return { ok: true, message: `Form kosong dibuat. Link siswa tersimpan; isi soal lewat tombol edit form.${catatanEditor}`, formId, editUrl, shareUrl }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Gagal membuat form di Google." }
+  }
+}
+
+/** Tarik ulang butir form dari Google: hitung jumlah soal + simpan snapshot formItems. */
+export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; message: string; jumlah?: number }> {
+  const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+  if (!bank.formId) return { ok: false, message: "Bank soal belum punya form." }
+
+  try {
+    const { items } = await ambilForm(bank.formId)
+    const jumlah = items.filter((item) => (item as { questionItem?: unknown }).questionItem).length
+    await db.update(questionBanks).set({ formItems: items, syncedAt: new Date(), updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    revalidatePath("/dashboard/bank-soal")
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: `Sinkron selesai: ${jumlah} soal di form.`, jumlah }
+  } catch (error) {
+    console.error("Gagal sinkron form:", error)
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal sinkron form." }
+  }
+}
+
+/** Sinkron semua bank soal yang punya form. */
+export async function sinkronSemuaFormItems(): Promise<{ ok: boolean; message: string }> {
+  const rows = await db.select({ id: questionBanks.id }).from(questionBanks).where(ne(questionBanks.formId, ""))
+  let jumlah = 0
+  let gagal = 0
+  for (const row of rows) {
+    const hasil = await sinkronFormItems(row.id)
+    if (hasil.ok) jumlah += hasil.jumlah ?? 0
+    else gagal += 1
+  }
+  if (rows.length === 0) return { ok: false, message: "Belum ada bank soal dengan form." }
+  return {
+    ok: gagal === 0,
+    message: gagal ? `${jumlah} soal tersinkron, ${gagal} form gagal.` : `${rows.length} form tersinkron, total ${jumlah} soal.`,
   }
 }
 

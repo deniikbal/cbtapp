@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, FilePlus2, FileUp, Loader2, Trash2 } from "lucide-react"
+import { Edit, FilePlus2, FileUp, Loader2, RefreshCw, Trash2 } from "lucide-react"
 
-import { buatFormDariBank, deleteQuestionBank, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
+import { buatFormDariBank, deleteQuestionBank, sinkronFormItems, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
 import Link from "next/link"
 import type { SubjectOption } from "@/components/question-bank-create-dialog"
 import { TeacherCombobox, type TeacherOption } from "@/components/teacher-combobox"
@@ -36,6 +36,18 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
       }
       toast.success(result.message)
       setEditOpen(false)
+    })
+  }
+
+  function handleSinkron(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    startTransition(async () => {
+      const hasil = await sinkronFormItems(bank.id)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message)
     })
   }
 
@@ -101,6 +113,16 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
         </DialogContent>
       </Dialog>
       <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!bank.formId || isPending}
+              title={bank.formId ? "Sinkron jumlah soal dari Google" : "Buat form dulu"}
+              onClick={handleSinkron}
+            >
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+              <span className="sr-only">Sinkron jumlah soal</span>
+            </Button>
+            <Button
               variant="ghost"
               size="icon-sm"
               disabled={!bank.formId}
