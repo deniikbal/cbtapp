@@ -223,7 +223,7 @@ export function ImporSoalPage({
                     value={teks}
                     onChange={(e) => setTeks(e.target.value)}
                     placeholder={CONTOH}
-                    className="min-h-48 rounded-sm font-mono text-xs"
+                    className="min-h-[420px] rounded-sm font-mono text-xs lg:min-h-[520px]"
                   />
                   <Button
                     variant="outline"
