@@ -216,3 +216,31 @@ export async function hapusSoal(
     return { ok: false, message: err instanceof Error ? err.message : "Gagal menghapus soal." }
   }
 }
+
+/** Tambah satu soal manual (diketik langsung di aplikasi). */
+export async function tambahSoal(
+  bankId: string,
+  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
+): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+  const akses = await cekAkses(bankId)
+  if (!akses.ok) return akses
+  const [bank] = await db.select({ formId: questionBanks.formId, formItems: questionBanks.formItems }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
+
+  const pertanyaan = data.pertanyaan.trim()
+  const opsi = data.opsi.map((o) => o.trim()).filter(Boolean)
+  const idxKunci = "ABCDE".indexOf((data.hurufKunci || "").toUpperCase())
+  if (!pertanyaan) return { ok: false, message: "Pertanyaan masih kosong." }
+  if (opsi.length < 2) return { ok: false, message: "Isi minimal 2 opsi." }
+  if (idxKunci < 0 || idxKunci >= opsi.length) return { ok: false, message: "Pilih kunci jawaban yang sesuai dengan opsi." }
+
+  try {
+    const soalBaru: SoalImpor = { no: 1, pertanyaan, opsi, kunci: "abcde"[idxKunci] }
+    const items = await tambahSoalKeForm(bank.formId, [soalBaru])
+    await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: "Soal ditambahkan ke form.", soal: daftarSoalDariItems(items) }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Gagal menambah soal." }
+  }
+}

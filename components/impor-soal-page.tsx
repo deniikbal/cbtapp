@@ -11,12 +11,13 @@ import {
   FileUp,
   Loader2,
   Pencil,
+  Plus,
   Sparkles,
   Trash2,
   TriangleAlert,
 } from "lucide-react"
 
-import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks, daftarSoalForm, ubahSoal, hapusSoal } from "@/app/actions/impor-soal"
+import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks, daftarSoalForm, ubahSoal, hapusSoal, tambahSoal } from "@/app/actions/impor-soal"
 import { AksiIkon } from "@/components/aksi-ikon"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -70,7 +71,7 @@ export function ImporSoalPage({
   const [error, setError] = useState<string | null>(null)
   const [hasil, setHasil] = useState<string | null>(null)
   const [tersimpan, setTersimpan] = useState<SoalForm[]>(soalFormAwal)
-  const [edit, setEdit] = useState<{ qid: string; pertanyaan: string; opsi: string[]; kunci: string } | null>(null)
+  const [edit, setEdit] = useState<{ qid: string | null; pertanyaan: string; opsi: string[]; kunci: string } | null>(null)
   const [hapus, setHapus] = useState<SoalForm | null>(null)
   const [sedangUbah, startUbah] = useTransition()
   const [pending, startTransition] = useTransition()
@@ -167,14 +168,19 @@ export function ImporSoalPage({
     setEdit({ qid: s.qid, pertanyaan: s.pertanyaan, opsi, kunci: s.kunci })
   }
 
+  function tambahBaru() {
+    setEdit({ qid: null, pertanyaan: "", opsi: ["", "", "", "", ""], kunci: "" })
+  }
+
   function simpanEdit() {
     if (!edit) return
     startUbah(async () => {
-      const hasil = await ubahSoal(bankId, edit.qid, {
+      const payload = {
         pertanyaan: edit.pertanyaan,
         opsi: edit.opsi.filter((o) => o.trim()),
         hurufKunci: edit.kunci,
-      })
+      }
+      const hasil = edit.qid ? await ubahSoal(bankId, edit.qid, payload) : await tambahSoal(bankId, payload)
       if (!hasil.ok) {
         toast.error(hasil.message)
         return
@@ -271,9 +277,15 @@ export function ImporSoalPage({
               Daftar soal yang terbaca dari Google Form saat ini.
             </CardDescription>
           </div>
-          <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
-            {tersimpan.length} soal
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant="secondary" className="rounded-sm font-normal tabular-nums">
+              {tersimpan.length} soal
+            </Badge>
+            <Button size="sm" className="h-11 gap-1.5 rounded-sm sm:h-8" onClick={tambahBaru}>
+              <Plus className="size-4" />
+              Tambah soal
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="px-4 py-3">
           {tersimpan.length === 0 ? (
@@ -339,8 +351,12 @@ export function ImporSoalPage({
       <Dialog open={Boolean(edit)} onOpenChange={(buka) => !buka && setEdit(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit soal</DialogTitle>
-            <DialogDescription>Ubah pertanyaan, opsi, atau kunci. Perubahan langsung ke Google Form.</DialogDescription>
+            <DialogTitle>{edit?.qid ? "Edit soal" : "Tambah soal"}</DialogTitle>
+            <DialogDescription>
+              {edit?.qid
+                ? "Ubah pertanyaan, opsi, atau kunci. Perubahan langsung ke Google Form."
+                : "Ketik pertanyaan, opsi A–E, lalu pilih kunci. Soal langsung masuk ke Google Form."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
@@ -400,7 +416,7 @@ export function ImporSoalPage({
             </Button>
             <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpanEdit} disabled={sedangUbah}>
               {sedangUbah ? <Loader2 className="size-4 animate-spin" /> : null}
-              Simpan ke form
+              {edit?.qid ? "Simpan ke form" : "Tambah ke form"}
             </Button>
           </DialogFooter>
         </DialogContent>
