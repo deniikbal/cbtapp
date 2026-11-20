@@ -7,7 +7,7 @@ import * as XLSX from "xlsx"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
-import { classrooms, majors, students } from "@/lib/db/schema"
+import { classrooms, examRooms, majors, students } from "@/lib/db/schema"
 
 function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex")
@@ -128,6 +128,8 @@ export async function importStudentsExcel(formData: FormData) {
 
   const classroomRows = await db.select({ id: classrooms.id, name: classrooms.name }).from(classrooms)
   const classroomByName = new Map(classroomRows.map((classroom) => [normalizeKey(classroom.name), classroom.id]))
+  const roomRows = await db.select({ id: examRooms.id, name: examRooms.name }).from(examRooms)
+  const roomByName = new Map(roomRows.map((room) => [normalizeKey(room.name), room.id]))
   const nisValues = rows.map((row) => row.nis).filter(Boolean)
   const existingStudents = nisValues.length
     ? await db.select({ nis: students.nis }).from(students).where(inArray(students.nis, nisValues))
@@ -158,12 +160,14 @@ export async function importStudentsExcel(formData: FormData) {
     }
 
     seenNis.add(row.nis)
+    const roomId = row.roomName ? roomByName.get(normalizeKey(row.roomName)) ?? null : null
     values.push({
       id: randomUUID(),
       name: row.name,
       nis: row.nis,
       passwordHash: hashPassword(row.password),
       classroomId,
+      roomId,
       active: row.active,
     })
   })
@@ -251,6 +255,7 @@ type CsvStudentRow = {
   nis: string
   password: string
   className: string
+  roomName: string
   active: boolean
 }
 
@@ -288,6 +293,7 @@ async function parseExcel(file: File): Promise<CsvStudentRow[]> {
       nis: data.get("nis") ?? "",
       password: data.get("password") ?? "",
       className: data.get("kelas") ?? data.get("class") ?? "",
+      roomName: data.get("ruangan") ?? data.get("room") ?? "",
       active: !(status === "tidak aktif" || status === "nonaktif" || status === "false" || status === "0"),
     }
   })
