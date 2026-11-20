@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { eq, inArray, or, sql } from "drizzle-orm"
-import { BookOpen, CalendarDays, ClipboardList, ExternalLink, LogOut } from "lucide-react"
+import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
@@ -262,15 +262,21 @@ export default async function GuruDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="gap-0 rounded-sm py-0">
-          <CardHeader className="gap-0 px-2.5 py-1.5">
-            <CardTitle className="text-sm">Identitas laporan</CardTitle>
-            <CardDescription className="text-[11px]">
-              Dipakai di header PDF analisis butir: nama tes, tahun pelajaran, semester, KKM, kepala sekolah.
-            </CardDescription>
-          </CardHeader>
+        {/* Auto collapse: tertutup secara default, klik header untuk membuka. */}
+        <details className="group gap-0 rounded-sm border bg-card py-0 text-card-foreground shadow-sm">
+          <summary className="cursor-pointer list-none select-none px-2.5 py-1.5 [&::-webkit-details-marker]:hidden">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-0.5">
+                <CardTitle className="text-sm">Identitas laporan</CardTitle>
+                <CardDescription className="text-[11px]">
+                  Dipakai di header PDF analisis butir: nama tes, tahun pelajaran, semester, KKM, kepala sekolah.
+                </CardDescription>
+              </div>
+              <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+            </div>
+          </summary>
           <GuruIdentitasForm identitas={identitas} />
-        </Card>
+        </details>
       </div>
     </main>
   )
