@@ -74,33 +74,31 @@ export async function updateUser(formData: FormData) {
     throw new Error("Password minimal 8 karakter.")
   }
 
-  await db.transaction(async (tx) => {
-    await tx.update(user).set({ name, email, emailVerified, updatedAt: new Date() }).where(eq(user.id, id))
+  await db.update(user).set({ name, email, emailVerified, updatedAt: new Date() }).where(eq(user.id, id))
 
-    if (password) {
-      const passwordHash = await hashPassword(password)
-      const existingCredential = await tx
-        .select({ id: account.id })
-        .from(account)
-        .where(and(eq(account.userId, id), eq(account.providerId, "credential")))
-        .limit(1)
+  if (password) {
+    const passwordHash = await hashPassword(password)
+    const existingCredential = await db
+      .select({ id: account.id })
+      .from(account)
+      .where(and(eq(account.userId, id), eq(account.providerId, "credential")))
+      .limit(1)
 
-      if (existingCredential[0]) {
-        await tx
-          .update(account)
-          .set({ password: passwordHash, updatedAt: new Date() })
-          .where(eq(account.id, existingCredential[0].id))
-      } else {
-        await tx.insert(account).values({
-          id: randomUUID(),
-          userId: id,
-          accountId: id,
-          providerId: "credential",
-          password: passwordHash,
-        })
-      }
+    if (existingCredential[0]) {
+      await db
+        .update(account)
+        .set({ password: passwordHash, updatedAt: new Date() })
+        .where(eq(account.id, existingCredential[0].id))
+    } else {
+      await db.insert(account).values({
+        id: randomUUID(),
+        userId: id,
+        accountId: id,
+        providerId: "credential",
+        password: passwordHash,
+      })
     }
-  })
+  }
 
   revalidateUserPaths()
 }
