@@ -1,12 +1,14 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { eq, inArray, or, sql } from "drizzle-orm"
-import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, LogOut } from "lucide-react"
+import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, FileQuestion, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { GuruIdentitasForm } from "@/components/guru-identitas-form"
+import { StatCard } from "@/components/stat-card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { ImporDocxDialog } from "@/components/impor-docx-dialog"
@@ -104,7 +106,7 @@ export default async function GuruDashboardPage() {
   return (
     <main className="min-h-svh bg-muted/30">
       <header className="bg-brand text-brand-foreground">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-2.5 py-2">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 md:px-6 lg:px-8">
           <div className="leading-tight">
             <p className="text-[11px]">Area Guru</p>
             <p className="text-sm font-semibold">{guru.name}</p>
@@ -124,53 +126,53 @@ export default async function GuruDashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl space-y-2 px-2.5 py-2">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div className="leading-tight">
-            <h1 className="text-base font-semibold text-foreground">Dashboard guru</h1>
-            <p className="text-[11px] text-muted-foreground">
-              Ringkasan bank soal, jadwal, dan hasil ujian yang terhubung ke akun Anda.
-            </p>
-          </div>
-        </div>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
+        <section className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Dashboard Guru</h1>
+          <p className="text-sm text-muted-foreground">
+            Ringkasan bank soal, jadwal, dan hasil ujian yang terhubung ke akun Anda.
+          </p>
+        </section>
 
-        <div className="grid gap-1.5 sm:grid-cols-3">
-          {[
-            { label: "Bank soal saya", nilai: ringkas.length, ikon: BookOpen, warna: "bg-brand" },
-            { label: "Jadwal ujian", nilai: jadwal.length, ikon: CalendarDays, warna: "bg-token-jadwal" },
-            { label: "Respons masuk", nilai: totalRespons, ikon: ClipboardList, warna: "bg-token-respons" },
-          ].map((kartu) => (
-            <div
-              key={kartu.label}
-              className={`flex items-center justify-between gap-2 rounded-sm px-2.5 py-2 text-white ${kartu.warna}`}
-            >
-              <div className="leading-tight">
-                <p className="text-[11px]">{kartu.label}</p>
-                <p className="text-lg leading-none font-semibold">{kartu.nilai}</p>
-              </div>
-              <kartu.ikon className="size-6 opacity-90" aria-hidden="true" />
-            </div>
-          ))}
-        </div>
+        {/* Stat cards: flat, neutral, green icon as the only accent — sama dengan dashboard admin */}
+        <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
+          <StatCard label="Bank Soal Saya" value={ringkas.length} description="Bank assesmen terhubung" icon={BookOpen} />
+          <StatCard label="Jadwal Ujian" value={jadwal.length} description="Jadwal assesmen Anda" icon={CalendarDays} />
+          <StatCard label="Respons Masuk" value={totalRespons} description="Jawaban tersinkron" icon={ClipboardList} />
+        </section>
 
         <Card className="gap-0 rounded-sm py-0">
-          <CardHeader className="gap-0 px-2.5 py-1.5">
-            <CardTitle className="text-sm">Bank soal &amp; hasil</CardTitle>
-            <CardDescription className="text-[11px]">
-              Hanya bank soal yang terhubung ke akun Anda. Data hasil berasal dari sync Google Form oleh panitia.
-            </CardDescription>
+          <CardHeader className="gap-0 border-b px-4 py-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Bank Soal &amp; Hasil</CardTitle>
+                  <Badge variant="secondary" className="font-normal">
+                    {ringkas.length}
+                  </Badge>
+                </div>
+                <CardDescription className="text-[11px]">
+                  Hanya bank soal yang terhubung ke akun Anda. Data hasil berasal dari sync Google Form oleh panitia.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="px-2.5 pb-2">
+          <CardContent className="px-4 py-4">
             {ringkas.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted-foreground">
-                Belum ada bank soal yang terhubung ke akun Anda. Hubungi panitia.
-              </p>
+              <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-8 text-muted-foreground">
+                <FileQuestion className="size-8 text-muted-foreground/60" />
+                <div className="space-y-1 text-center">
+                  <div className="font-medium text-foreground">Belum ada bank soal</div>
+                  <p className="text-sm">Bank soal yang terhubung ke akun Anda akan tampil di sini. Hubungi panitia bila dirasa kurang.</p>
+                </div>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table className="overflow-hidden rounded-sm text-[11px] [&_tbody_tr:hover]:bg-muted/50 [&_th]:h-7 [&_th]:bg-muted/60 [&_th]:px-2 [&_th]:py-0 [&_td]:px-2 [&_td]:py-0.5">
+              <div className="overflow-x-auto rounded-lg border">
+                <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Bank soal</TableHead>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+                      <TableHead className="w-10 text-center">#</TableHead>
+                      <TableHead>Bank Soal</TableHead>
                       <TableHead>Mapel</TableHead>
                       <TableHead>Tingkat</TableHead>
                       <TableHead>Jadwal</TableHead>
@@ -180,31 +182,43 @@ export default async function GuruDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {ringkas.map((bank) => (
-                      <TableRow key={bank.id}>
-                        <TableCell>
-                          <p className="font-medium leading-tight">{bank.code}</p>
-                          <p className="text-[11px] leading-tight text-muted-foreground">{bank.title}</p>
+                    {ringkas.map((bank, index) => (
+                      <TableRow key={bank.id} className="transition-colors hover:bg-muted/40">
+                        <TableCell className="text-center text-sm text-muted-foreground tabular-nums">
+                          {index + 1}
                         </TableCell>
-                        <TableCell>{bank.subjectName ?? "-"}</TableCell>
-                        <TableCell>{bank.grade}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-8 rounded-sm">
+                              <AvatarFallback className="rounded-sm bg-primary/10 text-xs font-medium text-primary">
+                                {getInitials(bank.code)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">{bank.title}</p>
+                              <p className="font-mono text-xs text-muted-foreground">{bank.code}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{bank.subjectName ?? "-"}</TableCell>
+                        <TableCell className="text-sm">{bank.grade}</TableCell>
                         <TableCell>
                           {bank.jumlahJadwal === 0 ? (
-                            <span className="text-[11px] text-muted-foreground">Belum dijadwalkan</span>
+                            <span className="text-sm text-muted-foreground">Belum dijadwalkan</span>
                           ) : (
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="h-4 rounded-sm px-1.5 text-[10px] font-normal">
+                              <Badge variant="secondary" className="rounded-sm font-normal">
                                 {bank.jumlahJadwal} jadwal
                               </Badge>
                               {bank.kelas.map((kelas) => (
-                                <Badge key={kelas} variant="outline" className="h-4 rounded-sm px-1.5 text-[10px] font-normal">
+                                <Badge key={kelas} variant="outline" className="rounded-sm font-normal">
                                   {kelas}
                                 </Badge>
                               ))}
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">{bank.respons}</TableCell>
+                        <TableCell className="text-right tabular-nums">{bank.respons}</TableCell>
                         <TableCell className="text-right">
                           {bank.respons ? (
                             <span
@@ -222,17 +236,17 @@ export default async function GuruDashboardPage() {
                               {bank.rataRata.toFixed(2)}
                             </span>
                           ) : (
-                            "-"
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <div className="flex justify-end gap-1">
                             {bank.formId ? (
                               <a
                                 href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6" })}
+                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 rounded-sm px-2 text-xs sm:h-8" })}
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form
@@ -243,7 +257,7 @@ export default async function GuruDashboardPage() {
                                 size="sm"
                                 disabled
                                 title="Form belum dibuat"
-                                className="h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6"
+                                className="h-11 gap-1 rounded-sm px-2 text-xs sm:h-8"
                               >
                                 <ExternalLink className="size-3.5" />
                                 Edit form
@@ -264,20 +278,32 @@ export default async function GuruDashboardPage() {
 
         {/* Auto collapse: tertutup secara default, klik header untuk membuka. */}
         <details className="group gap-0 rounded-sm border bg-card py-0 text-card-foreground shadow-sm">
-          <summary className="cursor-pointer list-none select-none px-2.5 py-1.5 [&::-webkit-details-marker]:hidden">
+          <summary className="cursor-pointer list-none select-none border-b px-4 py-3 group-open:border-b-0 [&::-webkit-details-marker]:hidden">
             <div className="flex items-start justify-between gap-2">
-              <div className="space-y-0.5">
-                <CardTitle className="text-sm">Identitas laporan</CardTitle>
+              <div className="space-y-1">
+                <CardTitle>Identitas Laporan</CardTitle>
                 <CardDescription className="text-[11px]">
                   Dipakai di header PDF analisis butir: nama tes, tahun pelajaran, semester, KKM, kepala sekolah.
                 </CardDescription>
               </div>
-              <ChevronDown className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+              <ChevronDown className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
             </div>
           </summary>
-          <GuruIdentitasForm identitas={identitas} />
+          <div className="border-t">
+            <GuruIdentitasForm identitas={identitas} />
+          </div>
         </details>
       </div>
     </main>
   )
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/[\s-]+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase()
 }
