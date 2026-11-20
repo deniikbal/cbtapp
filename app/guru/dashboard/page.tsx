@@ -7,6 +7,7 @@ import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actio
 import { logoutGuru } from "@/app/guru/login/actions"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { GuruIdentitasForm } from "@/components/guru-identitas-form"
+import { KelasTooltip } from "@/components/kelas-tooltip"
 import { StatCard } from "@/components/stat-card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -210,11 +211,7 @@ export default async function GuruDashboardPage() {
                               <Badge variant="secondary" className="rounded-sm font-normal">
                                 {bank.jumlahJadwal} jadwal
                               </Badge>
-                              {bank.kelas.map((kelas) => (
-                                <Badge key={kelas} variant="outline" className="rounded-sm font-normal">
-                                  {kelas}
-                                </Badge>
-                              ))}
+                              <KelasTooltip kelas={bank.kelas} />
                             </div>
                           )}
                         </TableCell>
