@@ -54,6 +54,15 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
         aktif.kunci = tunggal
         continue
       }
+      // Kunci boleh ditulis pakai teks opsinya: "Kunci: bagus" = opsi yang isinya "bagus".
+      if (aktif) {
+        const cari = km[1].trim().toLowerCase()
+        const idx = aktif.opsi.findIndex((o) => o.trim().toLowerCase() === cari)
+        if (idx >= 0) {
+          aktif.kunci = HURUF[idx]
+          continue
+        }
+      }
       peringatan.push(`Baris kunci tidak dikenali: "${baris}"`)
       continue
     }
