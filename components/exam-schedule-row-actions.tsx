@@ -32,6 +32,8 @@ export function ExamScheduleRowActions({
   const groupClassroomIds = groupSchedules.map((item) => item.classroomId)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [dupOpen, setDupOpen] = useState(false)
+  const [dupTime, setDupTime] = useState("")
   const [selectedBankId, setSelectedBankId] = useState(schedule.questionBankId)
   const [selectedClassroomIds, setSelectedClassroomIds] = useState<string[]>(groupClassroomIds)
   const [error, setError] = useState<string | null>(null)
@@ -49,12 +51,27 @@ export function ExamScheduleRowActions({
     setSelectedClassroomIds(allSelected ? [] : classrooms.map((classroom) => classroom.id))
   }
 
+  function defaultDupTime() {
+    const [h, m] = schedule.startTime.split(":").map(Number)
+    const d = new Date(2000, 0, 1, h, m)
+    d.setMinutes(d.getMinutes() + schedule.durationMinutes + 30)
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  }
+
+  function openDuplicate() {
+    setDupTime(defaultDupTime())
+    setDupOpen(true)
+  }
+
   function handleDuplicate() {
-    if (!window.confirm(`Duplikat jadwal ini ke Sesi ${(schedule.session ?? 1) + 1}? Jam mulai otomatis digeser 30 menit setelah sesi ini selesai.`)) return
     startTransition(async () => {
-      const result = await duplicateExamScheduleToNextSession(schedule.id)
-      if (result.ok) toast.success(result.message)
-      else toast.error(result.message)
+      const result = await duplicateExamScheduleToNextSession(groupIds, dupTime)
+      if (result.ok) {
+        toast.success(result.message)
+        setDupOpen(false)
+      } else {
+        toast.error(result.message)
+      }
     })
   }
 
@@ -110,8 +127,8 @@ export function ExamScheduleRowActions({
 
   return (
     <div className="flex justify-end gap-1.5">
-      <Button variant="ghost" size="icon-sm" disabled={isPending} onClick={handleDuplicate} title="Duplikat ke sesi berikutnya">
-        {isPending ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
+      <Button variant="ghost" size="icon-sm" onClick={openDuplicate} title="Duplikat ke sesi berikutnya">
+        <Copy className="size-4" />
         <span className="sr-only">Duplikat ke sesi berikutnya</span>
       </Button>
       <Dialog
@@ -166,6 +183,28 @@ export function ExamScheduleRowActions({
             {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={dupOpen} onOpenChange={(nextOpen) => { setDupOpen(nextOpen); if (!nextOpen) setDupTime("") }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplikat ke Sesi {(schedule.session ?? 1) + 1}</DialogTitle>
+            <DialogDescription>
+              Salinan jadwal dibuat untuk {groupClassroomIds.length} kelas yang sama, pada tanggal {schedule.examDate.split("-").reverse().join("/")} dengan sesi {(schedule.session ?? 1) + 1}. Masukkan jam mulai sesi berikutnya.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="dup-start-time">Jam Mulai</Label>
+            <Input id="dup-start-time" type="time" value={dupTime} onChange={(event) => setDupTime(event.target.value)} required />
+            <p className="text-xs text-muted-foreground">Saran: {defaultDupTime()} (30 menit setelah sesi ini selesai).</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={isPending} onClick={() => setDupOpen(false)}>Batal</Button>
+            <Button disabled={isPending || !/^\d{2}:\d{2}$/.test(dupTime)} onClick={handleDuplicate}>
+              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending ? "Menyimpan..." : "Duplikat"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

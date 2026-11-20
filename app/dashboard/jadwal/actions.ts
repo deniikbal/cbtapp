@@ -211,48 +211,52 @@ export async function deleteExamSchedules(ids: string[]): Promise<{ ok: boolean;
 }
 
 
-export async function duplicateExamScheduleToNextSession(id: string): Promise<{ ok: boolean; message: string }> {
-  if (!id) return { ok: false, message: "ID jadwal tidak valid." }
+export async function duplicateExamScheduleToNextSession(
+  ids: string[],
+  startTime: string
+): Promise<{ ok: boolean; message: string }> {
+  const validIds = [...new Set((ids ?? []).map((value) => String(value).trim()).filter(Boolean))]
+  const jam = String(startTime ?? "").trim()
+  if (validIds.length === 0) return { ok: false, message: "ID jadwal tidak valid." }
+  if (!/^\d{2}:\d{2}$/.test(jam)) return { ok: false, message: "Jam mulai wajib diisi." }
 
-  const rows = await db.select().from(examSchedules).where(eq(examSchedules.id, id)).limit(1)
-  const source = rows[0]
-  if (!source) return { ok: false, message: "Jadwal tidak ditemukan." }
+  const rows = await db.select().from(examSchedules).where(inArray(examSchedules.id, validIds))
+  if (rows.length === 0) return { ok: false, message: "Jadwal tidak ditemukan." }
 
-  const nextSession = source.session + 1
-  const [h, m] = source.startTime.split(":").map(Number)
-  const start = new Date(2000, 0, 1, h, m)
-  start.setMinutes(start.getMinutes() + source.durationMinutes + 30) // sesi berikut: 30 menit setelah sesi sebelumnya selesai
-  const newStartTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`
+  const nextSession = Math.max(...rows.map((row) => row.session)) + 1
 
-  const duplicate = await db
-    .select({ id: examSchedules.id })
+  const existing = await db
+    .select({ classroomId: examSchedules.classroomId })
     .from(examSchedules)
     .where(
       and(
-        eq(examSchedules.questionBankId, source.questionBankId),
-        eq(examSchedules.classroomId, source.classroomId),
-        eq(examSchedules.examDate, source.examDate),
-        eq(examSchedules.startTime, newStartTime),
+        eq(examSchedules.questionBankId, rows[0].questionBankId),
+        eq(examSchedules.examDate, rows[0].examDate),
+        eq(examSchedules.startTime, jam),
         eq(examSchedules.session, nextSession)
       )
     )
-    .limit(1)
+  const occupied = new Set(existing.map((row) => row.classroomId))
 
-  if (duplicate.length > 0) {
-    return { ok: false, message: `Sesi ${nextSession} untuk jadwal ini sudah ada.` }
+  const values = rows
+    .filter((row) => !occupied.has(row.classroomId))
+    .map((row) => ({
+      id: randomUUID(),
+      questionBankId: row.questionBankId,
+      classroomId: row.classroomId,
+      examDate: row.examDate,
+      startTime: jam,
+      durationMinutes: row.durationMinutes,
+      active: row.active,
+      session: nextSession,
+    }))
+
+  if (values.length === 0) {
+    return { ok: false, message: `Sesi ${nextSession} pukul ${jam} sudah ada untuk semua kelas ini.` }
   }
 
   try {
-    await db.insert(examSchedules).values({
-      id: randomUUID(),
-      questionBankId: source.questionBankId,
-      classroomId: source.classroomId,
-      examDate: source.examDate,
-      startTime: newStartTime,
-      durationMinutes: source.durationMinutes,
-      active: source.active,
-      session: nextSession,
-    })
+    await db.insert(examSchedules).values(values)
   } catch (error) {
     return { ok: false, message: getDatabaseErrorMessage(error) }
   }
@@ -260,5 +264,6 @@ export async function duplicateExamScheduleToNextSession(id: string): Promise<{ 
   revalidatePath("/dashboard/jadwal")
   revalidatePath("/siswa/dashboard")
 
-  return { ok: true, message: `Jadwal sesi ${nextSession} dibuat pukul ${newStartTime}. Assign siswa ke sesi ${nextSession} di halaman Peserta.` }
+  const puluh = values.length
+  return { ok: true, message: `Jadwal sesi ${nextSession} dibuat pukul ${jam} untuk ${puluh} kelas. Tetapkan sesi ${nextSession} pada siswa di halaman Peserta.` }
 }
