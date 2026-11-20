@@ -123,6 +123,8 @@ export async function buatFormKosong(
           title: String(nomor),
           questionItem: {
             question: {
+              required: true,
+              grading: { pointValue: 1 },
               choiceQuestion: {
                 type: "RADIO",
                 options: ["A", "B", "C", "D", "E"].map((huruf) => ({ value: huruf })),
