@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { classrooms, majors, students } from "@/lib/db/schema"
+import { classrooms, examRooms, majors, students } from "@/lib/db/schema"
+import { CardSettingsForm } from "@/components/card-settings-form"
+import { getCardSettings } from "./card-settings-actions"
 
-const NAMA_SEKOLAH = "SMA Negeri 1 Bantarujeg"
-const JUDUL_UJIAN = "Kartu Peserta Ujian"
+
 
 export default async function KartuUjianPage({
   searchParams,
@@ -28,7 +29,7 @@ export default async function KartuUjianPage({
   const { kelas } = await searchParams
   let galat: string | null = null
   let opsiKelas: { id: string; name: string; majorName: string }[] = []
-  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null }[] = []
+  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null; roomName: string | null }[] = []
   let namaKelas = ""
 
   try {
@@ -46,8 +47,10 @@ export default async function KartuUjianPage({
           name: students.name,
           nis: students.nis,
           kartuPassword: students.kartuPassword,
+          roomName: examRooms.name,
         })
         .from(students)
+        .leftJoin(examRooms, eq(students.roomId, examRooms.id))
         .where(eq(students.classroomId, kelas))
         .orderBy(asc(students.name))
     }
@@ -56,6 +59,7 @@ export default async function KartuUjianPage({
   }
 
   const tanpaPassword = peserta.filter((siswa) => !siswa.kartuPassword).length
+  const cardSettings = await getCardSettings()
 
   return (
     <SidebarProvider>
@@ -95,6 +99,8 @@ export default async function KartuUjianPage({
         </Alert>
       )}
 
+      <CardSettingsForm settings={cardSettings} />
+
       <KartuUjianControls
         classrooms={opsiKelas}
         classroomId={kelas ?? ""}
@@ -112,42 +118,52 @@ export default async function KartuUjianPage({
             {peserta.map((siswa) => (
               <article
                 key={siswa.id}
-                className="kartu-item break-inside-avoid rounded-sm border border-border border-l-[3px] border-l-brand bg-white p-3 text-[11px] leading-tight"
+                className="kartu-item break-inside-avoid border border-border bg-white p-3 text-[11px] leading-tight"
               >
-                <header className="kartu-kop flex flex-col items-center gap-0.5 border-b border-dashed border-border pb-1.5 text-center">
-                  <p className="kartu-sekolah text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
-                    {NAMA_SEKOLAH}
-                  </p>
-                  <p className="kartu-judul text-[12px] font-semibold text-brand">{JUDUL_UJIAN}</p>
-                  <span className="kartu-kelas-badge rounded-sm bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
-                    {namaKelas}
-                  </span>
+                <header className="flex items-center gap-2 border-b border-border pb-2 text-center">
+                  {cardSettings.logoUrl && <img src={cardSettings.logoUrl} alt="Logo" className="size-10 object-contain" />}
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold uppercase">{cardSettings.schoolName}</p>
+                    <p className="text-[12px] font-semibold text-brand">{cardSettings.examTitle}</p>
+                    <p className="text-[9px] text-muted-foreground">Tahun Pelajaran {cardSettings.academicYear}</p>
+                  </div>
+                  {cardSettings.logoUrl && <div className="size-10" />}
                 </header>
 
                 <dl className="mt-2 space-y-1">
                   <div className="flex gap-2">
-                    <dt className="w-16 shrink-0 text-muted-foreground">Nama</dt>
-                    <dd className="kartu-nama line-clamp-2 font-medium text-foreground">{siswa.name}</dd>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Nama</dt>
+                    <dd className="kartu-nama line-clamp-2 font-medium">{siswa.name}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-16 shrink-0 text-muted-foreground">Kelas</dt>
-                    <dd className="font-medium text-foreground">{namaKelas}</dd>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Kelas</dt>
+                    <dd className="font-medium">{namaKelas}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-16 shrink-0 text-muted-foreground">Username</dt>
-                    <dd className="font-mono text-xs font-bold text-foreground">{siswa.nis}</dd>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Ruang Ujian</dt>
+                    <dd className="font-medium">{siswa.roomName ?? "—"}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-16 shrink-0 text-muted-foreground">Password</dt>
-                    <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em] text-foreground">
+                    <dt className="w-20 shrink-0 text-muted-foreground">Username</dt>
+                    <dd className="font-mono text-xs font-bold">{siswa.nis}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-20 shrink-0 text-muted-foreground">Password</dt>
+                    <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em]">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
                   </div>
                 </dl>
 
-                <p className="kartu-catatan mt-2 border-t border-dashed border-border pt-1.5 text-[9px] text-muted-foreground">
-                  Kartu ini bersifat pribadi. Jangan bagikan password ke siswa lain.
-                </p>
+                <footer className="mt-2 flex items-end justify-between border-t border-border pt-2">
+                  <p className="text-[8px] text-muted-foreground max-w-[60%]">Kartu ini bersifat pribadi. Jangan bagikan password ke siswa lain.</p>
+                  <div className="text-center text-[9px]">
+                    <p className="text-muted-foreground">Kepala Sekolah,</p>
+                    {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto h-8 object-contain" />}
+                    <p className="font-semibold">{cardSettings.principalName || "—"}</p>
+                    <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
+                  </div>
+                </footer>
               </article>
             ))}
           </section>
@@ -167,7 +183,7 @@ export default async function KartuUjianPage({
       )}
 
       <div className="kartu-footer-cetak hidden print:block print:text-[9px] print:text-muted-foreground">
-        Dicetak dari CBT {NAMA_SEKOLAH}
+        Dicetak dari CBT {cardSettings.schoolName}
       </div>
 
       <Button variant="ghost" className="w-fit gap-1.5 print:hidden" render={<Link href="/dashboard/peserta" />}>
