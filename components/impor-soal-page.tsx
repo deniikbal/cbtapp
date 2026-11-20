@@ -6,10 +6,15 @@ import { toast } from "sonner"
 import { ArrowLeft, CheckCircle2, ExternalLink, FileText, FileUp, Loader2, TriangleAlert } from "lucide-react"
 
 import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord } from "@/app/actions/impor-soal"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
 import type { SoalImpor } from "@/lib/impor-docx"
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
@@ -19,8 +24,6 @@ const CONTOH = `1. Hasil dari 12 x 2 adalah ...
 30
 36
 Kunci: C`
-
-type Sumber = "docx" | "teks"
 
 export function ImporSoalPage({
   bankId,
@@ -37,7 +40,7 @@ export function ImporSoalPage({
   formId: string
   backHref: string
 }) {
-  const [sumber, setSumber] = useState<Sumber>("docx")
+  const [sumber, setSumber] = useState<"docx" | "teks">("docx")
   const [nama, setNama] = useState("")
   const [teks, setTeks] = useState("")
   const [soal, setSoal] = useState<SoalImpor[] | null>(null)
@@ -168,58 +171,54 @@ export function ImporSoalPage({
                 Pilih file Word atau tempel teks soal langsung.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 px-4 py-4">
-              <div className="grid grid-cols-2 gap-2">
-                {(
-                  [
-                    { id: "docx", label: "File Word (.docx)", ikon: FileUp },
-                    { id: "teks", label: "Tempel teks", ikon: FileText },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setSumber(tab.id)
-                      setSoal(null)
-                      setPeringatan([])
-                      setError(null)
-                      setHasil(null)
-                    }}
-                    className={cn(
-                      "flex h-11 items-center justify-center gap-2 rounded-sm border text-xs font-medium transition-colors sm:h-8",
-                      sumber === tab.id
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:bg-muted/60",
-                    )}
-                  >
-                    <tab.ikon className="size-4" />
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            <CardContent className="px-4 py-4">
+              <Tabs
+                defaultValue="docx"
+                onValueChange={(v) => {
+                  setSumber(v as "docx" | "teks")
+                  setSoal(null)
+                  setPeringatan([])
+                  setError(null)
+                  setHasil(null)
+                }}
+              >
+                <TabsList className="w-full">
+                  <TabsTrigger value="docx" className="h-11 gap-1.5 text-xs sm:h-7">
+                    <FileUp className="size-3.5" />
+                    File Word (.docx)
+                  </TabsTrigger>
+                  <TabsTrigger value="teks" className="h-11 gap-1.5 text-xs sm:h-7">
+                    <FileText className="size-3.5" />
+                    Tempel teks
+                  </TabsTrigger>
+                </TabsList>
 
-              {sumber === "docx" ? (
-                <label
-                  className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-border bg-muted/40 px-4 py-8 text-center transition-colors hover:bg-muted"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    pilihFile(e.dataTransfer.files?.[0] ?? null)
-                  }}
-                >
-                  <FileUp className="size-5 text-muted-foreground" />
-                  <span className="text-sm font-medium">{nama || "Pilih atau tarik file .docx"}</span>
-                  <span className="text-[11px] text-muted-foreground">Maksimal 5 MB</span>
-                  <input
-                    type="file"
-                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="hidden"
-                    onChange={(e) => pilihFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-              ) : (
-                <div className="space-y-2">
+                <TabsContent value="docx" className="mt-3">
+                  <label
+                    className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed border-border bg-muted/40 px-4 py-8 text-center transition-colors hover:bg-muted"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      pilihFile(e.dataTransfer.files?.[0] ?? null)
+                    }}
+                  >
+                    {pending ? (
+                      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                    ) : (
+                      <FileUp className="size-5 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-medium">{nama || "Pilih atau tarik file .docx"}</span>
+                    <span className="text-[11px] text-muted-foreground">Maksimal 5 MB</span>
+                    <input
+                      type="file"
+                      accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="hidden"
+                      onChange={(e) => pilihFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                </TabsContent>
+
+                <TabsContent value="teks" className="mt-3 space-y-2">
                   <Textarea
                     value={teks}
                     onChange={(e) => setTeks(e.target.value)}
@@ -236,12 +235,16 @@ export function ImporSoalPage({
                     {pending ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
                     Periksa format
                   </Button>
-                </div>
-              )}
+                </TabsContent>
+              </Tabs>
 
-              <div className="rounded-sm bg-muted/60 px-3 py-2 text-[11px] text-muted-foreground">
+              <Separator className="my-3" />
+
+              <div className="text-[11px] text-muted-foreground">
                 <p className="font-medium text-foreground">Format yang dikenali:</p>
-                <pre className="mt-1 whitespace-pre-wrap font-mono text-[11px] text-foreground">{CONTOH}</pre>
+                <pre className="mt-1 whitespace-pre-wrap rounded-sm bg-muted/60 px-3 py-2 font-mono text-[11px] text-foreground">
+                  {CONTOH}
+                </pre>
                 <p className="mt-1">
                   Tiap baris setelah pertanyaan = satu opsi. Google Form memberi huruf A–E sendiri, jadi tidak perlu
                   menulis &quot;a.&quot;, &quot;b.&quot; (tetap didukung bila ditulis). Kunci:{" "}
@@ -252,60 +255,92 @@ export function ImporSoalPage({
             </CardContent>
           </Card>
 
-          <Card className="gap-0 rounded-sm py-0">
-            <CardHeader className="gap-1 border-b px-4 py-3">
-              <CardTitle className="text-sm">2. Pratinjau &amp; masukkan ke form</CardTitle>
-              <CardDescription className="text-[11px]">
-                Periksa dulu hasil pembacaan, baru masukkan ke Google Form.
-              </CardDescription>
+          <Card className="flex flex-col gap-0 rounded-sm py-0">
+            <CardHeader className="flex-row items-center justify-between gap-2 border-b px-4 py-3">
+              <div className="space-y-1">
+                <CardTitle className="text-sm">2. Pratinjau &amp; masukkan ke form</CardTitle>
+                <CardDescription className="text-[11px]">
+                  Periksa dulu hasil pembacaan, baru masukkan ke Google Form.
+                </CardDescription>
+              </div>
+              {soal ? (
+                <Badge variant="secondary" className="shrink-0 rounded-sm font-normal">
+                  {soal.length} soal · {siap} siap
+                </Badge>
+              ) : null}
             </CardHeader>
-            <CardContent className="space-y-3 px-4 py-4">
+            <CardContent className="flex flex-1 flex-col gap-3 px-4 py-4">
               {error ? (
-                <p className="flex items-start gap-1.5 rounded-sm border border-destructive/30 bg-destructive/5 px-2 py-1.5 text-[11px] text-destructive">
-                  <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-                  {error}
-                </p>
+                <Alert variant="destructive" className="rounded-sm px-3 py-2">
+                  <TriangleAlert />
+                  <AlertTitle className="text-xs">Gagal membaca soal</AlertTitle>
+                  <AlertDescription className="text-[11px]">{error}</AlertDescription>
+                </Alert>
               ) : null}
 
               {soal ? (
-                <div className="space-y-2">
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                    <CheckCircle2 className="size-3.5" />
-                    {soal.length} soal terbaca, {siap} siap diimpor
-                  </p>
-                  <div className="max-h-80 divide-y divide-border overflow-y-auto rounded-sm border border-border">
-                    {soal.map((s) => (
-                      <div key={s.no} className="flex items-start gap-2 px-2 py-1.5">
-                        <span className="w-6 shrink-0 text-right font-mono text-[11px] text-muted-foreground">{s.no}.</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs">{s.pertanyaan}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {s.opsi.length} opsi · kunci {s.kunci ? s.kunci.toUpperCase() : "belum ada"}
-                            {s.opsi[s.kunci.charCodeAt(0) - 97] ? ` (${s.opsi[s.kunci.charCodeAt(0) - 97]})` : ""}
-                          </p>
+                <div className="flex min-h-0 flex-1 flex-col gap-2">
+                  <ScrollArea className="h-80 rounded-sm border border-border">
+                    <div className="divide-y divide-border">
+                      {soal.map((s) => (
+                        <div key={s.no} className="flex items-start gap-2 px-2 py-1.5">
+                          <span className="w-6 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+                            {s.no}.
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs">{s.pertanyaan}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {s.opsi.length} opsi · kunci {s.kunci ? s.kunci.toUpperCase() : "belum ada"}
+                              {s.opsi[s.kunci.charCodeAt(0) - 97] ? ` (${s.opsi[s.kunci.charCodeAt(0) - 97]})` : ""}
+                            </p>
+                          </div>
+                          {s.opsi.length >= 2 && s.kunci ? (
+                            <Badge variant="outline" className="shrink-0 rounded-sm font-normal text-emerald-700 dark:text-emerald-400">
+                              siap
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="shrink-0 rounded-sm font-normal text-amber-700 dark:text-amber-400">
+                              belum lengkap
+                            </Badge>
+                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                  {peringatan.length ? (
-                    <ul className="space-y-0.5 rounded-sm border border-amber-300/60 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
-                      {peringatan.slice(0, 6).map((p, i) => (
-                        <li key={i}>• {p}</li>
                       ))}
-                      {peringatan.length > 6 ? <li>• … {peringatan.length - 6} catatan lain</li> : null}
-                    </ul>
+                    </div>
+                    <ScrollBar />
+                  </ScrollArea>
+
+                  {peringatan.length ? (
+                    <Alert className="rounded-sm border-amber-300/60 bg-amber-50 px-3 py-2 dark:border-amber-500/30 dark:bg-amber-950/40">
+                      <TriangleAlert className="text-amber-700 dark:text-amber-400" />
+                      <AlertTitle className="text-xs text-amber-900 dark:text-amber-200">Catatan pembacaan</AlertTitle>
+                      <AlertDescription className="text-[11px] text-amber-900 dark:text-amber-200/90">
+                        <ul className="list-disc space-y-0.5 pl-3">
+                          {peringatan.slice(0, 6).map((p, i) => (
+                            <li key={i}>{p}</li>
+                          ))}
+                          {peringatan.length > 6 ? <li>… {peringatan.length - 6} catatan lain</li> : null}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
                   ) : null}
                 </div>
               ) : (
                 !error && (
-                  <div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
-                    <FileText className="size-8 text-muted-foreground/60" />
-                    <p className="text-sm">Belum ada soal diperiksa. Pilih file atau tempel teks di sebelah kiri.</p>
-                  </div>
+                  <Empty className="flex-1 rounded-sm border p-8">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <FileText />
+                      </EmptyMedia>
+                      <EmptyTitle>Belum ada soal diperiksa</EmptyTitle>
+                      <EmptyDescription>
+                        Pilih file Word atau tempel teks soal di panel sebelah kiri, lalu pratinjau muncul di sini.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 )
               )}
 
-              <div className="flex justify-end gap-2 border-t pt-3">
+              <div className="mt-auto flex justify-end gap-2 border-t pt-3">
                 <Button variant="ghost" size="sm" className="h-11 rounded-sm sm:h-8" onClick={reset} disabled={pending}>
                   Ulangi
                 </Button>
