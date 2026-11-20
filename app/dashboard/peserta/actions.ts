@@ -29,6 +29,7 @@ export async function createStudent(formData: FormData) {
     name,
     nis,
     passwordHash: hashPassword(password),
+    kartuPassword: password,
     active,
     classroomId,
   })
@@ -166,6 +167,7 @@ export async function importStudentsExcel(formData: FormData) {
       name: row.name,
       nis: row.nis,
       passwordHash: hashPassword(row.password),
+      kartuPassword: row.password,
       classroomId,
       roomId,
       active: row.active,
