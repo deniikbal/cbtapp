@@ -155,14 +155,11 @@ export default async function KartuUjianPage({
                   </div>
                 </dl>
 
-                <footer className="mt-2 flex items-end justify-between border-t border-border pt-2">
-                  <p className="text-[8px] text-muted-foreground max-w-[60%]">Kartu ini bersifat pribadi. Jangan bagikan password ke siswa lain.</p>
-                  <div className="text-center text-[9px]">
-                    <p className="text-muted-foreground">Kepala Sekolah,</p>
-                    {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto h-8 object-contain" />}
-                    <p className="font-semibold">{cardSettings.principalName || "—"}</p>
-                    <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
-                  </div>
+                <footer className="mt-2 border-t border-border pt-2 text-center text-[9px]">
+                  <p className="text-muted-foreground">Kepala Sekolah,</p>
+                  <p className="font-semibold">{cardSettings.principalName || "—"}</p>
+                  <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
+                  {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto mt-1 h-14 object-contain" />}
                 </footer>
               </article>
             ))}
