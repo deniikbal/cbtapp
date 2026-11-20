@@ -5,6 +5,7 @@ import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, FileQ
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
+import { AksiIkon } from "@/components/aksi-ikon"
 import { GuruAnalisisButton } from "@/components/guru-analisis-button"
 import { GuruIdentitasForm } from "@/components/guru-identitas-form"
 import { KelasTooltip } from "@/components/kelas-tooltip"
@@ -243,41 +244,38 @@ export default async function GuruDashboardPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex justify-end gap-1">
+                          <div className="flex items-center justify-end gap-0.5">
                             {bank.formId ? (
-                              <a
-                                href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 rounded-sm px-2 text-xs sm:h-8" })}
-                              >
-                                <ExternalLink className="size-3.5" />
-                                Edit form
-                              </a>
+                              <AksiIkon label="Edit form">
+                                <a
+                                  href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={buttonVariants({ variant: "ghost", size: "icon-sm", className: "rounded-sm" })}
+                                >
+                                  <ExternalLink className="size-4" />
+                                  <span className="sr-only">Edit form</span>
+                                </a>
+                              </AksiIkon>
                             ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled
-                                title="Form belum dibuat"
-                                className="h-11 gap-1 rounded-sm px-2 text-xs sm:h-8"
-                              >
-                                <ExternalLink className="size-3.5" />
-                                Edit form
+                              <Button variant="ghost" size="icon-sm" disabled title="Form belum dibuat" className="rounded-sm">
+                                <ExternalLink className="size-4" />
+                                <span className="sr-only">Edit form</span>
                               </Button>
                             )}
-                            <Button
-                              nativeButton={false}
-                              variant="outline"
-                              size="sm"
-                              disabled={!bank.formId}
-                              title={bank.formId ? "Impor soal dari Word" : "Buat form dulu"}
-                              className="h-11 gap-1 rounded-sm px-2 text-xs sm:h-8"
-                              render={<Link href={`/guru/dashboard/impor?bank=${bank.id}`} />}
-                            >
-                              <FileUp className="size-3.5" />
-                              Impor
-                            </Button>
+                            <AksiIkon label={bank.formId ? "Impor soal dari Word" : "Buat form dulu"}>
+                              <Button
+                                nativeButton={false}
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={!bank.formId}
+                                className="rounded-sm"
+                                render={<Link href={`/guru/dashboard/impor?bank=${bank.id}`} />}
+                              >
+                                <FileUp className="size-4" />
+                                <span className="sr-only">Impor soal</span>
+                              </Button>
+                            </AksiIkon>
                             <GuruAnalisisButton bankId={bank.id} judul={bank.code} akses={aksesPdf} />
                           </div>
                         </TableCell>

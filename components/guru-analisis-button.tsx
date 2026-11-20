@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { getAnalisisButirGuru } from "@/app/guru/dashboard/actions"
 import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
 import { Button } from "@/components/ui/button"
+import { AksiIkon } from "@/components/aksi-ikon"
 import type { AnalisisBank } from "@/lib/analisis-data"
 
 export function GuruAnalisisButton({
@@ -36,16 +37,12 @@ export function GuruAnalisisButton({
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={buka}
-        disabled={pending}
-        className="h-11 gap-1 rounded-sm px-1.5 text-[11px] sm:h-6"
-      >
-        {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChartColumn className="size-3.5" />}
-        Analisis butir
-      </Button>
+      <AksiIkon label="Analisis butir">
+        <Button variant="ghost" size="icon-sm" onClick={buka} disabled={pending} className="rounded-sm">
+          {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
+          <span className="sr-only">Analisis butir</span>
+        </Button>
+      </AksiIkon>
       <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} data={data} bankId={bankId} akses={akses} />
     </>
   )
