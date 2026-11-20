@@ -10,10 +10,11 @@ import {
   FileText,
   FileUp,
   Loader2,
+  Sparkles,
   TriangleAlert,
 } from "lucide-react"
 
-import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord } from "@/app/actions/impor-soal"
+import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks } from "@/app/actions/impor-soal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -57,6 +58,7 @@ export function ImporSoalPage({
   const [error, setError] = useState<string | null>(null)
   const [hasil, setHasil] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [merapikan, startMerapikan] = useTransition()
   const fileRef = useRef<File | null>(null)
 
   function reset() {
@@ -100,6 +102,21 @@ export function ImporSoalPage({
       }
       setSoal(hasil.soal)
       setPeringatan(hasil.peringatan)
+    })
+  }
+
+  function rapikan() {
+    startMerapikan(async () => {
+      const hasil = await rapikanSoalTeks(teks)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      setTeks(hasil.teks)
+      setSoal(null)
+      setPeringatan([])
+      setError(null)
+      toast.success(hasil.cara === "ai" ? "Soal dirapikan oleh AI." : hasil.catatan ?? "Soal dirapikan.")
     })
   }
 
@@ -259,16 +276,27 @@ export function ImporSoalPage({
                 placeholder={CONTOH}
                 className="min-h-[480px] rounded-sm font-mono text-xs"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-11 gap-2 rounded-sm sm:h-8"
-                onClick={periksaTeks}
-                disabled={pending || teks.trim().length === 0}
-              >
-                {pending ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
-                Periksa format
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  className="h-11 gap-2 rounded-sm sm:h-8"
+                  onClick={rapikan}
+                  disabled={merapikan || pending || teks.trim().length === 0}
+                >
+                  {merapikan ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+                  Rapikan dengan AI
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-11 gap-2 rounded-sm sm:h-8"
+                  onClick={periksaTeks}
+                  disabled={pending || merapikan || teks.trim().length === 0}
+                >
+                  {pending ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+                  Periksa format
+                </Button>
+              </div>
             </div>
           )}
 

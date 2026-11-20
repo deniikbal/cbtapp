@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { parseSoalDocx, parseSoalTeks, type SoalImpor } from "@/lib/impor-docx"
+import { rapikanSoal, rapikanSoalAI } from "@/lib/rapikan-soal"
 import { tambahSoalKeForm } from "@/lib/google-forms"
 
 type Pratinjau = { ok: true; soal: SoalImpor[]; peringatan: string[] } | { ok: false; message: string }
@@ -124,5 +125,27 @@ export async function imporSoalTeks(bankId: string, teks: string): Promise<{ ok:
   } catch (error) {
     console.error("Gagal impor soal teks:", error)
     return { ok: false, message: error instanceof Error ? error.message : "Gagal impor soal." }
+  }
+}
+
+/** Rapikan teks mentah: coba AI (Gemini) dulu, jatuh ke perapian aturan bila gagal. */
+export async function rapikanSoalTeks(
+  teks: string,
+): Promise<{ ok: true; teks: string; cara: "ai" | "aturan"; catatan?: string } | { ok: false; message: string }> {
+  const mentah = (teks ?? "").trim()
+  if (mentah.length < 10) return { ok: false, message: "Teks soal masih kosong." }
+
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    return { ok: true, teks: rapikanSoal(mentah), cara: "aturan", catatan: "Kunci AI belum diset — dirapikan dengan aturan otomatis." }
+  }
+
+  try {
+    const rapi = await rapikanSoalAI(mentah, apiKey)
+    return { ok: true, teks: rapi, cara: "ai" }
+  } catch (err) {
+    const pesan = err instanceof Error ? err.message : "AI gagal."
+    console.error("[rapikanSoalTeks]", pesan)
+    return { ok: true, teks: rapikanSoal(mentah), cara: "aturan", catatan: `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.` }
   }
 }
