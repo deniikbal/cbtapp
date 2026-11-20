@@ -59,7 +59,7 @@ const PROMPT = `Kamu pengubah format soal pilihan ganda. Ubah teks berikut menja
 Aturan keluaran (WAJIB):
 - Satu soal ditulis: baris nomor + pertanyaan, contoh "1. Hasil dari 12 x 2 adalah ..."
 - Setiap opsi pada baris sendiri, tanpa huruf di depan (jangan tulis "a." / "A.").
-- Setelah opsi terakhir tiap soal, baris "Kunci: X" — X boleh huruf opsi (A-E) atau teks opsi apa adanya bila huruf tidak jelas.
+- Setiap soal yang punya jawaban WAJIB diakhiri baris "Kunci: X". Kalau jawaban berupa huruf opsi, tulis hurufnya (contoh "Kunci: C"). Kalau jawaban berupa teks/nama/angka, tulis teks itu apa adanya setelah "Kunci: " (contoh "Kunci: Soekarno"). Jangan pernah membiarkan jawaban sebagai baris opsi tambahan.
 - Pisahkan antar soal dengan satu baris kosong.
 - Jangan menulis penjelasan, pembuka, penutup, atau markdown. Keluarkan teks soal saja.
 - Bila opsi tidak berjumlah 5, biarkan apa adanya. Bila ada soal tanpa kunci, tetap keluarkan soalnya tanpa baris Kunci.
@@ -68,31 +68,39 @@ Teks soal:
 ---
 `
 
+// Nama model Gemini sering berubah; coba berurutan sampai ada yang menjawab.
+const KANDIDAT_MODEL = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"].filter(
+  Boolean,
+) as string[]
+
 export async function rapikanSoalAI(teks: string, apiKey: string): Promise<string> {
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
-        generationConfig: { temperature: 0, maxOutputTokens: 8192 },
-      }),
-      signal: AbortSignal.timeout(60_000),
-    },
-  )
-  if (!res.ok) {
-    const pesan = await res.text()
-    throw new Error(`Gemini ${res.status}: ${pesan.slice(0, 200)}`)
+  let pesanTerakhir = "AI tidak menjawab."
+  for (const model of KANDIDAT_MODEL) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
+          generationConfig: { temperature: 0, maxOutputTokens: 8192 },
+        }),
+        signal: AbortSignal.timeout(60_000),
+      })
+      if (!res.ok) {
+        pesanTerakhir = `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}`
+        continue
+      }
+      const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+      const out = (json.candidates?.[0]?.content?.parts ?? [])
+        .map((p) => p.text ?? "")
+        .join("")
+        .replace(/^```[a-z]*\n?|```$/g, "")
+        .trim()
+      if (out) return out
+      pesanTerakhir = "Gemini mengembalikan teks kosong."
+    } catch (err) {
+      pesanTerakhir = err instanceof Error ? err.message : "Gagal menghubungi Gemini."
+    }
   }
-  const json = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[]
-  }
-  const out = (json.candidates?.[0]?.content?.parts ?? [])
-    .map((p) => p.text ?? "")
-    .join("")
-    .replace(/^```[a-z]*\n?|```$/g, "")
-    .trim()
-  if (!out) throw new Error("Gemini mengembalikan teks kosong.")
-  return out
+  throw new Error(pesanTerakhir)
 }
