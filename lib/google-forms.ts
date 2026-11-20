@@ -69,17 +69,24 @@ const BUTIR_IDENTITAS = ["NIS", "Nama Lengkap", "Kelas"]
 
 export async function buatFormKosong(
   judul: string,
-  opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[] } = {}
+  opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[]; deskripsi?: string } = {}
 ) {
-  const { kuis = true, identitas = true, kelas = [] } = opsi
+  const { kuis = true, identitas = true, kelas = [], deskripsi = "" } = opsi
 
   // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
-  const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
+  const form = await gpost("https://forms.googleapis.com/v1/forms", {
+    info: { title: judul, documentTitle: judul, ...(deskripsi ? { description: deskripsi } : {}) },
+  })
   const formId = String(form.formId ?? "")
   if (!formId) throw new Error("Google tidak mengembalikan formId.")
 
   const requests: Record<string, unknown>[] = []
   let index = 0
+
+  // Pastikan deskripsi terpasang (fallback bila create tidak menerimanya).
+  if (deskripsi) {
+    requests.push({ updateFormInfo: { info: { description: deskripsi }, updateMask: "info.description" } })
+  }
 
   if (kuis) {
     requests.push({ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } })
