@@ -49,6 +49,7 @@ type StudentRow = {
   className: string
   classroomId: string
   majorName: string
+  kartuPassword: string | null
 }
 
 type ClassroomOption = {
