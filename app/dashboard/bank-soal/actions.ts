@@ -166,8 +166,15 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
 
   try {
     const [bank] = await db
-      .select({ code: questionBanks.code, title: questionBanks.title, grade: questionBanks.grade, formId: questionBanks.formId })
+      .select({
+        code: questionBanks.code,
+        title: questionBanks.title,
+        grade: questionBanks.grade,
+        formId: questionBanks.formId,
+        subjectName: subjects.name,
+      })
       .from(questionBanks)
+      .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
       .where(eq(questionBanks.id, id))
       .limit(1)
 
@@ -192,7 +199,10 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       "3. Dianjurkan login menggunakan akun Google masing-masing agar jawaban tersimpan dan tidak perlu mengulang dari awal jika terjadi kendala dalam pelaksanaan ujian.",
     ].join("\n")
 
-    const { formId, editUrl, responderUri } = await buatFormKosong(`${bank.code} | ${bank.title}`, {
+    // Judul form: ASAS [MAPEL] KELAS [TINGKAT] (REGULER), contoh: ASAS KIMIA KELAS X (REGULER)
+    const judulForm = `ASAS ${bank.subjectName.toUpperCase()} KELAS ${bank.grade.toUpperCase()} (REGULER)`
+
+    const { formId, editUrl, responderUri } = await buatFormKosong(judulForm, {
       kelas: kelasAngkatan,
       deskripsi,
     })
