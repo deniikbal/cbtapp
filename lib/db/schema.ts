@@ -177,6 +177,7 @@ export const examBrowserSettings = pgTable("exam_browser_settings", {
     .notNull()
     .default("Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android."),
   downloadUrl: text("downloadUrl").notNull().default(""),
+  configCode: text("configCode").notNull().default(""),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 })
