@@ -42,6 +42,8 @@ export default async function GuruDashboardPage() {
       title: questionBanks.title,
       grade: questionBanks.grade,
       formId: questionBanks.formId,
+      formItems: questionBanks.formItems,
+      syncedAt: questionBanks.syncedAt,
       subjectName: subjects.name,
     })
     .from(questionBanks)
@@ -176,6 +178,7 @@ export default async function GuruDashboardPage() {
                       <TableHead>Bank Soal</TableHead>
                       <TableHead>Mapel</TableHead>
                       <TableHead>Tingkat</TableHead>
+                      <TableHead className="text-center">Soal</TableHead>
                       <TableHead>Jadwal</TableHead>
                       <TableHead className="text-right">Respons</TableHead>
                       <TableHead className="text-right">Rata-rata</TableHead>
@@ -203,6 +206,9 @@ export default async function GuruDashboardPage() {
                         </TableCell>
                         <TableCell className="text-sm">{bank.subjectName ?? "-"}</TableCell>
                         <TableCell className="text-sm">{bank.grade}</TableCell>
+                        <TableCell className="text-center tabular-nums">
+                          {bank.formId ? hitungSoal(bank.formItems) : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
                         <TableCell>
                           {bank.jumlahJadwal === 0 ? (
                             <span className="text-sm text-muted-foreground">Belum dijadwalkan</span>
@@ -304,6 +310,11 @@ export default async function GuruDashboardPage() {
       </div>
     </main>
   )
+}
+
+function hitungSoal(formItems: unknown): number {
+  if (!Array.isArray(formItems)) return 0
+  return formItems.filter((item) => typeof item === "object" && item !== null && "questionItem" in item).length
 }
 
 function getInitials(name: string) {
