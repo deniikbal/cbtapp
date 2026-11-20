@@ -9,7 +9,7 @@ import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { parseSoalDocx, parseSoalTeks, type SoalImpor } from "@/lib/impor-docx"
 import { rapikanSoal, rapikanSoalAI } from "@/lib/rapikan-soal"
-import { tambahSoalKeForm } from "@/lib/google-forms"
+import { ambilForm, daftarSoalDariItems, tambahSoalKeForm } from "@/lib/google-forms"
 
 type Pratinjau = { ok: true; soal: SoalImpor[]; peringatan: string[] } | { ok: false; message: string }
 
@@ -147,5 +147,19 @@ export async function rapikanSoalTeks(
     const pesan = err instanceof Error ? err.message : "AI gagal."
     console.error("[rapikanSoalTeks]", pesan)
     return { ok: true, teks: rapikanSoal(mentah), cara: "aturan", catatan: `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.` }
+  }
+}
+
+/** Daftar soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
+export async function daftarSoalForm(
+  bankId: string,
+): Promise<{ ok: true; soal: { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] } | { ok: false; message: string }> {
+  const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
+  try {
+    const { items } = await ambilForm(bank.formId)
+    return { ok: true, soal: daftarSoalDariItems(items) }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Gagal membaca form." }
   }
 }

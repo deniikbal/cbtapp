@@ -239,6 +239,30 @@ type ButirForm = {
   }
 }
 
+/** Ringkasan soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
+export function daftarSoalDariItems(
+  items: unknown[],
+): { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] {
+  const hasil: { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] = []
+  for (const butir of items as ButirForm[]) {
+    const q = butir?.questionItem?.question
+    if (!q?.questionId) continue
+    const poin = q.grading?.pointValue ?? 0
+    const opsi = (q.choiceQuestion?.options ?? []).map((o) => (o.value ?? "").trim()).filter(Boolean)
+    // Butir identitas (NIS/nama/kelas) tidak punya bobot -> lewati.
+    if (poin <= 0 || opsi.length < 2) continue
+    const kunciTeks = (q.grading?.correctAnswers?.answers ?? []).map((a) => (a.value ?? "").trim()).filter(Boolean)[0] ?? ""
+    const idx = kunciTeks ? opsi.findIndex((o) => o.toLowerCase() === kunciTeks.toLowerCase()) : -1
+    hasil.push({
+      no: hasil.length + 1,
+      pertanyaan: (butir.title ?? "").trim() || "(tanpa judul)",
+      opsi,
+      kunci: idx >= 0 ? "ABCDE"[idx] : kunciTeks,
+    })
+  }
+  return hasil
+}
+
 export function soalDariItems(items: unknown[]): Soal[] {
   const hasil: Soal[] = []
   for (const butir of items as ButirForm[]) {

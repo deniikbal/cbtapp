@@ -14,7 +14,7 @@ import {
   TriangleAlert,
 } from "lucide-react"
 
-import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks } from "@/app/actions/impor-soal"
+import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks, daftarSoalForm } from "@/app/actions/impor-soal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,8 @@ import { Separator } from "@/components/ui/separator"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Textarea } from "@/components/ui/textarea"
 import type { SoalImpor } from "@/lib/impor-docx"
+
+type SoalForm = { no: number; pertanyaan: string; opsi: string[]; kunci: string }
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
 12
@@ -42,6 +44,7 @@ export function ImporSoalPage({
   mapel,
   formId,
   backHref,
+  soalFormAwal,
 }: {
   bankId: string
   kode: string
@@ -49,6 +52,7 @@ export function ImporSoalPage({
   mapel: string
   formId: string
   backHref: string
+  soalFormAwal: SoalForm[]
 }) {
   const [sumber, setSumber] = useState<"docx" | "teks">("docx")
   const [nama, setNama] = useState("")
@@ -57,6 +61,7 @@ export function ImporSoalPage({
   const [peringatan, setPeringatan] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [hasil, setHasil] = useState<string | null>(null)
+  const [tersimpan, setTersimpan] = useState<SoalForm[]>(soalFormAwal)
   const [pending, startTransition] = useTransition()
   const [merapikan, startMerapikan] = useTransition()
   const fileRef = useRef<File | null>(null)
@@ -140,6 +145,8 @@ export function ImporSoalPage({
       setHasil(hasil.message)
       setSoal(null)
       setPeringatan([])
+      const terbaru = await daftarSoalForm(bankId)
+      if (terbaru.ok) setTersimpan(terbaru.soal)
     })
   }
 
@@ -205,6 +212,60 @@ export function ImporSoalPage({
           Kembali
         </Button>
       </div>
+
+      {/* Soal yang sudah ada di form */}
+      <Card className="gap-0 rounded-sm py-0">
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+          <div className="space-y-1">
+            <CardTitle className="text-sm">Soal yang sudah ada di form</CardTitle>
+            <CardDescription className="text-[11px]">
+              Daftar soal yang terbaca dari Google Form saat ini.
+            </CardDescription>
+          </div>
+          <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
+            {tersimpan.length} soal
+          </Badge>
+        </CardHeader>
+        <CardContent className="px-4 py-3">
+          {tersimpan.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Form masih kosong — belum ada soal yang masuk. Impor soal di langkah 1 di bawah.
+            </p>
+          ) : (
+            <ScrollArea className="max-h-64 rounded-sm border border-border">
+              <ol className="divide-y divide-border">
+                {tersimpan.map((s) => (
+                  <li key={s.no} className="flex items-start gap-2 px-2 py-1.5">
+                    <span className="w-6 shrink-0 text-right font-mono text-[11px] text-muted-foreground">{s.no}.</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium">{s.pertanyaan}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {s.opsi.map((o, i) => `${"ABCDE"[i]}. ${o}`).join("  ·  ")}
+                      </p>
+                    </div>
+                    {s.kunci ? (
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 rounded-sm font-mono text-[11px] font-normal text-emerald-700 dark:text-emerald-400"
+                      >
+                        {s.kunci}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 rounded-sm text-[11px] font-normal text-amber-700 dark:text-amber-400"
+                      >
+                        tanpa kunci
+                      </Badge>
+                    )}
+                  </li>
+                ))}
+              </ol>
+              <ScrollBar />
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Langkah 1: sumber soal */}
       <Card className="gap-0 rounded-sm py-0">

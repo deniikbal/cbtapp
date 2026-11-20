@@ -11,6 +11,16 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, subjects } from "@/lib/db/schema"
+import { ambilForm, daftarSoalDariItems } from "@/lib/google-forms"
+
+async function muatSoalForm(formId: string): Promise<{ no: number; pertanyaan: string; opsi: string[]; kunci: string }[]> {
+  try {
+    const { items } = await ambilForm(formId)
+    return daftarSoalDariItems(items)
+  } catch {
+    return []
+  }
+}
 
 export const dynamic = "force-dynamic"
 
@@ -51,6 +61,7 @@ export default async function ImporSoalAdminPage({
         <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           {bank && bank.formId ? (
             <ImporSoalPage
+              soalFormAwal={await muatSoalForm(bank.formId)}
               bankId={bank.id}
               kode={bank.code}
               judul={bank.title}

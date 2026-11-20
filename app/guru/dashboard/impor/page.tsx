@@ -10,6 +10,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { db } from "@/lib/db"
 import { questionBanks, subjects, teachers } from "@/lib/db/schema"
+import { ambilForm, daftarSoalDariItems } from "@/lib/google-forms"
+
+async function muatSoalForm(formId: string): Promise<{ no: number; pertanyaan: string; opsi: string[]; kunci: string }[]> {
+  try {
+    const { items } = await ambilForm(formId)
+    return daftarSoalDariItems(items)
+  } catch {
+    return []
+  }
+}
 
 export const dynamic = "force-dynamic"
 
@@ -63,6 +73,7 @@ export default async function ImporSoalGuruPage({
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
         {bank && milikSaya && bank.formId ? (
           <ImporSoalPage
+            soalFormAwal={await muatSoalForm(bank.formId)}
             bankId={bank.id}
             kode={bank.code}
             judul={bank.title}
