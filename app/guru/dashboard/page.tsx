@@ -314,7 +314,11 @@ export default async function GuruDashboardPage() {
 
 function hitungSoal(formItems: unknown): number {
   if (!Array.isArray(formItems)) return 0
-  return formItems.filter((item) => typeof item === "object" && item !== null && "questionItem" in item).length
+  return formItems.filter((item) => {
+    if (typeof item !== "object" || item === null) return false
+    const q = (item as { questionItem?: { question?: { grading?: { pointValue?: number } } } }).questionItem?.question
+    return (q?.grading?.pointValue ?? 0) > 0
+  }).length
 }
 
 function getInitials(name: string) {
