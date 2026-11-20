@@ -196,8 +196,10 @@ export async function tambahSoalKeForm(
     .map((item, index) => ({ item: item as ButirForm, index }))
     .filter(({ item }) => adalahPlaceholder(item))
   if (placeholder.length) {
+    // Hapus dari indeks terbesar ke terkecil: menghapus dari depan menggeser indeks sisanya.
+    const urutMundur = [...placeholder].sort((a, b) => b.index - a.index)
     await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
-      requests: placeholder.map(({ index }) => ({ deleteItem: { location: { index } } })),
+      requests: urutMundur.map(({ index }) => ({ deleteItem: { location: { index } } })),
     })
   }
 
