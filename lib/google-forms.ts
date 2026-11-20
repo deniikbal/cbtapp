@@ -74,9 +74,8 @@ export async function buatFormKosong(
   const { kuis = true, identitas = true, kelas = [], deskripsi = "" } = opsi
 
   // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
-  const form = await gpost("https://forms.googleapis.com/v1/forms", {
-    info: { title: judul, documentTitle: judul, ...(deskripsi ? { description: deskripsi } : {}) },
-  })
+  // Google hanya menerima info.title saat create; deskripsi lewat batchUpdate di bawah.
+  const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
   const formId = String(form.formId ?? "")
   if (!formId) throw new Error("Google tidak mengembalikan formId.")
 
