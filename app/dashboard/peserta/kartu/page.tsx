@@ -132,23 +132,23 @@ export default async function KartuUjianPage({
 
                 <dl className="mt-3 space-y-1.5">
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Nama</dt>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Nama :</dt>
                     <dd className="kartu-nama line-clamp-2 font-medium">{siswa.name}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Kelas</dt>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Kelas :</dt>
                     <dd className="font-medium">{namaKelas}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Ruang Ujian</dt>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Ruang Ujian :</dt>
                     <dd className="font-medium">{siswa.roomName ?? "—"}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Username</dt>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Username :</dt>
                     <dd className="font-mono text-xs font-bold">{siswa.nis}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Password</dt>
+                    <dt className="w-20 shrink-0 text-muted-foreground">Password :</dt>
                     <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em]">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
@@ -158,7 +158,7 @@ export default async function KartuUjianPage({
                 <footer className="mt-auto border-t border-border pt-2 text-[9px]">
                   <div className="ml-auto w-fit text-center">
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
-                    {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto my-0.5 h-12 object-contain" />}
+                    {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="mx-auto my-0.5 h-20 object-contain" />}
                     <div className="text-left">
                       <p className="font-semibold">{cardSettings.principalName || "—"}</p>
                       <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
