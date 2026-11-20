@@ -49,6 +49,7 @@ export type StudentManagementRow = {
   className: string
   classroomId: string
   majorName: string
+  kartuPassword: string | null
 }
 
 export type StudentManagementClassroom = {
@@ -304,7 +305,7 @@ export function StudentManagementCard({
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
                   <TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-blue-500/15 text-xs font-medium text-blue-700 dark:text-blue-300">{getInitials(student.name)}</AvatarFallback></Avatar><span className="font-medium">{student.name}</span></div></TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">••••••••</TableCell>
+                  <TableCell className="font-mono text-xs">{student.kartuPassword || "—"}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal">{student.className}</Badge></TableCell>
                   <TableCell className="text-muted-foreground">{student.majorName}</TableCell>
                   <TableCell><Badge variant="secondary" className={cn("font-normal", student.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{student.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell>

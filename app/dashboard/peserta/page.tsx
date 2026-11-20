@@ -80,6 +80,7 @@ export default async function PesertaPage() {
         className: classrooms.name,
         classroomId: classrooms.id,
         majorName: majors.name,
+        kartuPassword: students.kartuPassword,
       })
       .from(students)
       .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
