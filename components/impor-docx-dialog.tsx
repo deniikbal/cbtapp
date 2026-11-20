@@ -103,7 +103,7 @@ export function ImporDocxDialog({ bankId, kode, disabled, ikon }: { bankId: stri
         <DialogHeader className="shrink-0 gap-1">
           <DialogTitle className="text-sm">Impor soal dari Word — {kode}</DialogTitle>
           <DialogDescription className="text-[11px]">
-            Soal ditambahkan ke Google Form bank soal ini beserta kunci jawabannya.
+            Soal menggantikan 30 soal kosong bawaan form beserta kunci jawabannya. Placeholder yang sudah diisi manual tidak diubah.
           </DialogDescription>
         </DialogHeader>
 

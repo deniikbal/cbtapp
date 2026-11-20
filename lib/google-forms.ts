@@ -176,12 +176,33 @@ const HURUF_OPSI = "abcdefghijklmnopqrstuvwxyz"
  * Tambahkan butir soal pilihan ganda (mode kuis) ke form yang sudah ada,
  * lalu kembalikan `items` terbaru untuk disimpan di `question_banks.formItems`.
  */
+// Butir placeholder kosong hasil "Buat form kosong": judul angka 1-30, opsi persis A-E, tanpa kunci.
+function adalahPlaceholder(item: ButirForm): boolean {
+  const q = item.questionItem?.question
+  if (!q || !item.title || !/^\d{1,2}$/.test(item.title)) return false
+  const nilai = (q.choiceQuestion?.options ?? []).map((o) => o.value ?? "")
+  if (nilai.length !== 5 || nilai.join("") !== "ABCDE") return false
+  return !q.grading?.correctAnswers?.answers?.length
+}
+
 export async function tambahSoalKeForm(
   formId: string,
   soal: { pertanyaan: string; opsi: string[]; kunci: string }[]
 ) {
   const { items } = await ambilForm(formId)
-  const mulai = items.length
+
+  // Bersihkan placeholder kosong dulu (batchUpdate terpisah agar indeks tidak bergeser).
+  const placeholder = items
+    .map((item, index) => ({ item: item as ButirForm, index }))
+    .filter(({ item }) => adalahPlaceholder(item))
+  if (placeholder.length) {
+    await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
+      requests: placeholder.map(({ index }) => ({ deleteItem: { location: { index } } })),
+    })
+  }
+
+  const sesudahHapus = placeholder.length ? (await ambilForm(formId)).items : items
+  const mulai = sesudahHapus.length
 
   const requests = soal.map((s, i) => {
     const kunciTeks = s.opsi[HURUF_OPSI.indexOf(s.kunci.toLowerCase())] ?? s.opsi[0]
