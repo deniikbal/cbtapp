@@ -132,23 +132,28 @@ export default async function KartuUjianPage({
 
                 <dl className="mt-2 space-y-1">
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Nama :</dt>
+                    <dt className="w-24 shrink-0 text-left text-muted-foreground">Nama</dt>
+                    <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="kartu-nama line-clamp-2 font-medium">{siswa.name}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Kelas :</dt>
+                    <dt className="w-24 shrink-0 text-left text-muted-foreground">Kelas</dt>
+                    <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="font-medium">{namaKelas}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Ruang Ujian :</dt>
+                    <dt className="w-24 shrink-0 text-left text-muted-foreground">Ruang Ujian</dt>
+                    <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="font-medium">{siswa.roomName ?? "—"}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Username :</dt>
+                    <dt className="w-24 shrink-0 text-left text-muted-foreground">Username</dt>
+                    <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="font-mono text-xs font-bold">{siswa.nis}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Password :</dt>
+                    <dt className="w-24 shrink-0 text-left text-muted-foreground">Password</dt>
+                    <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em]">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
