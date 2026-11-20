@@ -615,8 +615,8 @@ export function ImporSoalPage({
         </div>
       </div>
 
-      <Tabs value={model} onValueChange={(v) => setModel(v as "manual" | "teks")}>
-        <TabsList>
+      <Tabs value={model} onValueChange={(v) => setModel(v as "manual" | "teks")} className="flex flex-col gap-4">
+        <TabsList className="h-9 w-fit">
           <TabsTrigger value="manual" className="gap-1.5">
             <Keyboard data-icon="inline-start" />
             Input manual
