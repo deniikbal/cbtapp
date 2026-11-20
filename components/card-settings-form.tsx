@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { Loader2, Save, Upload } from "lucide-react"
+import { Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
 import { saveCardSettings, type CardSettings } from "@/app/dashboard/peserta/kartu/card-settings-actions"
 import { Button } from "@/components/ui/button"
@@ -14,10 +14,16 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
   const [isPending, startTransition] = useTransition()
   const [logoPreview, setLogoPreview] = useState(settings.logoUrl)
   const [sigPreview, setSigPreview] = useState(settings.signatureUrl)
+  const [sigX, setSigX] = useState(settings.sigX)
+  const [sigY, setSigY] = useState(settings.sigY)
+  const [sigSize, setSigSize] = useState(settings.sigSize)
 
   function handleSubmit(formData: FormData) {
     formData.set("existingLogoUrl", settings.logoUrl)
     formData.set("existingSignatureUrl", settings.signatureUrl)
+    formData.set("sigX", String(sigX))
+    formData.set("sigY", String(sigY))
+    formData.set("sigSize", String(sigSize))
     startTransition(async () => {
       await saveCardSettings(formData)
       toast.success("Pengaturan kartu disimpan.")
@@ -66,6 +72,48 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
           </div>
         </div>
       </div>
+
+      {/* ─── Live position tuner ─── */}
+      <div className="space-y-3 rounded-sm border bg-background p-3">
+        <p className="text-sm font-semibold">Atur Posisi TTD (live preview)</p>
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Geser Horizontal (X): {sigX}px</Label>
+              <input type="range" min={-60} max={60} value={sigX} onChange={(e) => setSigX(Number(e.target.value))} className="w-full" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Geser Vertikal (Y): {sigY}px</Label>
+              <input type="range" min={-60} max={60} value={sigY} onChange={(e) => setSigY(Number(e.target.value))} className="w-full" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Ukuran TTD: {sigSize}px</Label>
+              <input type="range" min={24} max={96} value={sigSize} onChange={(e) => setSigSize(Number(e.target.value))} className="w-full" />
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => { setSigX(0); setSigY(0); setSigSize(48) }}>Reset posisi</Button>
+          </div>
+          {/* preview */}
+          <div className="w-44 rounded-sm border bg-white p-2 text-[9px]">
+            <p className="text-center text-muted-foreground">Kepala Sekolah,</p>
+            <div className="relative mx-auto mt-2 h-24 w-40">
+              <div className="absolute bottom-0 left-0 text-left">
+                <p className="font-semibold">{settings.principalName || "Nama Kepsek"}</p>
+                <p className="text-[8px] text-muted-foreground">NIP. {settings.principalNip || "—"}</p>
+              </div>
+              {sigPreview && (
+                <img
+                  src={sigPreview}
+                  alt="TTD"
+                  className="absolute inset-0 h-full w-full object-contain opacity-90"
+                  style={{ transform: `translate(${sigX}px, ${sigY}px)`, height: sigSize, width: "100%", margin: "auto" }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">Geser slider sampai TTD pas di atas nama. Preview di kanan mendekati hasil cetak. Simpan untuk menerapkan ke semua kartu.</p>
+      </div>
+
       <Button type="submit" size="sm" className="gap-2" disabled={isPending}>
         {isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
         Simpan Pengaturan Kartu

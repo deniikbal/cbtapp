@@ -163,7 +163,7 @@ export default async function KartuUjianPage({
                         <p className="font-semibold">{cardSettings.principalName || "—"}</p>
                         <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
                       </div>
-                      {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="absolute inset-0 h-full w-full object-contain opacity-90" />}
+                      {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="absolute inset-0 h-full w-full object-contain opacity-90" style={{ transform: `translate(${cardSettings.sigX}px, ${cardSettings.sigY}px)`, height: cardSettings.sigSize, width: "100%", margin: "auto" }} />}
                     </div>
                   </div>
                 </footer>

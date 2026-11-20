@@ -15,12 +15,15 @@ export type CardSettings = {
   principalNip: string
   logoUrl: string
   signatureUrl: string
+  sigX: number
+  sigY: number
+  sigSize: number
 }
 
 export async function getCardSettings(): Promise<CardSettings> {
   const result = await db.execute(sql`SELECT * FROM card_settings WHERE id = 'default' LIMIT 1`)
   const row = (result as any).rows?.[0] ?? (result as any)[0]
-  if (!row) return { schoolName: "SMA Negeri 1 Bantarujeg", examTitle: "Asesmen Sumatif Akhir Tahun", academicYear: "2025/2026", principalName: "", principalNip: "", logoUrl: "", signatureUrl: "" }
+  if (!row) return { schoolName: "SMA Negeri 1 Bantarujeg", examTitle: "Asesmen Sumatif Akhir Tahun", academicYear: "2025/2026", principalName: "", principalNip: "", logoUrl: "", signatureUrl: "", sigX: 0, sigY: 0, sigSize: 48 }
   return {
     schoolName: row.schoolName ?? "",
     examTitle: row.examTitle ?? "",
@@ -29,6 +32,9 @@ export async function getCardSettings(): Promise<CardSettings> {
     principalNip: row.principalNip ?? "",
     logoUrl: row.logoUrl ?? "",
     signatureUrl: row.signatureUrl ?? "",
+    sigX: Number(row.sigX ?? 0),
+    sigY: Number(row.sigY ?? 0),
+    sigSize: Number(row.sigSize ?? 48),
   }
 }
 
@@ -38,6 +44,9 @@ export async function saveCardSettings(formData: FormData) {
   const academicYear = String(formData.get("academicYear") ?? "").trim()
   const principalName = String(formData.get("principalName") ?? "").trim()
   const principalNip = String(formData.get("principalNip") ?? "").trim()
+  const sigX = Number(formData.get("sigX") ?? 0) || 0
+  const sigY = Number(formData.get("sigY") ?? 0) || 0
+  const sigSize = Number(formData.get("sigSize") ?? 48) || 48
 
   let logoUrl = String(formData.get("existingLogoUrl") ?? "")
   let signatureUrl = String(formData.get("existingSignatureUrl") ?? "")
@@ -52,12 +61,12 @@ export async function saveCardSettings(formData: FormData) {
   }
 
   await db.execute(sql`
-    INSERT INTO card_settings (id, "schoolName", "examTitle", "academicYear", "principalName", "principalNip", "logoUrl", "signatureUrl", "updatedAt")
-    VALUES ('default', ${schoolName}, ${examTitle}, ${academicYear}, ${principalName}, ${principalNip}, ${logoUrl}, ${signatureUrl}, now())
+    INSERT INTO card_settings (id, "schoolName", "examTitle", "academicYear", "principalName", "principalNip", "logoUrl", "signatureUrl", "sigX", "sigY", "sigSize", "updatedAt")
+    VALUES ('default', ${schoolName}, ${examTitle}, ${academicYear}, ${principalName}, ${principalNip}, ${logoUrl}, ${signatureUrl}, ${sigX}, ${sigY}, ${sigSize}, now())
     ON CONFLICT (id) DO UPDATE SET
       "schoolName" = ${schoolName}, "examTitle" = ${examTitle}, "academicYear" = ${academicYear},
       "principalName" = ${principalName}, "principalNip" = ${principalNip},
-      "logoUrl" = ${logoUrl}, "signatureUrl" = ${signatureUrl}, "updatedAt" = now()
+      "logoUrl" = ${logoUrl}, "signatureUrl" = ${signatureUrl}, "sigX" = ${sigX}, "sigY" = ${sigY}, "sigSize" = ${sigSize}, "updatedAt" = now()
   `)
   revalidatePath("/dashboard/peserta/kartu")
 }
