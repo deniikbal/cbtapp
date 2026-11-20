@@ -212,13 +212,13 @@ export function ImporSoalPage({
               setHasil(null)
             }}
           >
-            <TabsList className="w-full sm:w-auto">
-              <TabsTrigger value="docx" className="h-11 gap-1.5 px-4 text-xs sm:h-7">
-                <FileUp className="size-3.5" />
+            <TabsList>
+              <TabsTrigger value="docx">
+                <FileUp data-icon="inline-start" />
                 File Word (.docx)
               </TabsTrigger>
-              <TabsTrigger value="teks" className="h-11 gap-1.5 px-4 text-xs sm:h-7">
-                <FileText className="size-3.5" />
+              <TabsTrigger value="teks">
+                <FileText data-icon="inline-start" />
                 Tempel teks
               </TabsTrigger>
             </TabsList>
