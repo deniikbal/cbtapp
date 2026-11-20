@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
+import { getExamBrowserSettings } from "@/lib/exam-browser"
+import { daftarEmailEditor, shareFormEditor } from "@/lib/google-forms"
 import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
@@ -190,8 +192,22 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       .set({ formId, googleFormUrl: shareUrl, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
 
+    // Bagikan akses edit ke email tambahan (pengaturan), supaya bukan hanya pemilik token yang bisa edit.
+    let catatanEditor = ""
+    try {
+      const settings = await getExamBrowserSettings()
+      const editors = daftarEmailEditor(settings.formEditorEmails)
+      if (editors.length > 0) {
+        const hasil = await shareFormEditor(formId, editors)
+        if (hasil.ok.length > 0) catatanEditor = ` Akses edit diberikan ke: ${hasil.ok.join(", ")}.`
+        if (hasil.gagal.length > 0) catatanEditor += ` Gagal dibagikan ke: ${hasil.gagal.join(", ")}.`
+      }
+    } catch {
+      // pemberian akses gagal tidak membuat pembuatan form gagal
+    }
+
     revalidatePath("/dashboard/bank-soal")
-    return { ok: true, message: "Form kosong dibuat. Link siswa tersimpan; isi soal lewat tombol edit form.", formId, editUrl, shareUrl }
+    return { ok: true, message: `Form kosong dibuat. Link siswa tersimpan; isi soal lewat tombol edit form.${catatanEditor}`, formId, editUrl, shareUrl }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Gagal membuat form di Google." }
   }

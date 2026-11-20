@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
-import { examBrowserSettings } from "@/lib/db/schema"
-import { ensureExamBrowserSettingsTable, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
+import { examBrowserSettings, questionBanks } from "@/lib/db/schema"
+import { daftarEmailEditor, shareFormEditor } from "@/lib/google-forms"
+import { ensureExamBrowserSettingsTable, getExamBrowserSettings, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
 
 export async function updateExamBrowserSettings(formData: FormData) {
   const forceExamBrowser = formData.get("forceExamBrowser") === "on"
@@ -12,6 +13,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
   const blockedMessage = String(formData.get("blockedMessage") ?? "").trim()
   const downloadUrl = String(formData.get("downloadUrl") ?? "").trim()
   const configCode = String(formData.get("configCode") ?? "").trim()
+  const formEditorEmails = String(formData.get("formEditorEmails") ?? "").trim()
 
   if (forceExamBrowser && !allowedUserAgentPattern) {
     throw new Error("Isi minimal satu pola User-Agent sebelum mode wajib ExamBro diaktifkan.")
@@ -29,6 +31,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
         blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
       downloadUrl,
       configCode,
+      formEditorEmails,
     })
     .onConflictDoUpdate({
       target: examBrowserSettings.id,
@@ -39,6 +42,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
           blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
         downloadUrl,
         configCode,
+        formEditorEmails,
         updatedAt: new Date(),
       },
     })
@@ -60,4 +64,36 @@ export async function generateExamConfigCode() {
       set: { configCode: code, updatedAt: new Date() },
     })
   return code
+}
+
+export async function bagikanSemuaFormKeEditor(): Promise<{ ok: boolean; message: string }> {
+  await ensureExamBrowserSettingsTable()
+  const settings = await getExamBrowserSettings()
+  const editors = daftarEmailEditor(settings.formEditorEmails)
+  if (editors.length === 0) {
+    return { ok: false, message: 'Isi dulu daftar email editor di kolom "Email editor Google Form".' }
+  }
+
+  const banks = await db
+    .select({ formId: questionBanks.formId, code: questionBanks.code })
+    .from(questionBanks)
+  const targets = banks.filter((bank) => bank.formId)
+
+  let sukses = 0
+  const gagal: string[] = []
+  for (const bank of targets) {
+    try {
+      const hasil = await shareFormEditor(bank.formId, editors)
+      if (hasil.ok.length === editors.length) sukses += 1
+      else gagal.push(bank.code)
+    } catch {
+      gagal.push(bank.code)
+    }
+  }
+
+  revalidatePath("/dashboard/bank-soal")
+  return {
+    ok: true,
+    message: `Akses edit diberikan ke ${sukses} dari ${targets.length} form. Email: ${editors.join(", ")}.${gagal.length ? ` Gagal: ${gagal.join(", ")}.` : ""}`,
+  }
 }

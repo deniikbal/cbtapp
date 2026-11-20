@@ -180,6 +180,8 @@ export const examBrowserSettings = pgTable("exam_browser_settings", {
     .default("Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android."),
   downloadUrl: text("downloadUrl").notNull().default(""),
   configCode: text("configCode").notNull().default(""),
+  // Email (pisahkan koma/baris) yang diberi akses edit ke semua Google Form buatan sistem.
+  formEditorEmails: text("formEditorEmails").notNull().default(""),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 })

@@ -272,3 +272,33 @@ export function hitungNilai(soal: Soal[], respons: Respons) {
 export function normNis(nis: string) {
   return (nis ?? "").replace(/\D/g, "").replace(/^0+/, "")
 }
+
+// Beri akses editor (writer) ke email lain untuk sebuah form, lewat Drive API.
+// Berlaku untuk form yang dibuat sistem (scope drive.file).
+export async function shareFormEditor(formId: string, emails: string[]): Promise<{ ok: string[]; gagal: string[] }> {
+  const token = await accessToken()
+  const ok: string[] = []
+  const gagal: string[] = []
+  for (const email of emails) {
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(formId)}/permissions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "writer", type: "user", emailAddress: email }),
+        cache: "no-store",
+      })
+      if (res.ok) ok.push(email)
+      else gagal.push(email)
+    } catch {
+      gagal.push(email)
+    }
+  }
+  return { ok, gagal }
+}
+
+export function daftarEmailEditor(raw: string | undefined | null): string[] {
+  return (raw ?? "")
+    .split(/[\n,;]+/)
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.includes("@"))
+}

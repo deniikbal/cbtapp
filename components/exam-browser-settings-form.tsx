@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { Copy, Loader2, RefreshCw, Settings } from "lucide-react"
+import { Copy, Loader2, RefreshCw, Settings, Share2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
-import { updateExamBrowserSettings, generateExamConfigCode } from "@/app/dashboard/pengaturan/actions"
+import { updateExamBrowserSettings, generateExamConfigCode, bagikanSemuaFormKeEditor } from "@/app/dashboard/pengaturan/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,6 +22,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isGenerating, startGenerate] = useTransition()
+  const [isSharing, startSharing] = useTransition()
   const [code, setCode] = useState(settings.configCode || "")
 
   function handleSubmit(formData: FormData) {
@@ -49,6 +50,18 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
     })
   }
 
+  function handleShare() {
+    startSharing(async () => {
+      try {
+        const result = await bagikanSemuaFormKeEditor()
+        if (result.ok) toast.success(result.message)
+        else toast.error(result.message)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Gagal membagikan form.")
+      }
+    })
+  }
+
   function handleCopy() {
     navigator.clipboard.writeText(code)
     toast.success("Kode disalin!")
@@ -56,7 +69,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
 
   return (
     <form
-      key={`${settings.forceExamBrowser}-${settings.allowedUserAgentPattern}-${settings.blockedMessage}-${settings.downloadUrl}-${settings.configCode}`}
+      key={`${settings.forceExamBrowser}-${settings.allowedUserAgentPattern}-${settings.blockedMessage}-${settings.downloadUrl}-${settings.configCode}-${settings.formEditorEmails}`}
       action={handleSubmit}
       className="space-y-5"
     >
@@ -105,6 +118,18 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
       <div className="space-y-2">
         <Label htmlFor="blockedMessage">Pesan saat diblokir</Label>
         <Textarea id="blockedMessage" name="blockedMessage" defaultValue={settings.blockedMessage} rows={2} disabled={isPending} />
+      </div>
+
+      <div className="space-y-2 rounded-sm border bg-muted/30 p-4">
+        <Label htmlFor="formEditorEmails">Email editor Google Form</Label>
+        <Textarea id="formEditorEmails" name="formEditorEmails" defaultValue={settings.formEditorEmails} placeholder={"guru1@guru.sma.belajar.id\nguru2@guru.sma.belajar.id"} rows={2} disabled={isPending} />
+        <p className="text-xs text-muted-foreground">
+          Email ini diberi akses EDITOR ke setiap Google Form yang dibuat otomatis dari bank soal, sehingga bisa mengedit soal walau bukan pemilik akun token. Pisahkan dengan baris baru atau koma.
+        </p>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={isSharing || isPending} onClick={handleShare}>
+          {isSharing ? <Loader2 className="size-3.5 animate-spin" /> : <Share2 className="size-3.5" />}
+          Bagikan akses ke semua form yang sudah ada
+        </Button>
       </div>
 
       <div className="space-y-2">

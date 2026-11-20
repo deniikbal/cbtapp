@@ -12,6 +12,7 @@ export type ExamBrowserSettings = {
   blockedMessage: string
   downloadUrl: string
   configCode: string
+  formEditorEmails: string
 }
 
 export const defaultExamBrowserSettings: ExamBrowserSettings = {
@@ -21,6 +22,7 @@ export const defaultExamBrowserSettings: ExamBrowserSettings = {
   blockedMessage: "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
   downloadUrl: "",
   configCode: "",
+  formEditorEmails: "",
 }
 
 export async function ensureExamBrowserSettingsTable() {
@@ -31,6 +33,7 @@ export async function ensureExamBrowserSettingsTable() {
       "allowedUserAgentPattern" text DEFAULT '' NOT NULL,
       "blockedMessage" text DEFAULT 'Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.' NOT NULL,
       "downloadUrl" text DEFAULT '' NOT NULL,
+      "formEditorEmails" text DEFAULT '' NOT NULL,
       "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
       "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
     )
