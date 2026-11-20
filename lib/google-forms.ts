@@ -302,3 +302,19 @@ export function daftarEmailEditor(raw: string | undefined | null): string[] {
     .map((value) => value.trim().toLowerCase())
     .filter((value) => value.includes("@"))
 }
+
+// Set form agar "siapa saja dengan link bisa edit" (Drive permission anyone/writer).
+export async function setFormAnyoneEditor(formId: string): Promise<boolean> {
+  try {
+    const token = await accessToken()
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(formId)}/permissions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "writer", type: "anyone", withLink: true }),
+      cache: "no-store",
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}

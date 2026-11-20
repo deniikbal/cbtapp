@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { getExamBrowserSettings } from "@/lib/exam-browser"
-import { daftarEmailEditor, shareFormEditor } from "@/lib/google-forms"
+import { daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
 import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
@@ -196,6 +196,11 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
     let catatanEditor = ""
     try {
       const settings = await getExamBrowserSettings()
+      if (settings.formPublicEdit) {
+        catatanEditor = (await setFormAnyoneEditor(formId))
+          ? " Form bisa diedit siapa saja yang punya link edit."
+          : " Gagal mengaktifkan edit-via-link pada form."
+      }
       const editors = daftarEmailEditor(settings.formEditorEmails)
       if (editors.length > 0) {
         const hasil = await shareFormEditor(formId, editors)

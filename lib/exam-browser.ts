@@ -13,6 +13,7 @@ export type ExamBrowserSettings = {
   downloadUrl: string
   configCode: string
   formEditorEmails: string
+  formPublicEdit: boolean
 }
 
 export const defaultExamBrowserSettings: ExamBrowserSettings = {
@@ -23,6 +24,7 @@ export const defaultExamBrowserSettings: ExamBrowserSettings = {
   downloadUrl: "",
   configCode: "",
   formEditorEmails: "",
+  formPublicEdit: false,
 }
 
 export async function ensureExamBrowserSettingsTable() {
@@ -34,6 +36,7 @@ export async function ensureExamBrowserSettingsTable() {
       "blockedMessage" text DEFAULT 'Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.' NOT NULL,
       "downloadUrl" text DEFAULT '' NOT NULL,
       "formEditorEmails" text DEFAULT '' NOT NULL,
+      "formPublicEdit" boolean DEFAULT false NOT NULL,
       "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
       "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
     )

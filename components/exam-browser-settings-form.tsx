@@ -121,10 +121,17 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
       </div>
 
       <div className="space-y-2 rounded-sm border bg-muted/30 p-4">
+        <div className="flex items-start gap-3">
+          <input id="formPublicEdit" name="formPublicEdit" type="checkbox" defaultChecked={settings.formPublicEdit} disabled={isPending} className="mt-1 size-4 rounded border-border" />
+          <div className="space-y-1">
+            <Label htmlFor="formPublicEdit">Siapa saja dengan link bisa edit form</Label>
+            <p className="text-sm text-muted-foreground">Setiap form baru langsung terbuka untuk diedit siapa pun yang pegang link edit. Lebih praktis, tapi link edit harus dijaga — kalau bocor, soal bisa diubah orang lain.</p>
+          </div>
+        </div>
         <Label htmlFor="formEditorEmails">Email editor Google Form</Label>
         <Textarea id="formEditorEmails" name="formEditorEmails" defaultValue={settings.formEditorEmails} placeholder={"guru1@guru.sma.belajar.id\nguru2@guru.sma.belajar.id"} rows={2} disabled={isPending} />
         <p className="text-xs text-muted-foreground">
-          Email ini diberi akses EDITOR ke setiap Google Form yang dibuat otomatis dari bank soal, sehingga bisa mengedit soal walau bukan pemilik akun token. Pisahkan dengan baris baru atau koma.
+          Dipakai kalau kotak di atas tidak dicentang: email ini diberi akses EDITOR ke setiap Google Form yang dibuat otomatis dari bank soal. Pisahkan dengan baris baru atau koma.
         </p>
         <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={isSharing || isPending} onClick={handleShare}>
           {isSharing ? <Loader2 className="size-3.5 animate-spin" /> : <Share2 className="size-3.5" />}

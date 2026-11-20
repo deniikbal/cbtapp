@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { examBrowserSettings, questionBanks } from "@/lib/db/schema"
-import { daftarEmailEditor, shareFormEditor } from "@/lib/google-forms"
+import { daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
 import { ensureExamBrowserSettingsTable, getExamBrowserSettings, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
 
 export async function updateExamBrowserSettings(formData: FormData) {
@@ -14,6 +14,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
   const downloadUrl = String(formData.get("downloadUrl") ?? "").trim()
   const configCode = String(formData.get("configCode") ?? "").trim()
   const formEditorEmails = String(formData.get("formEditorEmails") ?? "").trim()
+  const formPublicEdit = formData.get("formPublicEdit") === "on"
 
   if (forceExamBrowser && !allowedUserAgentPattern) {
     throw new Error("Isi minimal satu pola User-Agent sebelum mode wajib ExamBro diaktifkan.")
@@ -32,6 +33,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
       downloadUrl,
       configCode,
       formEditorEmails,
+      formPublicEdit,
     })
     .onConflictDoUpdate({
       target: examBrowserSettings.id,
@@ -43,6 +45,7 @@ export async function updateExamBrowserSettings(formData: FormData) {
         downloadUrl,
         configCode,
         formEditorEmails,
+        formPublicEdit,
         updatedAt: new Date(),
       },
     })
@@ -83,6 +86,11 @@ export async function bagikanSemuaFormKeEditor(): Promise<{ ok: boolean; message
   const gagal: string[] = []
   for (const bank of targets) {
     try {
+      if (settings.formPublicEdit) {
+        if (await setFormAnyoneEditor(bank.formId)) sukses += 1
+        else gagal.push(bank.code)
+        continue
+      }
       const hasil = await shareFormEditor(bank.formId, editors)
       if (hasil.ok.length === editors.length) sukses += 1
       else gagal.push(bank.code)
@@ -92,8 +100,9 @@ export async function bagikanSemuaFormKeEditor(): Promise<{ ok: boolean; message
   }
 
   revalidatePath("/dashboard/bank-soal")
+  const cara = settings.formPublicEdit ? "edit via link (siapa saja)" : `email editor: ${editors.join(", ")}`
   return {
     ok: true,
-    message: `Akses edit diberikan ke ${sukses} dari ${targets.length} form. Email: ${editors.join(", ")}.${gagal.length ? ` Gagal: ${gagal.join(", ")}.` : ""}`,
+    message: `Akses diterapkan ke ${sukses} dari ${targets.length} form (${cara}).${gagal.length ? ` Gagal: ${gagal.join(", ")}.` : ""}`,
   }
 }

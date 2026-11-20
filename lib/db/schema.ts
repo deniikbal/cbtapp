@@ -182,6 +182,8 @@ export const examBrowserSettings = pgTable("exam_browser_settings", {
   configCode: text("configCode").notNull().default(""),
   // Email (pisahkan koma/baris) yang diberi akses edit ke semua Google Form buatan sistem.
   formEditorEmails: text("formEditorEmails").notNull().default(""),
+  // true = form dibuat dengan akses "siapa saja dengan link bisa edit".
+  formPublicEdit: boolean("formPublicEdit").notNull().default(false),
   createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 })
