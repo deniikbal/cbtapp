@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { toast } from "sonner"
 import { Edit, Loader2, MoreHorizontal, Trash2 } from "lucide-react"
 
-import { deleteStudent, updateStudent } from "@/app/dashboard/peserta/actions"
+import { deleteStudent, findStudentsWithAttempts, updateStudent } from "@/app/dashboard/peserta/actions"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +61,7 @@ export function StudentRowActions({
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedClassroomId, setSelectedClassroomId] = useState(student.classroomId)
   const [error, setError] = useState<string | null>(null)
+  const [hasAttempt, setHasAttempt] = useState(false)
   const [isPending, startTransition] = useTransition()
   const selectedClassroom = classrooms.find((classroom) => classroom.id === selectedClassroomId)
 
@@ -119,7 +120,12 @@ export function StudentRowActions({
         open={editOpen}
         onOpenChange={(nextOpen) => {
           setEditOpen(nextOpen)
-          if (nextOpen) setSelectedClassroomId(student.classroomId)
+          if (nextOpen) {
+            setSelectedClassroomId(student.classroomId)
+            findStudentsWithAttempts([student.id])
+              .then((ids) => setHasAttempt(ids.includes(student.id)))
+              .catch(() => setHasAttempt(false))
+          }
           if (!nextOpen) setError(null)
         }}
       >
@@ -198,6 +204,12 @@ export function StudentRowActions({
                 </SelectContent>
               </Select>
             </div>
+
+            {hasAttempt && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+                <span className="font-medium">Perhatian:</span> peserta ini sudah memiliki percobaan ujian tercatat pada jadwal sesi lama. Setelah sesi diubah, dia tidak bisa melanjutkan pengerjaan lama dan akan mengerjakan ulang melalui jadwal sesi baru.
+              </div>
+            )}
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 

@@ -7,7 +7,7 @@ import * as XLSX from "xlsx"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
-import { classrooms, examRooms, majors, students } from "@/lib/db/schema"
+import { classrooms, examAttempts, examRooms, majors, students } from "@/lib/db/schema"
 
 function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex")
@@ -452,4 +452,16 @@ export async function setStudentsSession(ids: string[], session: number) {
   revalidatePath("/dashboard/peserta")
 
   return { jumlah: unik.length, session: safeSession }
+}
+
+export async function findStudentsWithAttempts(ids: string[]): Promise<string[]> {
+  const unik = [...new Set((ids ?? []).map((value) => String(value).trim()).filter(Boolean))]
+  if (unik.length === 0) return []
+
+  const rows = await db
+    .selectDistinct({ studentId: examAttempts.studentId })
+    .from(examAttempts)
+    .where(inArray(examAttempts.studentId, unik))
+
+  return rows.map((row) => row.studentId)
 }

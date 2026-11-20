@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react"
 import { Filter, RotateCcw, Search, Trash2, Users, X, UsersRound } from "lucide-react"
 import { toast } from "sonner"
 
-import { deleteStudents, setStudentsSession } from "@/app/dashboard/peserta/actions"
+import { deleteStudents, findStudentsWithAttempts, setStudentsSession } from "@/app/dashboard/peserta/actions"
 
 import { SeedMasterDataButton } from "@/components/seed-master-data-button"
 import { StudentCreateDialog } from "@/components/student-create-dialog"
@@ -75,6 +75,8 @@ export function StudentManagementCard({
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkSession, setBulkSession] = useState("1")
+  const [bulkAttemptCount, setBulkAttemptCount] = useState(0)
+  const [bulkSessionConfirmOpen, setBulkSessionConfirmOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const selectedClassroom = classrooms.find((classroom) => classroom.id === classroomId)
@@ -128,9 +130,26 @@ export function StudentManagementCard({
   function handleBulkSession() {
     startTransition(async () => {
       try {
+        const withAttempts = await findStudentsWithAttempts(selectedIds)
+        if (withAttempts.length > 0) {
+          setBulkAttemptCount(withAttempts.length)
+          setBulkSessionConfirmOpen(true)
+          return
+        }
+        await applyBulkSession()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Gagal memeriksa percobaan ujian.")
+      }
+    })
+  }
+
+  function applyBulkSession() {
+    startTransition(async () => {
+      try {
         const result = await setStudentsSession(selectedIds, Number(bulkSession))
         toast.success(`Sesi ${result.session} diterapkan ke ${result.jumlah} peserta.`)
         setSelectedIds([])
+        setBulkSessionConfirmOpen(false)
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Gagal menetapkan sesi.")
       }
@@ -412,6 +431,22 @@ export function StudentManagementCard({
         </div>
       </CardContent>
 
+      <AlertDialog open={bulkSessionConfirmOpen} onOpenChange={setBulkSessionConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{bulkAttemptCount} peserta sudah punya percobaan ujian</AlertDialogTitle>
+            <AlertDialogDescription>
+              Peserta yang sudah memulai/mengerjakan ujian di sesi lama tidak bisa melanjutkan pengerjaan tersebut setelah sesinya diubah — mereka akan mengerjakan ulang melalui jadwal sesi baru. Hasil yang sudah tersinkron tetap tersimpan. Tetap ubah sesi {selectedIds.length} peserta ke Sesi {bulkSession}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction disabled={isPending} onClick={(event) => { event.preventDefault(); applyBulkSession() }}>
+              {isPending ? "Menyimpan..." : "Ya, ubah sesi"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
