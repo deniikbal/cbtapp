@@ -120,6 +120,8 @@ export const questionBanks = pgTable(
     title: text("title").notNull(),
     teacherName: text("teacherName").notNull().default(""),
     teacherId: text("teacherId").references((): AnyPgColumn => teachers.id, { onDelete: "set null" }),
+    // Semua guru pengampu mapel ini (multi-select); teacherId tetap guru pertama untuk kompatibilitas.
+    teacherIds: jsonb("teacherIds").$type<string[]>().notNull().default([]),
     grade: text("grade").notNull().default("X"),
     googleFormUrl: text("googleFormUrl").notNull(),
     formId: text("formId").notNull().default(""),

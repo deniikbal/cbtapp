@@ -31,7 +31,7 @@ export default async function BankSoalPage() {
 
   try {
     rows = await db
-      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, teacherId: questionBanks.teacherId, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
+      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds, grade: questionBanks.grade, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
       .from(questionBanks)
       .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
       .orderBy(asc(questionBanks.code))

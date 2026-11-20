@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { classrooms, examResults, examSchedules, questionBanks, reportSettings, subjects, teachers } from "@/lib/db/schema"
@@ -81,7 +81,7 @@ export async function ambilAnalisisButir(
   if (!bankId) return { ok: false, message: "Bank soal tidak valid." }
 
   const filter = opsi.teacherId
-    ? and(eq(questionBanks.id, bankId), eq(questionBanks.teacherId, opsi.teacherId))
+    ? and(eq(questionBanks.id, bankId), or(eq(questionBanks.teacherId, opsi.teacherId), sql`${questionBanks.teacherIds} @> ${JSON.stringify([opsi.teacherId])}::jsonb`))
     : eq(questionBanks.id, bankId)
 
   const bank = await db

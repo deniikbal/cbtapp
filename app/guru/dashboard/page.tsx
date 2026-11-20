@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { eq, inArray, sql } from "drizzle-orm"
+import { eq, inArray, or, sql } from "drizzle-orm"
 import { BookOpen, CalendarDays, ClipboardList, ExternalLink, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
@@ -43,7 +43,7 @@ export default async function GuruDashboardPage() {
     })
     .from(questionBanks)
     .leftJoin(subjects, eq(questionBanks.subjectId, subjects.id))
-    .where(eq(questionBanks.teacherId, guru.id))
+    .where(or(eq(questionBanks.teacherId, guru.id), sql`${questionBanks.teacherIds} @> ${JSON.stringify([guru.id])}::jsonb`))
     .orderBy(questionBanks.code)
 
   const identitas = await getIdentitasLaporan()

@@ -65,23 +65,26 @@ async function generateQuestionBankIdentity(subjectId: string, grade: string) {
   }
 }
 
+// Baca daftar guru terpilih (multi-select); kembalikan null bila tidak ada yang valid.
 async function bacaGuru(formData: FormData) {
-  const teacherId = String(formData.get("teacherId") ?? "").trim()
-  if (!teacherId) return null
+  const ids = [...new Set(formData.getAll("teacherIds").map((v) => String(v).trim()).filter(Boolean))]
+  if (ids.length === 0) return null
 
-  const [teacher] = await db
+  const rows = await db
     .select({ id: teachers.id, name: teachers.name })
     .from(teachers)
-    .where(eq(teachers.id, teacherId))
-    .limit(1)
+    .where(inArray(teachers.id, ids))
 
-  return teacher ?? null
+  // Urutkan sesuai pilihan user.
+  return ids.map((id) => rows.find((t) => t.id === id)).filter(Boolean) as { id: string; name: string }[]
 }
 
 export async function createQuestionBank(formData: FormData): Promise<{ ok: boolean; message: string }> {
   const subjectId = String(formData.get("subjectId") ?? "").trim()
-  const teacher = await bacaGuru(formData)
-  const teacherName = teacher?.name ?? ""
+  const guruList = await bacaGuru(formData)
+  const teacher = guruList?.[0] ?? null
+  const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
+  const teacherIds = guruList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
   const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
@@ -89,7 +92,7 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   const active = String(formData.get("active") ?? "true") === "true"
 
   if (!subjectId) return { ok: false, message: "Mapel wajib dipilih." }
-  if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
+  if (!teacher) return { ok: false, message: "Minimal satu guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
   // Link boleh kosong: form bisa dibuat belakangan lewat tombol "Buat form kosong".
   if (String(formData.get("googleFormUrl") ?? "").trim() && !googleFormUrl) {
@@ -107,6 +110,7 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
       title: generated.title,
       teacherName,
       teacherId: teacher.id,
+      teacherIds,
       grade,
       subjectId,
       googleFormUrl: googleFormUrl ?? "",
@@ -124,8 +128,10 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
 export async function updateQuestionBank(formData: FormData): Promise<{ ok: boolean; message: string }> {
   const id = String(formData.get("id") ?? "").trim()
   const subjectId = String(formData.get("subjectId") ?? "").trim()
-  const teacher = await bacaGuru(formData)
-  const teacherName = teacher?.name ?? ""
+  const guruList = await bacaGuru(formData)
+  const teacher = guruList?.[0] ?? null
+  const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
+  const teacherIds = guruList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
   const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
@@ -134,7 +140,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
 
   if (!id) return { ok: false, message: "Data bank soal tidak dikenali." }
   if (!subjectId) return { ok: false, message: "Mapel wajib dipilih." }
-  if (!teacher) return { ok: false, message: "Guru pembuat wajib dipilih dari daftar guru." }
+  if (!teacher) return { ok: false, message: "Minimal satu guru pembuat wajib dipilih dari daftar guru." }
   if (!grade) return { ok: false, message: "Kelas wajib dipilih." }
   if (String(formData.get("googleFormUrl") ?? "").trim() && !googleFormUrl) {
     return { ok: false, message: "Link Google Form tidak valid. Contoh: https://forms.gle/xxxx" }
@@ -144,7 +150,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   try {
     await db
       .update(questionBanks)
-      .set({ subjectId, teacherName, teacherId: teacher.id, grade, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
+      .set({ subjectId, teacherName, teacherId: teacher.id, teacherIds, grade, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
   } catch (error) {
     return { ok: false, message: getDatabaseErrorMessage(error, "Gagal mengubah bank soal.") }

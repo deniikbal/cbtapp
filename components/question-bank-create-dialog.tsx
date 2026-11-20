@@ -92,8 +92,8 @@ export function QuestionBankCreateDialog({
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="teacherId">Guru Pembuat</Label>
-              <TeacherCombobox teachers={teachers} id="teacherId" />
+              <Label htmlFor="teacherIds">Guru Pengampu</Label>
+              <TeacherCombobox teachers={teachers} multiple id="teacherIds" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="active">Status</Label>
