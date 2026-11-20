@@ -9,7 +9,7 @@ import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { parseSoalDocx, parseSoalTeks, type SoalImpor } from "@/lib/impor-docx"
 import { rapikanSoal, rapikanSoalAI } from "@/lib/rapikan-soal"
-import { ambilForm, daftarSoalDariItems, tambahSoalKeForm } from "@/lib/google-forms"
+import { ambilForm, daftarSoalDariItems, hapusSoalForm, tambahSoalKeForm, ubahSoalForm } from "@/lib/google-forms"
 
 type Pratinjau = { ok: true; soal: SoalImpor[]; peringatan: string[] } | { ok: false; message: string }
 
@@ -80,18 +80,27 @@ async function imporDariSoal(
   if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
   if (!bank.formId) return { ok: false, message: "Bank soal belum punya form. Buat form dulu." }
 
-  const siap = soal.filter((s) => s.opsi.length >= 2 && s.kunci)
-  if (siap.length === 0) return { ok: false, message: "Semua soal belum lengkap (butuh opsi a–e dan kunci)." }
+  const lengkap = soal.filter((s) => s.opsi.length >= 2 && s.kunci)
+  if (lengkap.length === 0) return { ok: false, message: "Semua soal belum lengkap (butuh opsi a–e dan kunci)." }
+
+  // Buang soal yang isinya sama dengan yang sudah ada di form (cegah dobel).
+  const { items: itemsLama } = await ambilForm(bank.formId)
+  const sudahAda = new Set(daftarSoalDariItems(itemsLama).map((s) => kunciTeks(s.pertanyaan)))
+  const siap = lengkap.filter((s) => !sudahAda.has(kunciTeks(s.pertanyaan)))
+  const duplikat = lengkap.length - siap.length
+  if (siap.length === 0) {
+    return { ok: false, message: `Semua ${lengkap.length} soal sudah ada di form (duplikat). Tidak ada yang ditambahkan.` }
+  }
 
   const items = await tambahSoalKeForm(bank.formId, siap)
   await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bank.id))
 
   revalidatePath("/dashboard/bank-soal")
   revalidatePath("/guru/dashboard")
-  const dilewati = soal.length - siap.length
+  const dilewati = soal.length - lengkap.length
   return {
     ok: true,
-    message: `${siap.length} soal ditambahkan ke form.${dilewati ? ` ${dilewati} soal dilewati karena belum lengkap.` : ""}${peringatan.length ? ` Catatan: ${peringatan[0]}` : ""}`,
+    message: `${siap.length} soal ditambahkan ke form.${dilewati ? ` ${dilewati} soal dilewati karena belum lengkap.` : ""}${duplikat ? ` ${duplikat} soal dilewati karena sudah ada di form.` : ""}${peringatan.length ? ` Catatan: ${peringatan[0]}` : ""}`,
   }
 }
 
@@ -153,7 +162,7 @@ export async function rapikanSoalTeks(
 /** Daftar soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
 export async function daftarSoalForm(
   bankId: string,
-): Promise<{ ok: true; soal: { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] } | { ok: false; message: string }> {
+): Promise<{ ok: true; soal: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] } | { ok: false; message: string }> {
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
   if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
   try {
@@ -161,5 +170,49 @@ export async function daftarSoalForm(
     return { ok: true, soal: daftarSoalDariItems(items) }
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Gagal membaca form." }
+  }
+}
+
+/** Kunci pembanding duplikat: huruf kecil, tanpa tanda baca & spasi berlebih. */
+function kunciTeks(teks: string): string {
+  return teks.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+}
+
+/** Ubah satu soal yang sudah ada di form. */
+export async function ubahSoal(
+  bankId: string,
+  qid: string,
+  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
+): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+  const akses = await cekAkses(bankId)
+  if (!akses.ok) return akses
+  const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
+  try {
+    const items = await ubahSoalForm(bank.formId, qid, data)
+    await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: "Soal diperbarui.", soal: daftarSoalDariItems(items) }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Gagal mengubah soal." }
+  }
+}
+
+/** Hapus satu soal dari form. */
+export async function hapusSoal(
+  bankId: string,
+  qid: string,
+): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+  const akses = await cekAkses(bankId)
+  if (!akses.ok) return akses
+  const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
+  try {
+    const items = await hapusSoalForm(bank.formId, qid)
+    await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: "Soal dihapus dari form.", soal: daftarSoalDariItems(items) }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Gagal menghapus soal." }
   }
 }

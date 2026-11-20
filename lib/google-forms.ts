@@ -209,6 +209,60 @@ export async function tambahSoalKeForm(
   return sesudah.items
 }
 
+/** Cari indeks butir berdasarkan questionId. */
+async function indexButir(formId: string, qid: string): Promise<number> {
+  const { items } = await ambilForm(formId)
+  const idx = (items as ButirForm[]).findIndex((it) => it?.questionItem?.question?.questionId === qid)
+  if (idx < 0) throw new Error("Soal tidak ditemukan di form (mungkin sudah diubah dari Google Form).")
+  return idx
+}
+
+/** Ubah satu soal di form (isi pertanyaan, opsi, kunci). */
+export async function ubahSoalForm(
+  formId: string,
+  qid: string,
+  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
+): Promise<unknown[]> {
+  const index = await indexButir(formId, qid)
+  const opsi = data.opsi.map((o) => o.trim()).filter(Boolean)
+  if (opsi.length < 2) throw new Error("Minimal 2 opsi.")
+  const idxKunci = "ABCDE".indexOf((data.hurufKunci || "").toUpperCase())
+  const benar = idxKunci >= 0 && idxKunci < opsi.length ? opsi[idxKunci] : ""
+
+  await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
+    requests: [
+      {
+        updateItem: {
+          location: { index },
+          item: {
+            title: data.pertanyaan.trim(),
+            questionItem: {
+              question: {
+                required: true,
+                grading: benar ? { pointValue: 1, correctAnswers: { answers: [{ value: benar }] } } : { pointValue: 1 },
+                choiceQuestion: { type: "RADIO", options: opsi.map((v) => ({ value: v })) },
+              },
+            },
+          },
+          updateMask: "title,questionItem.question",
+        },
+      },
+    ],
+  })
+  const { items } = await ambilForm(formId)
+  return items
+}
+
+/** Hapus satu soal dari form. */
+export async function hapusSoalForm(formId: string, qid: string): Promise<unknown[]> {
+  const index = await indexButir(formId, qid)
+  await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
+    requests: [{ deleteItem: { location: { index } } }],
+  })
+  const { items } = await ambilForm(formId)
+  return items
+}
+
 export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[] }> {
   const data = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
   return { title: data.info?.title ?? data.title ?? "", items: data.items ?? [] }
@@ -242,8 +296,8 @@ type ButirForm = {
 /** Ringkasan soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
 export function daftarSoalDariItems(
   items: unknown[],
-): { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] {
-  const hasil: { no: number; pertanyaan: string; opsi: string[]; kunci: string }[] = []
+): { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] {
+  const hasil: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] = []
   for (const butir of items as ButirForm[]) {
     const q = butir?.questionItem?.question
     if (!q?.questionId) continue
@@ -255,6 +309,7 @@ export function daftarSoalDariItems(
     const idx = kunciTeks ? opsi.findIndex((o) => o.toLowerCase() === kunciTeks.toLowerCase()) : -1
     hasil.push({
       no: hasil.length + 1,
+      qid: q.questionId,
       pertanyaan: (butir.title ?? "").trim() || "(tanpa judul)",
       opsi,
       kunci: idx >= 0 ? "ABCDE"[idx] : kunciTeks,

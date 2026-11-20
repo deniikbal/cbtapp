@@ -10,15 +10,21 @@ import {
   FileText,
   FileUp,
   Loader2,
+  Pencil,
   Sparkles,
+  Trash2,
   TriangleAlert,
 } from "lucide-react"
 
-import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks, daftarSoalForm } from "@/app/actions/impor-soal"
+import { imporSoalTeks, imporSoalWord, pratinjauSoalTeks, pratinjauSoalWord, rapikanSoalTeks, daftarSoalForm, ubahSoal, hapusSoal } from "@/app/actions/impor-soal"
+import { AksiIkon } from "@/components/aksi-ikon"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
@@ -27,7 +33,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Textarea } from "@/components/ui/textarea"
 import type { SoalImpor } from "@/lib/impor-docx"
 
-type SoalForm = { no: number; pertanyaan: string; opsi: string[]; kunci: string }
+type SoalForm = { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }
+
+const kunciTeks = (teks: string) => teks.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
 12
@@ -62,6 +70,9 @@ export function ImporSoalPage({
   const [error, setError] = useState<string | null>(null)
   const [hasil, setHasil] = useState<string | null>(null)
   const [tersimpan, setTersimpan] = useState<SoalForm[]>(soalFormAwal)
+  const [edit, setEdit] = useState<{ qid: string; pertanyaan: string; opsi: string[]; kunci: string } | null>(null)
+  const [hapus, setHapus] = useState<SoalForm | null>(null)
+  const [sedangUbah, startUbah] = useTransition()
   const [pending, startTransition] = useTransition()
   const [merapikan, startMerapikan] = useTransition()
   const fileRef = useRef<File | null>(null)
@@ -147,6 +158,44 @@ export function ImporSoalPage({
       setPeringatan([])
       const terbaru = await daftarSoalForm(bankId)
       if (terbaru.ok) setTersimpan(terbaru.soal)
+    })
+  }
+
+  function bukaEdit(s: SoalForm) {
+    const opsi = [...s.opsi]
+    while (opsi.length < 5) opsi.push("")
+    setEdit({ qid: s.qid, pertanyaan: s.pertanyaan, opsi, kunci: s.kunci })
+  }
+
+  function simpanEdit() {
+    if (!edit) return
+    startUbah(async () => {
+      const hasil = await ubahSoal(bankId, edit.qid, {
+        pertanyaan: edit.pertanyaan,
+        opsi: edit.opsi.filter((o) => o.trim()),
+        hurufKunci: edit.kunci,
+      })
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      if (hasil.soal) setTersimpan(hasil.soal)
+      setEdit(null)
+      toast.success(hasil.message)
+    })
+  }
+
+  function konfirmasiHapus() {
+    if (!hapus) return
+    startUbah(async () => {
+      const hasil = await hapusSoal(bankId, hapus.qid)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      if (hasil.soal) setTersimpan(hasil.soal)
+      setHapus(null)
+      toast.success(hasil.message)
     })
   }
 
@@ -258,6 +307,25 @@ export function ImporSoalPage({
                         tanpa kunci
                       </Badge>
                     )}
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <AksiIkon label="Edit soal">
+                        <Button variant="ghost" size="icon-sm" className="rounded-sm" onClick={() => bukaEdit(s)}>
+                          <Pencil className="size-3.5" />
+                          <span className="sr-only">Edit soal</span>
+                        </Button>
+                      </AksiIkon>
+                      <AksiIkon label="Hapus soal">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-sm text-destructive hover:text-destructive"
+                          onClick={() => setHapus(s)}
+                        >
+                          <Trash2 className="size-3.5" />
+                          <span className="sr-only">Hapus soal</span>
+                        </Button>
+                      </AksiIkon>
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -266,6 +334,96 @@ export function ImporSoalPage({
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog edit soal */}
+      <Dialog open={Boolean(edit)} onOpenChange={(buka) => !buka && setEdit(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit soal</DialogTitle>
+            <DialogDescription>Ubah pertanyaan, opsi, atau kunci. Perubahan langsung ke Google Form.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Pertanyaan</label>
+              <Textarea
+                value={edit?.pertanyaan ?? ""}
+                onChange={(e) => setEdit((v) => (v ? { ...v, pertanyaan: e.target.value } : v))}
+                className="min-h-20 rounded-sm text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Opsi</label>
+              <div className="space-y-1.5">
+                {(edit?.opsi ?? []).map((o, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="w-4 text-xs font-medium text-muted-foreground">{"ABCDE"[i]}</span>
+                    <Input
+                      value={o}
+                      onChange={(e) =>
+                        setEdit((v) =>
+                          v ? { ...v, opsi: v.opsi.map((x, j) => (j === i ? e.target.value : x)) } : v,
+                        )
+                      }
+                      placeholder={`Opsi ${"ABCDE"[i]} (kosongkan bila tidak dipakai)`}
+                      className="h-8 rounded-sm text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Kunci jawaban</label>
+              <div className="flex flex-wrap gap-1.5">
+                {[..."ABCDE"].map((huruf, i) => {
+                  const aktif = (edit?.kunci ?? "").toUpperCase() === huruf
+                  const kosong = !(edit?.opsi?.[i] ?? "").trim()
+                  return (
+                    <Button
+                      key={huruf}
+                      type="button"
+                      size="sm"
+                      variant={aktif ? "default" : "outline"}
+                      disabled={kosong}
+                      className="h-8 w-8 rounded-sm p-0 font-mono text-xs"
+                      onClick={() => setEdit((v) => (v ? { ...v, kunci: huruf } : v))}
+                    >
+                      {huruf}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-11 rounded-sm sm:h-8" onClick={() => setEdit(null)} disabled={sedangUbah}>
+              Batal
+            </Button>
+            <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpanEdit} disabled={sedangUbah}>
+              {sedangUbah ? <Loader2 className="size-4 animate-spin" /> : null}
+              Simpan ke form
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Konfirmasi hapus soal */}
+      <AlertDialog open={Boolean(hapus)} onOpenChange={(buka) => !buka && setHapus(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus soal ini dari form?</AlertDialogTitle>
+            <AlertDialogDescription>
+              “{hapus?.pertanyaan}” akan dihapus permanen dari Google Form. Nomor soal setelahnya ikut bergeser.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={sedangUbah}>Batal</AlertDialogCancel>
+            <AlertDialogAction disabled={sedangUbah} onClick={konfirmasiHapus}>
+              {sedangUbah ? <Loader2 className="size-4 animate-spin" /> : null}
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Langkah 1: sumber soal */}
       <Card className="gap-0 rounded-sm py-0">
@@ -424,7 +582,15 @@ export function ImporSoalPage({
                           {s.opsi[s.kunci.charCodeAt(0) - 97] ? ` (${s.opsi[s.kunci.charCodeAt(0) - 97]})` : ""}
                         </p>
                       </div>
-                      {s.opsi.length >= 2 && s.kunci ? (
+                      {tersimpan.some((t) => kunciTeks(t.pertanyaan) === kunciTeks(s.pertanyaan)) ? (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 rounded-sm font-normal text-muted-foreground"
+                          title="Soal dengan isi sama sudah ada di form — tidak akan ditambahkan lagi"
+                        >
+                          sudah ada
+                        </Badge>
+                      ) : s.opsi.length >= 2 && s.kunci ? (
                         <Badge
                           variant="outline"
                           className="shrink-0 rounded-sm font-normal text-emerald-700 dark:text-emerald-400"
