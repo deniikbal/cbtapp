@@ -68,6 +68,7 @@ export function ImporSoalPage({
     setSoal(null)
     setPeringatan([])
     setError(null)
+    setHasil(null)
   }
 
   function pilihFile(file: File | null) {
