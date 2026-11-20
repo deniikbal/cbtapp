@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { eq, inArray, or, sql } from "drizzle-orm"
-import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, FileQuestion, LogOut } from "lucide-react"
+import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, FileQuestion, FileUp, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
 import { logoutGuru } from "@/app/guru/login/actions"
@@ -11,7 +11,7 @@ import { StatCard } from "@/components/stat-card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { ImporDocxDialog } from "@/components/impor-docx-dialog"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -263,7 +263,17 @@ export default async function GuruDashboardPage() {
                                 Edit form
                               </Button>
                             )}
-                            <ImporDocxDialog bankId={bank.id} kode={bank.code} disabled={!bank.formId} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!bank.formId}
+                              title={bank.formId ? "Impor soal dari Word" : "Buat form dulu"}
+                              className="h-11 gap-1 rounded-sm px-2 text-xs sm:h-8"
+                              render={<Link href={`/guru/dashboard/impor?bank=${bank.id}`} />}
+                            >
+                              <FileUp className="size-3.5" />
+                              Impor
+                            </Button>
                             <GuruAnalisisButton bankId={bank.id} judul={bank.code} akses={aksesPdf} />
                           </div>
                         </TableCell>

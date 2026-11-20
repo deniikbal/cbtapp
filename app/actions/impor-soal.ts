@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
-import { parseSoalDocx, type SoalImpor } from "@/lib/impor-docx"
+import { parseSoalDocx, parseSoalTeks, type SoalImpor } from "@/lib/impor-docx"
 import { tambahSoalKeForm } from "@/lib/google-forms"
 
 type Pratinjau = { ok: true; soal: SoalImpor[]; peringatan: string[] } | { ok: false; message: string }
@@ -22,7 +22,7 @@ async function bacaFile(formData: FormData): Promise<Baca> {
   return { ok: true, buffer: Buffer.from(await file.arrayBuffer()) }
 }
 
-/** Parse saja, tanpa mengubah apa pun. */
+/** Parse saja, tanpa mengubah apa pun (dari file Word). */
 export async function pratinjauSoalWord(formData: FormData): Promise<Pratinjau> {
   const baca = await bacaFile(formData)
   if (!baca.ok) return { ok: false, message: baca.error }
@@ -38,44 +38,91 @@ export async function pratinjauSoalWord(formData: FormData): Promise<Pratinjau> 
   }
 }
 
-/** Tambahkan soal dari Word ke Google Form bank soal + simpan butirnya ke database. */
-export async function imporSoalWord(bankId: string, formData: FormData): Promise<{ ok: boolean; message: string }> {
-  // Admin (sesi) atau guru pemilik bank lewat cookie.
-  const sesi = await auth.api.getSession({ headers: await headers() })
-  let teacherId: string | undefined
-  if (!sesi) {
-    const cookie = (await cookies()).get("teacher_id")?.value
-    const guru = cookie ? await db.query.teachers.findFirst({ where: eq(teachers.id, cookie) }) : null
-    if (!guru?.active) return { ok: false, message: "Sesi habis. Silakan login ulang." }
-    teacherId = guru.id
+/** Parse saja, tanpa mengubah apa pun (dari teks yang ditempel). */
+export async function pratinjauSoalTeks(teks: string): Promise<Pratinjau> {
+  const { soal, peringatan } = parseSoalTeks(teks)
+  if (soal.length === 0) {
+    return { ok: false, message: "Tidak ada soal yang terbaca. Pastikan penomoran seperti \"1. pertanyaan\" dengan opsi a–e." }
   }
+  return { ok: true, soal, peringatan }
+}
+
+/** Guru pemilik bank lewat cookie; admin lewat sesi. */
+async function guruPemilik(bankTeacherId: string | null, bankTeacherIds: string[]): Promise<boolean> {
+  const sesi = await auth.api.getSession({ headers: await headers() })
+  if (sesi) return true
+  const cookie = (await cookies()).get("teacher_id")?.value
+  if (!cookie) return false
+  const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, cookie) })
+  return Boolean(guru?.active && (bankTeacherId === guru.id || bankTeacherIds.includes(guru.id)))
+}
+
+async function cekAkses(bankId: string): Promise<{ ok: boolean; message: string }> {
+  const [bank] = await db
+    .select({ teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds })
+    .from(questionBanks)
+    .where(eq(questionBanks.id, bankId))
+    .limit(1)
+  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+  if (!(await guruPemilik(bank.teacherId, bank.teacherIds))) {
+    return { ok: false, message: "Sesi habis atau bank soal ini bukan milik Anda. Silakan login ulang." }
+  }
+  return { ok: true, message: "" }
+}
+
+async function imporDariSoal(
+  bankId: string,
+  soal: SoalImpor[],
+  peringatan: string[],
+): Promise<{ ok: boolean; message: string }> {
+  const [bank] = await db.select().from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+  if (!bank.formId) return { ok: false, message: "Bank soal belum punya form. Buat form dulu." }
+
+  const siap = soal.filter((s) => s.opsi.length >= 2 && s.kunci)
+  if (siap.length === 0) return { ok: false, message: "Semua soal belum lengkap (butuh opsi a–e dan kunci)." }
+
+  const items = await tambahSoalKeForm(bank.formId, siap)
+  await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bank.id))
+
+  revalidatePath("/dashboard/bank-soal")
+  revalidatePath("/guru/dashboard")
+  const dilewati = soal.length - siap.length
+  return {
+    ok: true,
+    message: `${siap.length} soal ditambahkan ke form.${dilewati ? ` ${dilewati} soal dilewati karena belum lengkap.` : ""}${peringatan.length ? ` Catatan: ${peringatan[0]}` : ""}`,
+  }
+}
+
+/** Tambahkan soal dari file Word ke Google Form bank soal + simpan butirnya ke database. */
+export async function imporSoalWord(bankId: string, formData: FormData): Promise<{ ok: boolean; message: string }> {
+  const akses = await cekAkses(bankId)
+  if (!akses.ok) return akses
 
   const baca = await bacaFile(formData)
   if (!baca.ok) return { ok: false, message: baca.error }
 
-  const [bank] = await db.select().from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
-  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
-  if (teacherId && bank.teacherId !== teacherId) return { ok: false, message: "Bank soal ini bukan milik Anda." }
-  if (!bank.formId) return { ok: false, message: "Bank soal belum punya form. Buat form dulu." }
-
   try {
     const { soal, peringatan } = await parseSoalDocx(baca.buffer)
     if (soal.length === 0) return { ok: false, message: "Tidak ada soal yang terbaca dari dokumen." }
-    const siap = soal.filter((s) => s.opsi.length >= 2 && s.kunci)
-    if (siap.length === 0) return { ok: false, message: "Semua soal belum lengkap (butuh opsi a–e dan kunci)." }
-
-    const items = await tambahSoalKeForm(bank.formId, siap)
-    await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bank.id))
-
-    revalidatePath("/dashboard/bank-soal")
-    revalidatePath("/guru/dashboard")
-    const dilewati = soal.length - siap.length
-    return {
-      ok: true,
-      message: `${siap.length} soal ditambahkan ke form.${dilewati ? ` ${dilewati} soal dilewati karena belum lengkap.` : ""}${peringatan.length ? ` Catatan: ${peringatan[0]}` : ""}`,
-    }
+    return await imporDariSoal(bankId, soal, peringatan)
   } catch (error) {
     console.error("Gagal impor soal Word:", error)
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal impor soal." }
+  }
+}
+
+/** Tambahkan soal dari teks yang ditempel langsung. */
+export async function imporSoalTeks(bankId: string, teks: string): Promise<{ ok: boolean; message: string }> {
+  const akses = await cekAkses(bankId)
+  if (!akses.ok) return akses
+
+  try {
+    const { soal, peringatan } = parseSoalTeks(teks)
+    if (soal.length === 0) return { ok: false, message: "Tidak ada soal yang terbaca dari teks." }
+    return await imporDariSoal(bankId, soal, peringatan)
+  } catch (error) {
+    console.error("Gagal impor soal teks:", error)
     return { ok: false, message: error instanceof Error ? error.message : "Gagal impor soal." }
   }
 }

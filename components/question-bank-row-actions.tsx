@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, FilePlus2, Loader2, Trash2 } from "lucide-react"
+import { Edit, FilePlus2, FileUp, Loader2, Trash2 } from "lucide-react"
 
 import { buatFormDariBank, deleteQuestionBank, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
-import { ImporDocxDialog } from "@/components/impor-docx-dialog"
+import Link from "next/link"
 import type { SubjectOption } from "@/components/question-bank-create-dialog"
 import { TeacherCombobox, type TeacherOption } from "@/components/teacher-combobox"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -100,7 +100,16 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
           </form>
         </DialogContent>
       </Dialog>
-      <ImporDocxDialog bankId={bank.id} kode={bank.code} disabled={!bank.formId} ikon />
+      <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={!bank.formId}
+              title={bank.formId ? "Impor soal dari Word" : "Buat form dulu"}
+              render={<Link href={`/dashboard/bank-soal/impor?bank=${bank.id}`} />}
+            >
+              <FileUp className="size-4" />
+              <span className="sr-only">Impor soal dari Word</span>
+            </Button>
       <AlertDialog open={buatOpen} onOpenChange={setBuatOpen}>
         <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" disabled={Boolean(bank.formId)} title={bank.formId ? "Sudah punya form" : "Buat form kosong"} />}><FilePlus2 className="size-4" /><span className="sr-only">Buat form kosong</span></AlertDialogTrigger>
         <AlertDialogContent>
