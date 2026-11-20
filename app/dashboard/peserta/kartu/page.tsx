@@ -132,23 +132,23 @@ export default async function KartuUjianPage({
 
                 <dl className="mt-2 space-y-1">
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Nama :</dt>
+                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Nama :</dt>
                     <dd className="kartu-nama line-clamp-2 font-medium">{siswa.name}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Kelas :</dt>
+                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Kelas :</dt>
                     <dd className="font-medium">{namaKelas}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Ruang Ujian :</dt>
+                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Ruang Ujian :</dt>
                     <dd className="font-medium">{siswa.roomName ?? "—"}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Username :</dt>
+                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Username :</dt>
                     <dd className="font-mono text-xs font-bold">{siswa.nis}</dd>
                   </div>
                   <div className="flex gap-2">
-                    <dt className="w-20 shrink-0 text-muted-foreground">Password :</dt>
+                    <dt className="w-24 shrink-0 text-right text-muted-foreground">Password :</dt>
                     <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em]">
                       {siswa.kartuPassword ?? "—"}
                     </dd>
