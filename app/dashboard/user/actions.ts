@@ -38,21 +38,19 @@ export async function createUser(formData: FormData) {
   const id = randomUUID()
   const passwordHash = await hashPassword(password)
 
-  await db.transaction(async (tx) => {
-    await tx.insert(user).values({
-      id,
-      name,
-      email,
-      emailVerified,
-    })
+  await db.insert(user).values({
+    id,
+    name,
+    email,
+    emailVerified,
+  })
 
-    await tx.insert(account).values({
-      id: randomUUID(),
-      userId: id,
-      accountId: id,
-      providerId: "credential",
-      password: passwordHash,
-    })
+  await db.insert(account).values({
+    id: randomUUID(),
+    userId: id,
+    accountId: id,
+    providerId: "credential",
+    password: passwordHash,
   })
 
   revalidateUserPaths()
