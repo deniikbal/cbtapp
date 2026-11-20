@@ -73,8 +73,8 @@ export async function bagikanSemuaFormKeEditor(): Promise<{ ok: boolean; message
   await ensureExamBrowserSettingsTable()
   const settings = await getExamBrowserSettings()
   const editors = daftarEmailEditor(settings.formEditorEmails)
-  if (editors.length === 0) {
-    return { ok: false, message: 'Isi dulu daftar email editor di kolom "Email editor Google Form".' }
+  if (!settings.formPublicEdit && editors.length === 0) {
+    return { ok: false, message: 'Isi dulu daftar email editor di kolom "Email editor Google Form", atau centang "Siapa saja dengan link bisa edit form".' }
   }
 
   const banks = await db
