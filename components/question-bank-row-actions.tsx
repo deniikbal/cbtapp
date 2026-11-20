@@ -123,6 +123,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
               <span className="sr-only">Sinkron jumlah soal</span>
             </Button>
             <Button
+              nativeButton={false}
               variant="ghost"
               size="icon-sm"
               disabled={!bank.formId}

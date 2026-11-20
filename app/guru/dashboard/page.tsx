@@ -261,6 +261,7 @@ export default async function GuruDashboardPage() {
                               </Button>
                             )}
                             <Button
+                              nativeButton={false}
                               variant="outline"
                               size="sm"
                               disabled={!bank.formId}
