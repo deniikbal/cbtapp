@@ -529,14 +529,14 @@ function DaftarSoal({
 
   return (
     <Card className="flex min-h-64 flex-col gap-0 rounded-sm py-0 lg:max-h-[calc(100dvh-13rem)]">
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-        <div className="space-y-0.5">
+      <CardHeader className="gap-1 border-b px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm">Soal di topik ini</CardTitle>
-          <CardDescription className="text-[11px]">Klik satu soal untuk lihat opsi &amp; kunci.</CardDescription>
+          <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
+            {soal.length} soal
+          </Badge>
         </div>
-        <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
-          {soal.length} soal
-        </Badge>
+        <CardDescription className="text-[11px]">Klik satu soal untuk lihat opsi &amp; kunci.</CardDescription>
       </CardHeader>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {soal.length === 0 ? (
