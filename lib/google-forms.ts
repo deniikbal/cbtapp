@@ -186,6 +186,9 @@ export async function tambahSoalKeForm(
   const mulai = sesudahHapus.length
 
   const requests = soal.map((s, i) => {
+    // Google menolak opsi kembar; ambil yang pertama saja (pengaman terakhir).
+    const opsiUnik = s.opsi.filter((v, j) => s.opsi.findIndex((w) => w.trim().toLowerCase() === v.trim().toLowerCase()) === j)
+    s = { ...s, opsi: opsiUnik }
     const kunciTeks = s.opsi[HURUF_OPSI.indexOf(s.kunci.toLowerCase())] ?? s.opsi[0]
     return {
       createItem: {

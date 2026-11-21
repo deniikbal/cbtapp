@@ -5,6 +5,35 @@ const HURUF = "abcdefghijklmnopqrstuvwxyz"
 /** Baris "Kunci: C" / "Jawaban: c" / "Kunci Jawaban: 1.C 2.A" */
 const RE_KUNCI = /^(?:kunci(?:\s+jawaban)?|jawaban)\s*[:\-]?\s*(.+)$/i
 
+/**
+ * Google Form menolak soal yang punya dua opsi berisi teks sama
+ * ("ChoiceQuestion.options cannot contain duplicate values").
+ * Opsi ganda digabung (yang pertama dipertahankan) dan kuncinya ikut digeser.
+ */
+export function satukanOpsiGanda(soal: SoalImpor[], peringatan: string[]) {
+  for (const s of soal) {
+    const idxKunci = HURUF.indexOf((s.kunci || "").toLowerCase())
+    const unik: string[] = []
+    const peta: number[] = [] // indeks lama -> indeks baru
+    const ganda: string[] = []
+    s.opsi.forEach((o, i) => {
+      const teks = o.trim()
+      const ada = unik.findIndex((u) => u.toLowerCase() === teks.toLowerCase())
+      if (ada >= 0) {
+        peta[i] = ada
+        ganda.push(`${HURUF[i]} = ${HURUF[ada]} ("${teks}")`)
+        return
+      }
+      peta[i] = unik.length
+      unik.push(teks)
+    })
+    if (!ganda.length) continue
+    s.opsi = unik
+    if (idxKunci >= 0) s.kunci = HURUF[peta[idxKunci]] ?? ""
+    peringatan.push(`Soal ${s.no}: opsi kembar digabung (${ganda.join(", ")}).`)
+  }
+}
+
 function hurufDariTeks(teks: string) {
   const t = teks.trim().toLowerCase()
   if (/^[a-z]$/.test(t)) return t
@@ -113,6 +142,9 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
     }
   }
   tutup()
+
+  // Google Form menolak opsi kembar dalam satu soal — digabung dulu, lalu diberi info.
+  satukanOpsiGanda(soal, peringatan)
 
   // Kunci massal diterapkan dulu, baru validasi (barisnya ada di akhir dokumen).
   for (const s of soal) {

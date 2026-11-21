@@ -233,6 +233,12 @@ export async function tambahSoal(
   if (!pertanyaan) return { ok: false, message: "Pertanyaan masih kosong." }
   if (opsi.length < 2) return { ok: false, message: "Isi minimal 2 opsi." }
   if (idxKunci < 0 || idxKunci >= opsi.length) return { ok: false, message: "Pilih kunci jawaban yang sesuai dengan opsi." }
+  const kembar = opsi
+    .map((o, i) => ({ o: o.toLowerCase(), i }))
+    .filter((v, i, arr) => arr.findIndex((w) => w.o === v.o) !== i)
+    .map((v) => `${"ABCDE"[v.i]} ("${opsi[v.i]}")`)
+  if (kembar.length)
+    return { ok: false, message: `Opsi tidak boleh kembar: ${kembar.join(", ")} sudah ada di opsi sebelumnya.` }
 
   try {
     const soalBaru: SoalImpor = { no: 1, pertanyaan, opsi, kunci: "abcde"[idxKunci] }
