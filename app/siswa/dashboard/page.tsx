@@ -1,5 +1,5 @@
 import type { ComponentType } from "react"
-import { and, asc, desc, eq, max } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, max } from "drizzle-orm"
 import {
   BookOpen,
   CalendarDays,
@@ -110,6 +110,7 @@ export default async function SiswaDashboardPage({
   const hasilRows = await db
     .select({
       id: examResults.id,
+      scheduleId: examResults.scheduleId,
       score: examResults.score,
       correct: examResults.correct,
       wrong: examResults.wrong,
@@ -138,6 +139,27 @@ export default async function SiswaDashboardPage({
   const syncTerakhir = syncHasilSendiri ?? syncBank[0]?.waktu ?? null
 
   const attemptBySchedule = new Map(attemptRows.map((attempt) => [attempt.scheduleId, attempt]))
+  const completedAttempts = attemptRows.filter((attempt) => attempt.submittedAt)
+  const completedIds = completedAttempts.map((attempt) => attempt.scheduleId)
+  const completedExamRows = completedIds.length
+    ? await db
+        .select({
+          id: examSchedules.id,
+          examDate: examSchedules.examDate,
+          startTime: examSchedules.startTime,
+          title: questionBanks.title,
+          code: questionBanks.code,
+          subjectName: subjects.name,
+          subjectCode: subjects.code,
+        })
+        .from(examSchedules)
+        .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
+        .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
+        .where(inArray(examSchedules.id, completedIds))
+        .orderBy(desc(examSchedules.examDate), desc(examSchedules.startTime))
+    : []
+  const completedBySchedule = new Map(completedAttempts.map((attempt) => [attempt.scheduleId, attempt]))
+  const hasilBySchedule = new Map(hasilRows.map((hasil) => [hasil.scheduleId, hasil]))
   const today = getTodayInTimeZone("Asia/Jakarta")
   const visibleSchedules = schedules.filter(
     (schedule) => getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) === "ACTIVE"
@@ -155,8 +177,12 @@ export default async function SiswaDashboardPage({
       : null
 
   if (tabAktif === "hasil") {
-    const totalBenar = hasilRows.reduce((jumlah, baris) => jumlah + baris.correct, 0)
-    const totalSoal = hasilRows.reduce((jumlah, baris) => jumlah + baris.total, 0)
+    const dinilaiCount = completedExamRows.filter((schedule) => hasilBySchedule.has(schedule.id)).length
+    const menungguCount = completedExamRows.length - dinilaiCount
+    const totalBenar = completedExamRows.reduce(
+      (jumlah, schedule) => jumlah + (hasilBySchedule.get(schedule.id)?.correct ?? 0),
+      0
+    )
 
     return (
       <div className="min-h-svh bg-background">
@@ -166,32 +192,30 @@ export default async function SiswaDashboardPage({
           <section className="space-y-1">
             <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Hasil ujian</h1>
             <p className="text-xs text-muted-foreground sm:text-sm">
-              Nilai dari Google Form yang sudah disinkronkan panitia.
+              Ujian yang sudah Anda selesaikan. Nilai muncul setelah panitia menjalankan sync hasil.
             </p>
           </section>
 
           <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-            <MetricCard label="Jumlah hasil" value={String(hasilRows.length)} icon={ClipboardCheck} warna="bg-brand" />
+            <MetricCard label="Ujian selesai" value={String(completedExamRows.length)} icon={ClipboardCheck} warna="bg-brand" />
+            <MetricCard label="Sudah dinilai" value={String(dinilaiCount)} icon={CheckCircle2} warna="bg-card text-foreground border" />
+            <MetricCard label="Menunggu sync" value={String(menungguCount)} icon={RefreshCw} warna="bg-token-respons" />
             <MetricCard
               label="Rata-rata nilai"
               value={rataRata === null ? "-" : rataRata.toFixed(2)}
               icon={Trophy}
               warna="bg-card text-foreground border"
             />
-            <MetricCard label="Total benar" value={String(totalBenar)} icon={CheckCircle2} warna="bg-brand" />
-            <MetricCard label="Total soal" value={String(totalSoal)} icon={BookOpen} warna="bg-card text-foreground border" />
           </section>
 
-          {hasilRows.length === 0 ? (
+          {completedExamRows.length === 0 ? (
             <Card className="rounded-lg">
               <CardContent className="flex items-start gap-3 px-3 py-4">
-                <RefreshCw className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <ClipboardCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <div className="space-y-2">
-                  <p className="text-sm">
-                    Belum ada jawaban yang tersinkron untuk akun ini.
-                  </p>
+                  <p className="text-sm">Belum ada ujian yang selesai dikerjakan.</p>
                   <p className="text-xs text-muted-foreground">
-                    Nilai muncul setelah panitia menjalankan sync hasil untuk ujian yang sudah selesai.
+                    Ujian yang sedang berlangsung bisa dikerjakan dari menu Beranda.
                   </p>
                   <Button nativeButton={false} variant="outline" className="h-11 sm:h-9" render={<Link href="/siswa/dashboard" />}>
                     Lihat jadwal ujian
@@ -201,50 +225,72 @@ export default async function SiswaDashboardPage({
             </Card>
           ) : (
             <div className="space-y-2">
-              {hasilRows.map((hasil) => (
-                <Card key={hasil.id} className="rounded-lg">
-                  <CardContent className="px-3 py-3 sm:px-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Badge variant="secondary" className="font-mono text-[10px]">{hasil.code}</Badge>
-                          <span className="text-[11px] text-muted-foreground sm:text-xs">
-                            {hasil.subjectName} ({hasil.subjectCode})
-                          </span>
+              {completedExamRows.map((schedule) => {
+                const hasil = hasilBySchedule.get(schedule.id)
+                const submittedAt = completedBySchedule.get(schedule.id)?.submittedAt
+
+                return (
+                  <Card key={schedule.id} className="rounded-lg">
+                    <CardContent className="px-3 py-3 sm:px-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Badge variant="secondary" className="font-mono text-[10px]">{schedule.code}</Badge>
+                            <span className="text-[11px] text-muted-foreground sm:text-xs">
+                              {schedule.subjectName} ({schedule.subjectCode})
+                            </span>
+                          </div>
+                          <h2 className="text-sm font-medium leading-snug">{schedule.title}</h2>
+                          <p className="text-[11px] text-muted-foreground sm:text-xs">
+                            Selesai dikerjakan {submittedAt ? formatTanggalJam(submittedAt) : "-"}
+                          </p>
                         </div>
-                        <h2 className="text-sm font-medium leading-snug">{hasil.title}</h2>
-                        <p className="text-[11px] text-muted-foreground sm:text-xs">
-                          Dikumpulkan {hasil.submittedAt ? formatTanggalJam(hasil.submittedAt) : "-"}
+                        <div className="shrink-0 text-right">
+                          {hasil ? (
+                            <>
+                              <p className="text-2xl font-semibold tabular-nums leading-none text-primary">
+                                {Number(hasil.score).toFixed(2)}
+                              </p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="border-token-respons text-[11px] font-normal text-amber-700">
+                              Menunggu sync
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {hasil ? (
+                        <>
+                          <Separator className="my-3" />
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div>
+                              <p className="text-[11px] text-muted-foreground">Benar</p>
+                              <p className="font-semibold tabular-nums text-lime-700">{hasil.correct}</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] text-muted-foreground">Salah</p>
+                              <p className="font-semibold tabular-nums text-amber-700">{hasil.wrong}</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] text-muted-foreground">Jumlah soal</p>
+                              <p className="font-semibold tabular-nums">{hasil.total}</p>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-[11px] text-muted-foreground">
+                            Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Nilai belum tersedia. Panitia belum menjalankan sync untuk ujian ini.
                         </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-2xl font-semibold tabular-nums leading-none text-primary">
-                          {Number(hasil.score).toFixed(2)}
-                        </p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
-                      </div>
-                    </div>
-                    <Separator className="my-3" />
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div>
-                        <p className="text-[11px] text-muted-foreground">Benar</p>
-                        <p className="font-semibold tabular-nums text-lime-700">{hasil.correct}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-muted-foreground">Salah</p>
-                        <p className="font-semibold tabular-nums text-amber-700">{hasil.wrong}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-muted-foreground">Jumlah soal</p>
-                        <p className="font-semibold tabular-nums">{hasil.total}</p>
-                      </div>
-                    </div>
-                    <p className="mt-3 text-[11px] text-muted-foreground">
-                      Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </main>
