@@ -157,6 +157,12 @@ export async function importStudentsExcel(formData: FormData) {
       return
     }
 
+    const session = row.sessionRaw === "" ? 1 : Number(row.sessionRaw)
+    if (!Number.isInteger(session) || session < 1) {
+      errors.push(`Baris ${line}: sesi harus angka bulat ≥ 1 (kosong = sesi 1).`)
+      return
+    }
+
     if (existingNis.has(row.nis) || seenNis.has(row.nis)) {
       skipped += 1
       return
@@ -172,6 +178,7 @@ export async function importStudentsExcel(formData: FormData) {
       kartuPassword: row.password,
       classroomId,
       roomId,
+      session,
       active: row.active,
     })
   })
@@ -260,6 +267,7 @@ type CsvStudentRow = {
   password: string
   className: string
   roomName: string
+  sessionRaw: string
   active: boolean
 }
 
@@ -298,6 +306,7 @@ async function parseExcel(file: File): Promise<CsvStudentRow[]> {
       password: data.get("password") ?? "",
       className: data.get("kelas") ?? data.get("class") ?? "",
       roomName: data.get("ruangan") ?? data.get("room") ?? "",
+      sessionRaw: String(data.get("sesi") ?? "").trim(),
       active: !(status === "tidak aktif" || status === "nonaktif" || status === "false" || status === "0"),
     }
   })

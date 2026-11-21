@@ -65,13 +65,13 @@ export function StudentImportDialog() {
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Import Peserta</DialogTitle>
-          <DialogDescription>Upload file Excel (.xlsx/.xls) berisi nama, NIS, password, kelas, dan status peserta.</DialogDescription>
+          <DialogDescription>Upload file Excel (.xlsx/.xls) berisi nama, NIS, password, kelas, sesi, dan status peserta.</DialogDescription>
         </DialogHeader>
         <form ref={formRef} action={handleSubmit} className="space-y-4">
           <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Format kolom wajib:</p>
-            <p className="mt-1 font-mono text-xs">nama, nis, password, kelas, status</p>
-            <p className="mt-2">Nama kelas harus sama dengan data kelas di aplikasi. Status isi <b>aktif</b> atau <b>tidak aktif</b>.</p>
+            <p className="mt-1 font-mono text-xs">nama, nis, password, kelas, ruangan, sesi, status</p>
+            <p className="mt-2">Nama kelas harus sama dengan data kelas di aplikasi. Sesi isi angka (1, 2, …) — kosong berarti sesi 1. Status isi <b>aktif</b> atau <b>tidak aktif</b>.</p>
           </div>
 
           <Button nativeButton={false} type="button" variant="outline" className="w-full gap-2" render={<a href="/templates/import-peserta.xlsx" download />}>
