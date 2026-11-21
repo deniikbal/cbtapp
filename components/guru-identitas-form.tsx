@@ -17,7 +17,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
   const nilai = state.values ?? identitas
 
   return (
-    <form action={aksi} className="grid gap-2 px-2.5 pb-2.5 sm:grid-cols-2 lg:grid-cols-3">
+    <form action={aksi} className="grid gap-2 px-2.5 py-3 sm:grid-cols-2 lg:grid-cols-3">
       <div className="grid gap-1">
         <Label htmlFor="namaTes" className="text-[11px]">
           Nama tes
