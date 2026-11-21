@@ -71,29 +71,52 @@ export async function buatFormKosong(
   judul: string,
   opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[]; deskripsi?: string } = {}
 ) {
+  const templateId = process.env.GOOGLE_FORM_TEMPLATE_ID
+  if (!templateId) {
+    throw new Error("GOOGLE_FORM_TEMPLATE_ID belum diisi. Template wajib agar aturan rilis nilai dan setelan responden terbawa.")
+  }
+
+  const access = await accessToken()
+  const headers = { Authorization: `Bearer ${access}`, "Content-Type": "application/json" }
+  const copied = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(templateId)}/copy`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ name: judul }),
+    cache: "no-store",
+  })
+  const salinan = await copied.json().catch(() => ({}))
+  if (!copied.ok || !salinan.id) {
+    const pesan = copied.status === 404
+      ? "template tidak ditemukan atau tidak bisa diakses akun Google ini"
+      : salinan.error?.message ?? String(copied.status)
+    throw new Error(`Gagal menyalin form template: ${pesan}`)
+  }
+  const formId = String(salinan.id)
+
+  // Template membawa setelan Quizzes dan Respondent settings yang diatur manual sekali di UI.
+  // Kita hanya mengganti judul, deskripsi, dan butir sesuai bank soal.
+  const existing = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
   const { kuis = true, identitas = true, kelas = [], deskripsi = "" } = opsi
+  const requests: Record<string, unknown>[] = [
+    {
+      updateFormInfo: {
+        info: { title: judul, description: deskripsi },
+        updateMask: "title,description",
+      },
+    },
+  ]
 
-  // documentTitle = nama file di Drive; title = judul yang dilihat pengisi.
-  // Google hanya menerima info.title saat create; deskripsi lewat batchUpdate di bawah.
-  const form = await gpost("https://forms.googleapis.com/v1/forms", { info: { title: judul, documentTitle: judul } })
-  const formId = String(form.formId ?? "")
-  if (!formId) throw new Error("Google tidak mengembalikan formId.")
-
-  const requests: Record<string, unknown>[] = []
-  let index = 0
-
-  // Pastikan deskripsi terpasang (fallback bila create tidak menerimanya).
-  if (deskripsi) {
-    requests.push({ updateFormInfo: { info: { description: deskripsi }, updateMask: "description" } })
+  for (const item of existing.items ?? []) {
+    if (item.itemId) requests.push({ deleteItem: { itemId: item.itemId } })
   }
 
   if (kuis) {
     requests.push({ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } })
   }
 
+  let index = 0
   if (identitas) {
     for (const judulButir of BUTIR_IDENTITAS) {
-      // Butir Kelas jadi dropdown berisi nama kelas sesuai angkatan bank soal.
       const pakaiDropdown = judulButir === "Kelas" && kelas.length > 0
       requests.push({
         createItem: {
@@ -111,14 +134,20 @@ export async function buatFormKosong(
     }
   }
 
-  // Bagian soal pilihan ganda: cukup halaman terpisah, soal diisi lewat Impor Word/tempel teks.
   requests.push({
-    createItem: { item: { title: "SOAL PILIHAN GANDA", description: "Isi soal di bagian ini.", pageBreakItem: {} }, location: { index: index++ } },
+    createItem: {
+      item: { title: "SOAL PILIHAN GANDA", description: "Isi soal di bagian ini.", pageBreakItem: {} },
+      location: { index: index++ },
+    },
   })
 
   await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
 
-  return { formId, editUrl: `https://docs.google.com/forms/d/${formId}/edit`, responderUri: String(form.responderUri ?? "") }
+  return {
+    formId,
+    editUrl: `https://docs.google.com/forms/d/${formId}/edit`,
+    responderUri: String(existing.responderUri ?? `https://docs.google.com/forms/d/${formId}/viewform`),
+  }
 }
 
 async function gget(url: string) {
