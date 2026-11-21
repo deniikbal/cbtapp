@@ -204,7 +204,7 @@ function EditorSoal({
                   disabled={!o.trim()}
                   onClick={() => setKunciIdx(aktif ? -1 : i)}
                   title={o.trim() ? `Tandai ${HURUF[i]} sebagai kunci` : "Isi opsi dulu"}
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] transition-colors disabled:opacity-40 ${
+                  className={`flex size-11 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] transition-colors disabled:opacity-40 sm:size-7 ${
                     aktif
                       ? "border-lime-600 bg-lime-600 text-white"
                       : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
@@ -232,7 +232,7 @@ function EditorSoal({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="shrink-0 rounded-sm text-muted-foreground"
+                    className="h-11 w-11 shrink-0 rounded-sm text-muted-foreground sm:h-6 sm:w-6"
                     title="Hapus opsi"
                     onClick={() => {
                       setOpsi((v) => v.filter((_, j) => j !== i))
@@ -251,7 +251,7 @@ function EditorSoal({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 rounded-sm px-2 text-[11px] text-muted-foreground"
+              className="h-11 gap-1.5 rounded-sm px-2 text-[11px] text-muted-foreground sm:h-8"
               onClick={() => setOpsi((v) => [...v, ""])}
             >
               <Plus className="size-3.5" />
@@ -455,7 +455,7 @@ function PanelTeks({
                         <Badge
                           variant="outline"
                           className="shrink-0 rounded-sm font-normal text-muted-foreground"
-                          title="Soal dengan isi sama sudah ada di form — tidak ditambahkan lagi"
+                          title="Soal dengan isi sama sudah ada di form, tidak ditambahkan lagi"
                         >
                           sudah ada
                         </Badge>
@@ -499,7 +499,7 @@ function PanelTeks({
 
         <Separator />
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-muted-foreground">
             Kunci boleh huruf (<span className="font-mono">Kunci: C</span>) atau teks opsinya.
           </p>
@@ -528,7 +528,7 @@ function DaftarSoal({
   const [buka, setBuka] = useState<number>(BUKA_AWAL)
 
   return (
-    <Card className="flex max-h-[calc(100dvh-13rem)] min-h-64 flex-col gap-0 rounded-sm py-0">
+    <Card className="flex min-h-64 flex-col gap-0 rounded-sm py-0 lg:max-h-[calc(100dvh-13rem)]">
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <div className="space-y-0.5">
           <CardTitle className="text-sm">Soal di topik ini</CardTitle>
@@ -541,7 +541,7 @@ function DaftarSoal({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {soal.length === 0 ? (
           <p className="px-4 py-10 text-center text-xs text-muted-foreground">
-            Belum ada soal. Tambah lewat editor di sebelah kiri.
+            Belum ada soal. Tambah lewat editor atau tempel teks.
           </p>
         ) : (
           <ul className="divide-y divide-border">
@@ -600,17 +600,17 @@ function DaftarSoal({
                       ) : (
                         <p className="rounded-sm border border-lime-300/60 bg-lime-50 px-2 py-1 text-xs dark:border-lime-500/30 dark:bg-lime-950/40">
                           <span className="text-muted-foreground">Kunci: </span>
-                          <span className="font-medium text-lime-800 dark:text-lime-300">{s.kunci || "—"}</span>
+                          <span className="font-medium text-lime-800 dark:text-lime-300">{s.kunci || "-"}</span>
                         </p>
                       )}
-                      <div className="flex justify-end gap-1.5">
-                        <Button variant="outline" size="sm" className="h-8 rounded-sm text-[11px]" onClick={() => onUbah(s)}>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" className="h-11 rounded-sm text-[11px] sm:h-8" onClick={() => onUbah(s)}>
                           Ubah
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 rounded-sm text-[11px] text-destructive hover:text-destructive"
+                          className="h-11 rounded-sm text-[11px] text-destructive hover:text-destructive sm:h-8"
                           onClick={() => onHapus(s)}
                         >
                           <Trash2 className="size-3.5" />
@@ -703,7 +703,7 @@ export function ImporSoalPage({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">Input Soal — {judul}</h1>
+            <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">Input Soal: {judul}</h1>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
               <Badge variant="outline" className="rounded-sm font-mono font-normal">
                 {kode}
@@ -732,7 +732,7 @@ export function ImporSoalPage({
       </div>
 
       <Tabs value={model} onValueChange={(v) => setModel(v as "manual" | "teks")} className="flex flex-col gap-4">
-        <TabsList className="h-9 w-fit">
+        <TabsList className="h-11 w-fit sm:h-9">
           <TabsTrigger value="manual" className="gap-1.5">
             <Keyboard data-icon="inline-start" />
             Input manual
