@@ -101,7 +101,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
           Simpan identitas
         </Button>
         {state.message ? (
-          <p className={state.ok ? "text-[11px] text-emerald-600" : "text-[11px] text-destructive"}>{state.message}</p>
+          <p className={state.ok ? "text-[11px] text-lime-600" : "text-[11px] text-destructive"}>{state.message}</p>
         ) : null}
       </div>
     </form>

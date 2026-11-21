@@ -354,7 +354,7 @@ export function StudentManagementCard({
                   <TableCell><Badge variant="outline" className="font-normal">{student.className}</Badge></TableCell>
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{student.session ?? 1}</TableCell>
                   <TableCell className="text-muted-foreground">{student.majorName}</TableCell>
-                  <TableCell><Badge variant="secondary" className={cn("font-normal", student.active ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{student.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell>
+                  <TableCell><Badge variant="secondary" className={cn("font-normal", student.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{student.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell>
                   <TableCell><div className="flex justify-end gap-1.5"><StudentRowActions student={student} classrooms={classrooms} /></div></TableCell>
                 </TableRow>
               ))}

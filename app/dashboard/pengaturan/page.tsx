@@ -53,7 +53,7 @@ export default async function PengaturanPage() {
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   <CardTitle>Proteksi Halaman Siswa</CardTitle>
-                  <Badge variant="secondary" className={cn("font-normal", settings.forceExamBrowser ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{settings.forceExamBrowser ? "Aktif" : "Nonaktif"}</Badge>
+                  <Badge variant="secondary" className={cn("font-normal", settings.forceExamBrowser ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{settings.forceExamBrowser ? "Aktif" : "Nonaktif"}</Badge>
                 </div>
                 <CardDescription>Pengaturan ini berlaku untuk halaman login siswa di root (/) dan /siswa/dashboard.</CardDescription>
               </div>

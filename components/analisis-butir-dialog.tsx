@@ -12,7 +12,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-const baik = "gap-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+const baik = "gap-1 bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-400"
 const sedang = "gap-1 bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
 const buruk = "gap-1 bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400"
 
@@ -131,7 +131,7 @@ export function AnalisisButirDialog({
                         <td className="text-right tabular-nums">{s.skor}</td>
                         <td className="text-right tabular-nums">{n(s.nilai, 1)}</td>
                         <td>
-                          <span className={s.ket === "Tuntas" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
+                          <span className={s.ket === "Tuntas" ? "text-lime-600 dark:text-lime-400" : "text-rose-600 dark:text-rose-400"}>
                             {s.ket}
                           </span>
                         </td>
@@ -242,7 +242,7 @@ export function AnalisisButirDialog({
                           key={o.label}
                           className={
                             o.kunci
-                              ? "rounded bg-emerald-100 px-1 font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                              ? "rounded bg-lime-100 px-1 font-medium text-lime-700 dark:bg-lime-500/15 dark:text-lime-400"
                               : "rounded px-1 text-muted-foreground"
                           }
                         >

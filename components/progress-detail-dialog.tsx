@@ -67,7 +67,7 @@ export function ProgressDetailDialog({
           <SummaryItem label="Target" value={stats.total} active={filter === "ALL"} accent="sky" onClick={() => setFilter("ALL")} />
           <SummaryItem label="Belum" value={stats.notStarted} active={filter === "NOT_STARTED"} accent="rose" onClick={() => setFilter("NOT_STARTED")} />
           <SummaryItem label="Sedang" value={stats.started} active={filter === "STARTED"} accent="amber" onClick={() => setFilter("STARTED")} />
-          <SummaryItem label="Selesai" value={stats.submitted} active={filter === "SUBMITTED"} accent="emerald" onClick={() => setFilter("SUBMITTED")} />
+          <SummaryItem label="Selesai" value={stats.submitted} active={filter === "SUBMITTED"} accent="lime" onClick={() => setFilter("SUBMITTED")} />
         </div>
         <div className="max-h-[60vh] overflow-auto rounded-lg border">
           <Table>
@@ -108,7 +108,7 @@ export function ProgressDetailDialog({
   )
 }
 
-function SummaryItem({ label, value, active, accent, onClick }: { label: string; value: number; active: boolean; accent: "sky" | "rose" | "amber" | "emerald"; onClick: () => void }) {
+function SummaryItem({ label, value, active, accent, onClick }: { label: string; value: number; active: boolean; accent: "sky" | "rose" | "amber" | "lime"; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -118,7 +118,7 @@ function SummaryItem({ label, value, active, accent, onClick }: { label: string;
         accent === "sky" && "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300",
         accent === "rose" && "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
         accent === "amber" && "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-        accent === "emerald" && "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        accent === "lime" && "border-lime-500/20 bg-lime-500/10 text-lime-700 dark:text-lime-300",
         active && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
@@ -132,7 +132,7 @@ function StatusBadge({ status }: { status: ProgressStudent["status"] }) {
   const label = status === "SUBMITTED" ? "Selesai" : status === "STARTED" ? "Sedang" : "Belum"
 
   return (
-    <Badge variant="secondary" className={cn("font-normal", status === "SUBMITTED" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : status === "STARTED" ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{label}</Badge>
+    <Badge variant="secondary" className={cn("font-normal", status === "SUBMITTED" ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : status === "STARTED" ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{label}</Badge>
   )
 }
 

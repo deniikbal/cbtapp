@@ -262,7 +262,7 @@ export default async function SiswaDashboardPage() {
                     <Separator className="my-2" />
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-                      <span className="text-emerald-700">
+                      <span className="text-lime-700">
                         Benar <span className="font-semibold tabular-nums">{hasil.correct}</span>
                       </span>
                       <span className="text-amber-700">

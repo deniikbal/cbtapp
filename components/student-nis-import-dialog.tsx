@@ -119,8 +119,8 @@ export function StudentNisImportDialog() {
           {preview && (
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Card size="sm" className="border-emerald-500/20 bg-emerald-500/5">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="size-5" />Valid</CardTitle></CardHeader>
+                <Card size="sm" className="border-lime-500/20 bg-lime-500/5">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-lime-700 dark:text-lime-300"><CheckCircle2 className="size-5" />Valid</CardTitle></CardHeader>
                   <CardContent><p className="text-3xl font-semibold">{preview.valid}</p></CardContent>
                 </Card>
                 <Card size="sm" className="border-rose-500/20 bg-rose-500/5">
@@ -150,7 +150,7 @@ export function StudentNisImportDialog() {
                         <TableCell className="truncate text-xs" title={row.className}>{row.className || "—"}</TableCell>
                         <TableCell className="truncate font-mono text-xs" title={row.oldNis}>{row.oldNis || "—"}</TableCell>
                         <TableCell className="truncate font-mono text-xs" title={row.newNis}>{row.newNis || "—"}</TableCell>
-                        <TableCell><Badge variant="secondary" className={row.valid ? "bg-emerald-500/10 px-1.5 text-xs text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 px-1.5 text-xs text-rose-700 dark:text-rose-300"}>{row.valid ? "Valid" : "Invalid"}</Badge></TableCell>
+                        <TableCell><Badge variant="secondary" className={row.valid ? "bg-lime-500/10 px-1.5 text-xs text-lime-700 dark:text-lime-300" : "bg-rose-500/10 px-1.5 text-xs text-rose-700 dark:text-rose-300"}>{row.valid ? "Valid" : "Invalid"}</Badge></TableCell>
                         <TableCell className="whitespace-normal break-words text-xs text-muted-foreground">{row.message}</TableCell>
                       </TableRow>
                     ))}

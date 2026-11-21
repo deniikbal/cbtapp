@@ -29,7 +29,7 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 const NATURAL_SORTER = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
 
 const gaya: Record<string, string> = {
-  aktif: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  aktif: "bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-400",
   menunggu: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
   ditolak: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400",
   belum: "bg-muted text-muted-foreground",
@@ -210,7 +210,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                           variant="ghost"
                           size="icon-sm"
                           title="Aktifkan akses"
-                          className="text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600"
+                          className="text-lime-600 hover:bg-lime-500/10 hover:text-lime-600"
                           disabled={pendingId === row.id || row.status === "aktif"}
                           onClick={() => ubah(row.id, true)}
                         >

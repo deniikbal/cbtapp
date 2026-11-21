@@ -227,7 +227,7 @@ export default async function GuruDashboardPage() {
                               <span
                                 className={
                                   bank.rataRata >= Number(identitas.kkm || 0)
-                                    ? "font-medium text-emerald-700"
+                                    ? "font-medium text-lime-700"
                                     : "font-medium text-amber-700"
                                 }
                                 title={

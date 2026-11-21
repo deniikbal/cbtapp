@@ -206,7 +206,7 @@ function EditorSoal({
                   title={o.trim() ? `Tandai ${HURUF[i]} sebagai kunci` : "Isi opsi dulu"}
                   className={`flex size-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] transition-colors disabled:opacity-40 ${
                     aktif
-                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      ? "border-lime-600 bg-lime-600 text-white"
                       : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
                   }`}
                 >
@@ -275,9 +275,9 @@ function EditorSoal({
       )}
 
       {pesan ? (
-        <Alert className="rounded-sm border-emerald-300/60 bg-emerald-50 px-3 py-2 dark:border-emerald-500/30 dark:bg-emerald-950/40">
-          <CheckCircle2 className="text-emerald-700 dark:text-emerald-400" />
-          <AlertDescription className="text-[11px] text-emerald-900 dark:text-emerald-200">{pesan}</AlertDescription>
+        <Alert className="rounded-sm border-lime-300/60 bg-lime-50 px-3 py-2 dark:border-lime-500/30 dark:bg-lime-950/40">
+          <CheckCircle2 className="text-lime-700 dark:text-lime-400" />
+          <AlertDescription className="text-[11px] text-lime-900 dark:text-lime-200">{pesan}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -462,7 +462,7 @@ function PanelTeks({
                       ) : s.opsi.length >= 2 && s.kunci ? (
                         <Badge
                           variant="outline"
-                          className="shrink-0 rounded-sm font-normal text-emerald-700 dark:text-emerald-400"
+                          className="shrink-0 rounded-sm font-normal text-lime-700 dark:text-lime-400"
                         >
                           siap
                         </Badge>
@@ -581,26 +581,26 @@ function DaftarSoal({
                               <li
                                 key={i}
                                 className={`flex items-start gap-2 rounded-sm px-1.5 py-1 text-xs ${
-                                  benar ? "bg-emerald-50 dark:bg-emerald-950/40" : ""
+                                  benar ? "bg-lime-50 dark:bg-lime-950/40" : ""
                                 }`}
                               >
                                 <span
                                   className={`w-4 shrink-0 font-mono text-[11px] ${
-                                    benar ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
+                                    benar ? "text-lime-700 dark:text-lime-400" : "text-muted-foreground"
                                   }`}
                                 >
                                   {HURUF[i]}.
                                 </span>
                                 <span className={`min-w-0 flex-1 ${benar ? "font-medium" : ""}`}>{o}</span>
-                                {benar ? <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" /> : null}
+                                {benar ? <Check className="size-4 shrink-0 text-lime-600 dark:text-lime-400" /> : null}
                               </li>
                             )
                           })}
                         </ul>
                       ) : (
-                        <p className="rounded-sm border border-emerald-300/60 bg-emerald-50 px-2 py-1 text-xs dark:border-emerald-500/30 dark:bg-emerald-950/40">
+                        <p className="rounded-sm border border-lime-300/60 bg-lime-50 px-2 py-1 text-xs dark:border-lime-500/30 dark:bg-lime-950/40">
                           <span className="text-muted-foreground">Kunci: </span>
-                          <span className="font-medium text-emerald-800 dark:text-emerald-300">{s.kunci || "—"}</span>
+                          <span className="font-medium text-lime-800 dark:text-lime-300">{s.kunci || "—"}</span>
                         </p>
                       )}
                       <div className="flex justify-end gap-1.5">

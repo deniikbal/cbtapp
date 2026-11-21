@@ -198,7 +198,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                         const v = s.sel[q.qid]
                         return (
                           <TableCell key={q.qid} className="text-center">
-                            {v === "benar" ? <span className="text-emerald-600">✓</span> : v === "salah" ? <span className="text-destructive">✗</span> : <span className="text-muted-foreground">—</span>}
+                            {v === "benar" ? <span className="text-lime-600">✓</span> : v === "salah" ? <span className="text-destructive">✗</span> : <span className="text-muted-foreground">—</span>}
                           </TableCell>
                         )
                       })}

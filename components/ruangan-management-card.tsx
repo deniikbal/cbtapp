@@ -66,7 +66,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
   return (
     <div className="space-y-4">
       {pesan && (
-        <p className={cn("text-sm", pesan.ok ? "text-emerald-700" : "text-destructive")} role="status">
+        <p className={cn("text-sm", pesan.ok ? "text-lime-700" : "text-destructive")} role="status">
           {pesan.text}
         </p>
       )}
@@ -323,7 +323,7 @@ function KelolaRuanganDialog({
                       />
                       <span className="min-w-0 flex-1 truncate">{s.name}</span>
                       {s.roomId === room.id ? (
-                        <span className="text-xs text-emerald-700">di ruang ini</span>
+                        <span className="text-xs text-lime-700">di ruang ini</span>
                       ) : sudahDiRuanganLain ? (
                         <span className="text-xs text-muted-foreground">pindah</span>
                       ) : null}
