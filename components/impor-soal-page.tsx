@@ -12,6 +12,7 @@ import {
   FileText,
   Keyboard,
   Loader2,
+  Pencil,
   Plus,
   Sparkles,
   Trash2,
@@ -604,17 +605,23 @@ function DaftarSoal({
                         </p>
                       )}
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" className="h-11 rounded-sm text-[11px] sm:h-8" onClick={() => onUbah(s)}>
-                          Ubah
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="h-11 w-11 rounded-sm text-primary hover:bg-primary/10 hover:text-primary sm:h-8 sm:w-8"
+                          onClick={() => onUbah(s)}
+                        >
+                          <Pencil className="size-4" />
+                          <span className="sr-only">Ubah soal</span>
                         </Button>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-11 rounded-sm text-[11px] text-destructive hover:text-destructive sm:h-8"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="h-11 w-11 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-8 sm:w-8"
                           onClick={() => onHapus(s)}
                         >
-                          <Trash2 className="size-3.5" />
-                          Hapus
+                          <Trash2 className="size-4" />
+                          <span className="sr-only">Hapus soal</span>
                         </Button>
                       </div>
                     </div>
