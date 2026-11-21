@@ -153,7 +153,7 @@ function EditorSoal({
           <NativeSelect
             value={jenis}
             onChange={(e) => ubahJenis(e.target.value as Jenis)}
-            className="w-full"
+            className="h-9 w-full"
             aria-label="Jenis soal"
           >
             {JENIS.map((j) => (
