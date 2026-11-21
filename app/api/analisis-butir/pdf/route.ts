@@ -5,6 +5,7 @@ import PDFDocument from "pdfkit"
 import { auth } from "@/lib/auth"
 import { bolehUnduhPdf } from "@/lib/akses-pdf"
 import { ambilAnalisisButir } from "@/lib/analisis-data"
+import type { AnalisisButir } from "@/lib/analisis-butir"
 import { db } from "@/lib/db"
 import { teachers } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
@@ -76,6 +77,69 @@ function judulBagian(doc: PDFKit.PDFDocument, teks: string) {
   doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827").text(teks, MARGIN, doc.y, { width: LEBAR })
   doc.moveDown(0.15)
   doc.font("Helvetica").fontSize(7)
+}
+
+// Distribusi jawaban per soal sebagai kartu batang horizontal (gaya kuis).
+function gambarDistribusi(doc: PDFKit.PDFDocument, butir: AnalisisButir[]) {
+  judulBagian(doc, "DISTRIBUSI JAWABAN SISWA PER SOAL")
+  doc.font("Helvetica-Oblique").fontSize(5.8).fillColor("#6b7280")
+    .text("Batang hijau = kunci jawaban.", MARGIN, doc.y, { width: LEBAR })
+  doc.fillColor("#000000").moveDown(0.2)
+
+  const PAD = 8
+  const HEADER = 18
+  const BARIS = 13
+  const BAR_TINGGI = 7
+  const labelW = 16
+  const kananW = 86
+  const barX = MARGIN + PAD + labelW
+  const barW = LEBAR - PAD * 2 - labelW - kananW
+
+  butir.forEach((b, i) => {
+    const opsi = b.opsiDetail.length
+      ? b.opsiDetail
+      : b.sebaran.map((s) => ({ label: s.jawaban, jumlah: s.jumlah, proporsi: s.persen / 100, kunci: s.kunci }))
+    const footer = (b.kosong ? 1 : 0) + (b.catatan ? 1 : 0)
+    const tinggi = PAD + HEADER + opsi.length * BARIS + footer * 10 + PAD
+    if (doc.y + tinggi > BAWAH) doc.addPage()
+    const y0 = doc.y
+
+    doc.roundedRect(MARGIN, y0, LEBAR, tinggi, 5).lineWidth(0.7).stroke("#e5e7eb")
+
+    doc.font("Helvetica-Bold").fontSize(8).fillColor("#111827")
+      .text(`Soal ${i + 1}`, MARGIN + PAD, y0 + PAD, { width: LEBAR - PAD * 2, lineBreak: false })
+    const kunciLabel = b.opsiDetail.find((o) => o.kunci)?.label ?? "?"
+    const pillW = 52
+    const pillX = MARGIN + LEBAR - PAD - pillW
+    doc.roundedRect(pillX, y0 + PAD - 2, pillW, 12, 6).fill("#16a34a")
+    doc.font("Helvetica-Bold").fontSize(6.5).fillColor("#ffffff")
+      .text(`Kunci: ${kunciLabel}`, pillX, y0 + PAD + 1, { width: pillW, align: "center", lineBreak: false })
+
+    let y = y0 + PAD + HEADER
+    for (const o of opsi) {
+      const persen = (o.proporsi * 100).toFixed(1)
+      doc.font("Helvetica-Bold").fontSize(7).fillColor(o.kunci ? "#16a34a" : "#374151")
+        .text(o.label, MARGIN + PAD, y, { width: labelW, lineBreak: false })
+      doc.roundedRect(barX, y + 1, barW, BAR_TINGGI, 3).fill("#e5e7eb")
+      const w = Math.max(0, Math.min(1, o.proporsi)) * barW
+      if (w > 0.5) doc.roundedRect(barX, y + 1, w, BAR_TINGGI, 3).fill(o.kunci ? "#16a34a" : "#9ca3af")
+      doc.font("Helvetica").fontSize(6.5).fillColor("#374151")
+        .text(`${persen}% (${o.jumlah}/${b.dikerjakan})`, MARGIN + LEBAR - PAD - kananW, y, { width: kananW, align: "right", lineBreak: false })
+      y += BARIS
+    }
+    if (b.kosong) {
+      doc.font("Helvetica").fontSize(5.8).fillColor("#6b7280")
+        .text(`Kosong: ${b.kosong}`, MARGIN + PAD, y, { width: LEBAR - PAD * 2, lineBreak: false })
+      y += 10
+    }
+    if (b.catatan) {
+      doc.font("Helvetica-Oblique").fontSize(5.8).fillColor("#6b7280")
+        .text(b.catatan, MARGIN + PAD, y, { width: LEBAR - PAD * 2, lineBreak: false, ellipsis: true })
+      y += 10
+    }
+    doc.fillColor("#000000")
+    doc.y = y0 + tinggi + 6
+  })
 }
 
 export async function GET(request: NextRequest) {
@@ -228,18 +292,8 @@ export async function GET(request: NextRequest) {
       ]),
     )
 
-    // ── Distribusi jawaban per soal
-    judulBagian(doc, `DISTRIBUSI JAWABAN PER SOAL (kunci: ${identitas.kunci})`)
-    doc.font("Helvetica-Oblique").fontSize(5.8).text("* = kunci jawaban", MARGIN, doc.y, { width: LEBAR })
-    butir.forEach((b, i) => {
-      if (doc.y + 24 > BAWAH) doc.addPage()
-      const sebaran = b.opsiDetail.length
-        ? b.opsiDetail.map((o) => `${o.label} ${o.jumlah} (${angka(o.proporsi)})${o.kunci ? "*" : ""}`).join("   ")
-        : b.sebaran.map((s) => `${s.jawaban} ${s.jumlah} (${angka(s.persen / 100)})${s.kunci ? "*" : ""}`).join("   ")
-      doc.font("Helvetica-Bold").fontSize(6.5).text(`Soal ${i + 1}. `, MARGIN, doc.y, { continued: true, width: LEBAR })
-      doc.font("Helvetica").text(`${sebaran}${b.kosong ? `   · kosong ${b.kosong}` : ""}`, { width: LEBAR })
-      if (b.catatan) doc.fontSize(5.8).fillColor("#4b5563").text(b.catatan, MARGIN + 20, doc.y, { width: LEBAR - 20 }).fillColor("#000000")
-    })
+    // ── Distribusi jawaban per soal (kartu batang horizontal)
+    gambarDistribusi(doc, butir)
 
     // ── Rekomendasi
     judulBagian(doc, "REKOMENDASI")
