@@ -13,7 +13,7 @@ import { db } from "@/lib/db"
 import { questionBanks, subjects } from "@/lib/db/schema"
 import { ambilForm, daftarSoalDariItems } from "@/lib/google-forms"
 
-async function muatSoalForm(formId: string): Promise<{ no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[]> {
+async function muatSoalForm(formId: string): Promise<ReturnType<typeof daftarSoalDariItems>> {
   try {
     const { items } = await ambilForm(formId)
     return daftarSoalDariItems(items)

@@ -164,6 +164,47 @@ function adalahPlaceholder(item: ButirForm): boolean {
   return !q.grading?.correctAnswers?.answers?.length
 }
 
+export type JenisSoal = "PILIHAN_GANDA" | "CENTANG" | "JAWABAN_SINGKAT" | "URAIAN"
+
+export type SoalMasukan = {
+  pertanyaan: string
+  opsi: string[]
+  kunci: string
+  jenis?: JenisSoal
+  bobot?: number
+}
+
+/** Susun satu question payload Google Forms sesuai jenisnya. */
+function questionDari(s: SoalMasukan) {
+  const jenis = s.jenis ?? "PILIHAN_GANDA"
+  const bobot = s.bobot && s.bobot > 0 ? s.bobot : 1
+  const opsi = s.opsi
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .filter((o, i, arr) => arr.findIndex((w) => w.toLowerCase() === o.toLowerCase()) === i)
+
+  if (jenis === "JAWABAN_SINGKAT" || jenis === "URAIAN") {
+    const jawab = s.kunci.trim()
+    return {
+      required: true,
+      textQuestion: { paragraph: jenis === "URAIAN" },
+      // Uraian tidak bisa dinilai otomatis oleh Google Form.
+      grading:
+        jenis === "URAIAN" || !jawab
+          ? { pointValue: bobot }
+          : { pointValue: bobot, correctAnswers: { answers: [{ value: jawab }] } },
+    }
+  }
+
+  const idx = HURUF_OPSI.indexOf(s.kunci.trim().toLowerCase())
+  const benar = idx >= 0 && idx < opsi.length ? opsi[idx] : ""
+  return {
+    required: true,
+    choiceQuestion: { type: jenis === "CENTANG" ? "CHECKBOX" : "RADIO", options: opsi.map((v) => ({ value: v })) },
+    grading: benar ? { pointValue: bobot, correctAnswers: { answers: [{ value: benar }] } } : { pointValue: bobot },
+  }
+}
+
 export async function tambahSoalKeForm(
   formId: string,
   soal: { pertanyaan: string; opsi: string[]; kunci: string }[]
@@ -185,27 +226,15 @@ export async function tambahSoalKeForm(
   const sesudahHapus = placeholder.length ? (await ambilForm(formId)).items : items
   const mulai = sesudahHapus.length
 
-  const requests = soal.map((s, i) => {
-    // Google menolak opsi kembar; ambil yang pertama saja (pengaman terakhir).
-    const opsiUnik = s.opsi.filter((v, j) => s.opsi.findIndex((w) => w.trim().toLowerCase() === v.trim().toLowerCase()) === j)
-    s = { ...s, opsi: opsiUnik }
-    const kunciTeks = s.opsi[HURUF_OPSI.indexOf(s.kunci.toLowerCase())] ?? s.opsi[0]
-    return {
-      createItem: {
-        item: {
-          title: s.pertanyaan,
-          questionItem: {
-            question: {
-              required: true,
-              choiceQuestion: { type: "RADIO", options: s.opsi.map((v) => ({ value: v })) },
-              grading: { pointValue: 1, correctAnswers: { answers: [{ value: kunciTeks }] } },
-            },
-          },
-        },
-        location: { index: mulai + i },
+  const requests = soal.map((s, i) => ({
+    createItem: {
+      item: {
+        title: s.pertanyaan,
+        questionItem: { question: questionDari(s as SoalMasukan) },
       },
-    }
-  })
+      location: { index: mulai + i },
+    },
+  }))
 
   await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
   const sesudah = await ambilForm(formId)
@@ -224,13 +253,13 @@ async function indexButir(formId: string, qid: string): Promise<number> {
 export async function ubahSoalForm(
   formId: string,
   qid: string,
-  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
+  data: SoalMasukan,
 ): Promise<unknown[]> {
   const index = await indexButir(formId, qid)
-  const opsi = data.opsi.map((o) => o.trim()).filter(Boolean)
-  if (opsi.length < 2) throw new Error("Minimal 2 opsi.")
-  const idxKunci = "ABCDE".indexOf((data.hurufKunci || "").toUpperCase())
-  const benar = idxKunci >= 0 && idxKunci < opsi.length ? opsi[idxKunci] : ""
+  const jenis = data.jenis ?? "PILIHAN_GANDA"
+  if ((jenis === "PILIHAN_GANDA" || jenis === "CENTANG") && data.opsi.filter((o) => o.trim()).length < 2) {
+    throw new Error("Minimal 2 opsi.")
+  }
 
   await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, {
     requests: [
@@ -239,13 +268,7 @@ export async function ubahSoalForm(
           location: { index },
           item: {
             title: data.pertanyaan.trim(),
-            questionItem: {
-              question: {
-                required: true,
-                grading: benar ? { pointValue: 1, correctAnswers: { answers: [{ value: benar }] } } : { pointValue: 1 },
-                choiceQuestion: { type: "RADIO", options: opsi.map((v) => ({ value: v })) },
-              },
-            },
+            questionItem: { question: questionDari(data) },
           },
           updateMask: "title,questionItem.question",
         },
@@ -289,31 +312,55 @@ type ButirForm = {
   questionItem?: {
     question?: {
       questionId?: string
-      textQuestion?: unknown
-      choiceQuestion?: { options?: { value?: string }[] }
+      textQuestion?: { paragraph?: boolean }
+      choiceQuestion?: { type?: string; options?: { value?: string }[] }
       grading?: { pointValue?: number; correctAnswers?: { answers?: { value?: string }[] } }
     }
   }
 }
 
 /** Ringkasan soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
-export function daftarSoalDariItems(
-  items: unknown[],
-): { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] {
-  const hasil: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] = []
+export function daftarSoalDariItems(items: unknown[]): {
+  no: number
+  qid: string
+  pertanyaan: string
+  jenis: JenisSoal
+  poin: number
+  opsi: string[]
+  kunci: string
+}[] {
+  const hasil: {
+    no: number
+    qid: string
+    pertanyaan: string
+    jenis: JenisSoal
+    poin: number
+    opsi: string[]
+    kunci: string
+  }[] = []
   for (const butir of items as ButirForm[]) {
     const q = butir?.questionItem?.question
     if (!q?.questionId) continue
     const poin = q.grading?.pointValue ?? 0
     const opsi = (q.choiceQuestion?.options ?? []).map((o) => (o.value ?? "").trim()).filter(Boolean)
     // Butir identitas (NIS/nama/kelas) tidak punya bobot -> lewati.
-    if (poin <= 0 || opsi.length < 2) continue
+    if (poin <= 0) continue
+    if (!q.textQuestion && opsi.length < 2) continue
+    const jenis: JenisSoal = q.textQuestion
+      ? q.textQuestion.paragraph
+        ? "URAIAN"
+        : "JAWABAN_SINGKAT"
+      : q.choiceQuestion?.type === "CHECKBOX"
+        ? "CENTANG"
+        : "PILIHAN_GANDA"
     const kunciTeks = (q.grading?.correctAnswers?.answers ?? []).map((a) => (a.value ?? "").trim()).filter(Boolean)[0] ?? ""
     const idx = kunciTeks ? opsi.findIndex((o) => o.toLowerCase() === kunciTeks.toLowerCase()) : -1
     hasil.push({
       no: hasil.length + 1,
       qid: q.questionId,
       pertanyaan: (butir.title ?? "").trim() || "(tanpa judul)",
+      jenis,
+      poin,
       opsi,
       kunci: idx >= 0 ? "ABCDE"[idx] : kunciTeks,
     })

@@ -6,16 +6,16 @@ import { toast } from "sonner"
 import {
   ArrowLeft,
   Check,
+  CheckCircle2,
   ExternalLink,
   FileText,
-  FileUp,
   Keyboard,
   Loader2,
-  Pencil,
   Plus,
   Sparkles,
   Trash2,
   TriangleAlert,
+  X,
 } from "lucide-react"
 
 import {
@@ -27,7 +27,6 @@ import {
   tambahSoal,
   ubahSoal,
 } from "@/app/actions/impor-soal"
-import { AksiIkon } from "@/components/aksi-ikon"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -35,7 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,21 +45,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import type { SoalImpor } from "@/lib/impor-docx"
 
-type SoalForm = { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }
-type Isian = { pertanyaan: string; opsi: string[]; hurufKunci: string }
+type Jenis = "PILIHAN_GANDA" | "CENTANG" | "JAWABAN_SINGKAT" | "URAIAN"
+type SoalForm = { no: number; qid: string; pertanyaan: string; jenis: Jenis; poin: number; opsi: string[]; kunci: string }
+type Isian = {
+  pertanyaan: string
+  jenis: Jenis
+  bobot: number
+  opsi: string[]
+  hurufKunci: string
+  kunciTeks: string
+}
 
 const HURUF = "ABCDE"
-const OPSI_KOSONG = ["", "", "", "", ""]
+const OPSI_AWAL = ["", "", "", "", ""]
+const JENIS: { value: Jenis; label: string }[] = [
+  { value: "PILIHAN_GANDA", label: "Pilihan ganda" },
+  { value: "CENTANG", label: "Centang banyak" },
+  { value: "JAWABAN_SINGKAT", label: "Jawaban singkat" },
+  { value: "URAIAN", label: "Uraian" },
+]
+const labelJenis = (j: Jenis) => JENIS.find((x) => x.value === j)?.label ?? j
+const pakaiOpsi = (j: Jenis) => j === "PILIHAN_GANDA" || j === "CENTANG"
 
 const kunciTeks = (teks: string) => teks.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
-
-const indeksKunci = (kunci: string) => HURUF.indexOf((kunci || "").toUpperCase())
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
 12
@@ -70,6 +84,232 @@ const CONTOH = `1. Hasil dari 12 x 2 adalah ...
 36
 Kunci: C`
 
+/** Editor satu soal: jenis, bobot, pertanyaan, opsi & kunci. Dipakai untuk tambah dan ubah. */
+function EditorSoal({
+  awal,
+  mode,
+  onSimpan,
+  backHref,
+}: {
+  awal?: SoalForm
+  mode: "tambah" | "ubah"
+  onSimpan: (data: Isian) => Promise<boolean>
+  backHref?: string
+}) {
+  const [pertanyaan, setPertanyaan] = useState(awal?.pertanyaan ?? "")
+  const [jenis, setJenis] = useState<Jenis>(awal?.jenis ?? "PILIHAN_GANDA")
+  const [bobot, setBobot] = useState(String(awal?.poin ?? 1))
+  const [opsi, setOpsi] = useState<string[]>(() => {
+    const isi = awal?.opsi.length ? [...awal.opsi] : [...OPSI_AWAL]
+    while (isi.length < 3) isi.push("")
+    return isi
+  })
+  const opsiAwalIdx = HURUF.indexOf((awal?.kunci ?? "").toUpperCase())
+  const [kunciIdx, setKunciIdx] = useState<number>(
+    pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? (opsiAwalIdx >= 0 ? opsiAwalIdx : -1) : -1,
+  )
+  const [kunciIsi, setKunciIsi] = useState(pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? "" : (awal?.kunci ?? ""))
+  const [proses, setProses] = useState(false)
+  const [pesan, setPesan] = useState<string | null>(null)
+
+  const perluOpsi = pakaiOpsi(jenis)
+  const opsiTerisi = opsi.filter((o) => o.trim())
+  const siap = perluOpsi
+    ? Boolean(pertanyaan.trim()) && opsiTerisi.length >= 2 && kunciIdx >= 0 && Boolean(opsi[kunciIdx]?.trim())
+    : Boolean(pertanyaan.trim()) && (jenis === "URAIAN" || Boolean(kunciIsi.trim()))
+
+  function ubahJenis(nilai: Jenis) {
+    setJenis(nilai)
+    setPesan(null)
+    if (!pakaiOpsi(nilai)) setKunciIdx(-1)
+  }
+
+  async function simpan() {
+    setProses(true)
+    const ok = await onSimpan({
+      pertanyaan,
+      jenis,
+      bobot: Number(bobot) > 0 ? Number(bobot) : 1,
+      opsi: perluOpsi ? opsi : [],
+      hurufKunci: kunciIdx >= 0 ? HURUF[kunciIdx] : "",
+      kunciTeks: perluOpsi ? "" : kunciIsi,
+    })
+    setProses(false)
+    if (!ok) return
+    setPesan(mode === "tambah" ? "Soal tersimpan ke Google Form." : "Perubahan tersimpan.")
+    setPertanyaan("")
+    setOpsi([...OPSI_AWAL])
+    setKunciIdx(-1)
+    setKunciIsi("")
+    setBobot("1")
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Jenis</label>
+          <NativeSelect
+            value={jenis}
+            onChange={(e) => ubahJenis(e.target.value as Jenis)}
+            className="w-full"
+            aria-label="Jenis soal"
+          >
+            {JENIS.map((j) => (
+              <NativeSelectOption key={j.value} value={j.value}>
+                {j.label}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Bobot</label>
+          <Input
+            type="number"
+            min={1}
+            value={bobot}
+            onChange={(e) => setBobot(e.target.value)}
+            className="h-9 rounded-sm text-xs tabular-nums"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium">Pertanyaan</label>
+        <Textarea
+          value={pertanyaan}
+          maxLength={2000}
+          onChange={(e) => setPertanyaan(e.target.value)}
+          placeholder="Tulis pertanyaan lengkapnya di sini..."
+          className="min-h-28 rounded-sm text-xs"
+        />
+        <p className="text-right font-mono text-[11px] text-muted-foreground">{pertanyaan.length}/2000</p>
+      </div>
+
+      <Separator />
+
+      {perluOpsi ? (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-1">
+            <label className="text-xs font-medium">Opsi dan kunci</label>
+            <span className="text-[11px] text-muted-foreground">Klik huruf di kiri untuk menandai jawaban benar.</span>
+          </div>
+          {opsi.map((o, i) => {
+            const aktif = kunciIdx === i
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!o.trim()}
+                  onClick={() => setKunciIdx(aktif ? -1 : i)}
+                  title={o.trim() ? `Tandai ${HURUF[i]} sebagai kunci` : "Isi opsi dulu"}
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] transition-colors disabled:opacity-40 ${
+                    aktif
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+                  }`}
+                >
+                  {aktif ? <Check className="size-3.5" /> : HURUF[i]}
+                </button>
+                <Input
+                  value={o}
+                  onChange={(e) => {
+                    const nilai = e.target.value
+                    setOpsi((v) => v.map((x, j) => (j === i ? nilai : x)))
+                    if (!nilai.trim() && aktif) setKunciIdx(-1)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && o.trim()) {
+                      e.preventDefault()
+                      setKunciIdx(i)
+                    }
+                  }}
+                  placeholder={`Opsi ${HURUF[i]}`}
+                  className="h-9 rounded-sm text-xs"
+                />
+                {opsi.length > 2 ? (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 rounded-sm text-muted-foreground"
+                    title="Hapus opsi"
+                    onClick={() => {
+                      setOpsi((v) => v.filter((_, j) => j !== i))
+                      if (kunciIdx === i) setKunciIdx(-1)
+                      else if (kunciIdx > i) setKunciIdx(kunciIdx - 1)
+                    }}
+                  >
+                    <X className="size-3.5" />
+                    <span className="sr-only">Hapus opsi</span>
+                  </Button>
+                ) : null}
+              </div>
+            )
+          })}
+          {opsi.length < HURUF.length ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1.5 rounded-sm px-2 text-[11px] text-muted-foreground"
+              onClick={() => setOpsi((v) => [...v, ""])}
+            >
+              <Plus className="size-3.5" />
+              Tambah opsi {HURUF[opsi.length]}
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <label className="text-xs font-medium">
+            {jenis === "URAIAN" ? "Kunci jawaban (tidak dinilai otomatis)" : "Kunci jawaban"}
+          </label>
+          <Input
+            value={kunciIsi}
+            disabled={jenis === "URAIAN"}
+            onChange={(e) => setKunciIsi(e.target.value)}
+            placeholder={jenis === "URAIAN" ? "Uraian dinilai manual oleh guru" : "Teks jawaban benar, mis. 24"}
+            className="h-9 rounded-sm text-xs"
+          />
+        </div>
+      )}
+
+      {pesan ? (
+        <Alert className="rounded-sm border-emerald-300/60 bg-emerald-50 px-3 py-2 dark:border-emerald-500/30 dark:bg-emerald-950/40">
+          <CheckCircle2 className="text-emerald-700 dark:text-emerald-400" />
+          <AlertDescription className="text-[11px] text-emerald-900 dark:text-emerald-200">{pesan}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+        {mode === "tambah" ? (
+          <>
+            {backHref ? (
+              <Button variant="ghost" size="sm" className="h-11 rounded-sm sm:h-8" render={<Link href={backHref} />}>
+                <ArrowLeft className="size-4" />
+                Selesai
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11 rounded-sm sm:h-8"
+              onClick={simpan}
+              disabled={proses || !siap}
+            >
+              {proses ? <Loader2 className="size-4 animate-spin" /> : null}
+              Simpan &amp; tulis lagi
+            </Button>
+          </>
+        ) : null}
+        <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpan} disabled={proses || !siap}>
+          {proses ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {mode === "tambah" ? "Simpan soal" : "Simpan perubahan"}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 /** Kolom 1 mode tempel teks: textarea + AI + pratinjau + tombol masukkan. */
 function PanelTeks({
   bankId,
@@ -78,7 +318,7 @@ function PanelTeks({
 }: {
   bankId: string
   tersimpan: SoalForm[]
-  onSelesai: (soal: SoalForm[], pesan: string) => void
+  onSelesai: (soal: SoalForm[]) => void
 }) {
   const [teks, setTeks] = useState("")
   const [soal, setSoal] = useState<SoalImpor[] | null>(null)
@@ -129,7 +369,7 @@ function PanelTeks({
       setSoal(null)
       setPeringatan([])
       const terbaru = await daftarSoalForm(bankId)
-      onSelesai(terbaru.ok ? terbaru.soal : tersimpan, hasil.message)
+      if (terbaru.ok) onSelesai(terbaru.soal)
     })
   }
 
@@ -273,134 +513,21 @@ function PanelTeks({
   )
 }
 
-/** Kolom 1 mode input manual: form soal langsung isi opsi + kunci. */
-function PanelManual({ onTambah }: { onTambah: (data: Isian) => Promise<boolean> }) {
-  const [pertanyaan, setPertanyaan] = useState("")
-  const [opsi, setOpsi] = useState<string[]>(OPSI_KOSONG)
-  const [kunci, setKunci] = useState("")
-  const [proses, setProses] = useState(false)
-
-  async function kirim() {
-    setProses(true)
-    const ok = await onTambah({ pertanyaan, opsi, hurufKunci: kunci })
-    setProses(false)
-    if (ok) {
-      setPertanyaan("")
-      setOpsi(OPSI_KOSONG)
-      setKunci("")
-    }
-  }
-
-  return (
-    <Card className="gap-0 rounded-sm py-0">
-      <CardHeader className="gap-1 border-b px-4 py-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Keyboard className="size-4 text-muted-foreground" />
-          Form soal baru
-        </CardTitle>
-        <CardDescription className="text-[11px]">
-          Ketik pertanyaan, isi opsi, tandai kunci. Simpan langsung masuk ke Google Form.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 px-4 py-4">
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Pertanyaan</label>
-          <Textarea
-            value={pertanyaan}
-            onChange={(e) => setPertanyaan(e.target.value)}
-            placeholder="Tulis pertanyaan soal di sini…"
-            className="min-h-24 rounded-sm text-xs"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium">Opsi jawaban</label>
-          {opsi.map((o, i) => {
-            const aktif = kunci.toUpperCase() === HURUF[i]
-            return (
-              <div key={i} className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={!o.trim()}
-                  onClick={() => setKunci(HURUF[i])}
-                  title={o.trim() ? `Tandai ${HURUF[i]} sebagai kunci` : "Isi opsi dulu"}
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-sm border font-mono text-[11px] transition-colors disabled:opacity-40 ${
-                    aktif
-                      ? "border-emerald-600 bg-emerald-600 text-white"
-                      : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
-                  }`}
-                >
-                  {aktif ? <Check className="size-3.5" /> : HURUF[i]}
-                </button>
-                <Input
-                  value={o}
-                  onChange={(e) => {
-                    const nilai = e.target.value
-                    setOpsi((v) => v.map((x, j) => (j === i ? nilai : x)))
-                    if (!nilai.trim() && aktif) setKunci("")
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && o.trim()) {
-                      e.preventDefault()
-                      setKunci(HURUF[i])
-                    }
-                  }}
-                  placeholder={`Opsi ${HURUF[i]}${i > 1 ? " (boleh dikosongkan)" : ""}`}
-                  className="h-9 rounded-sm text-xs"
-                />
-              </div>
-            )
-          })}
-          <p className="text-[11px] text-muted-foreground">
-            Klik huruf A–E di kiri untuk menandai jawaban benar. Enter di kolom opsi juga menandai kunci.
-          </p>
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[11px] text-muted-foreground">
-            {kunci ? (
-              <>
-                Kunci:{" "}
-                <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400">
-                  {kunci.toUpperCase()}. {opsi[HURUF.indexOf(kunci.toUpperCase())] || "—"}
-                </span>
-              </>
-            ) : (
-              "Kunci jawaban belum ditandai"
-            )}
-          </span>
-          <Button
-            size="sm"
-            className="h-11 gap-2 rounded-sm sm:h-8"
-            onClick={kirim}
-            disabled={proses || !pertanyaan.trim() || !kunci || opsi.filter((o) => o.trim()).length < 2}
-          >
-            {proses ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-            Tambah ke form
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-/** Kolom 2: daftar soal yang sudah ada di form (collapse, opsi benar ditandai). */
+/** Kolom 2: daftar soal yang sudah ada di Google Form. */
 function DaftarSoal({
   soal,
-  onEdit,
+  onUbah,
   onHapus,
 }: {
   soal: SoalForm[]
-  onEdit: (s: SoalForm) => void
+  onUbah: (s: SoalForm) => void
   onHapus: (s: SoalForm) => void
 }) {
   return (
     <Card className="gap-0 rounded-sm py-0">
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <div className="space-y-1">
-          <CardTitle className="text-sm">Soal di form</CardTitle>
+          <CardTitle className="text-sm">Soal di topik ini</CardTitle>
           <CardDescription className="text-[11px]">Klik soal untuk melihat opsi &amp; kunci jawaban.</CardDescription>
         </div>
         <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
@@ -410,13 +537,13 @@ function DaftarSoal({
       <CardContent className="px-4 py-3">
         {soal.length === 0 ? (
           <p className="py-6 text-center text-xs text-muted-foreground">
-            Belum ada soal di form. Tambah lewat form di sebelah kiri.
+            Belum ada soal. Tambah lewat editor di sebelah kiri.
           </p>
         ) : (
           <ScrollArea className="max-h-[560px] rounded-sm border border-border">
             <Accordion>
               {soal.map((s) => {
-                const idx = indeksKunci(s.kunci)
+                const idx = HURUF.indexOf((s.kunci || "").toUpperCase())
                 return (
                   <AccordionItem key={s.qid || String(s.no)} value={String(s.no)}>
                     <AccordionTrigger className="items-center gap-2 px-3 py-2.5 text-xs hover:no-underline">
@@ -425,61 +552,57 @@ function DaftarSoal({
                           {s.no}.
                         </span>
                         <span className="min-w-0 flex-1 truncate font-normal">{s.pertanyaan}</span>
+                        <span className="shrink-0 text-[11px] font-normal text-muted-foreground tabular-nums">
+                          {s.poin} poin
+                        </span>
                       </span>
-                      {s.kunci ? (
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 rounded-sm font-mono text-[11px] font-normal text-emerald-700 dark:text-emerald-400"
-                        >
-                          {s.kunci.toUpperCase()}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 rounded-sm text-[11px] font-normal text-amber-700 dark:text-amber-400"
-                        >
-                          tanpa kunci
-                        </Badge>
-                      )}
                     </AccordionTrigger>
                     <AccordionContent className="px-3">
-                      <ul className="space-y-1">
-                        {s.opsi.map((o, i) => {
-                          const benar = i === idx
-                          return (
-                            <li
-                              key={i}
-                              className={`flex items-start gap-2 rounded-sm px-2 py-1 text-xs ${
-                                benar ? "bg-emerald-50 font-medium dark:bg-emerald-950/40" : ""
-                              }`}
-                            >
-                              <span
-                                className={`w-4 shrink-0 font-mono text-[11px] ${
-                                  benar ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
+                      {s.opsi.length ? (
+                        <ul className="space-y-1">
+                          {s.opsi.map((o, i) => {
+                            const benar = i === idx
+                            return (
+                              <li
+                                key={i}
+                                className={`flex items-start gap-2 rounded-sm px-2 py-1 text-xs ${
+                                  benar ? "bg-emerald-50 font-medium dark:bg-emerald-950/40" : ""
                                 }`}
                               >
-                                {HURUF[i]}.
-                              </span>
-                              <span className="min-w-0 flex-1">{o}</span>
-                              {benar ? (
-                                <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400">
-                                  <Check className="size-3.5" />
-                                  kunci
+                                <span
+                                  className={`w-4 shrink-0 font-mono text-[11px] ${
+                                    benar ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {HURUF[i]}.
                                 </span>
-                              ) : null}
-                            </li>
-                          )
-                        })}
-                      </ul>
+                                <span className="min-w-0 flex-1">{o}</span>
+                                {benar ? (
+                                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400">
+                                    <Check className="size-3.5" />
+                                    kunci
+                                  </span>
+                                ) : null}
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="rounded-sm bg-muted/60 px-2 py-1 text-xs">
+                          <span className="text-muted-foreground">Jenis: </span>
+                          {labelJenis(s.jenis)}
+                          <span className="text-muted-foreground"> · Kunci: </span>
+                          {s.kunci || "—"}
+                        </p>
+                      )}
                       <div className="mt-2 flex justify-end gap-1 border-t pt-2">
-                        <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-sm text-[11px]" onClick={() => onEdit(s)}>
-                          <Pencil className="size-3.5" />
-                          Edit
+                        <Button variant="outline" size="sm" className="h-9 rounded-sm text-[11px]" onClick={() => onUbah(s)}>
+                          Ubah
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-9 gap-1.5 rounded-sm text-[11px] text-destructive hover:text-destructive"
+                          className="h-9 rounded-sm text-[11px] text-destructive hover:text-destructive"
                           onClick={() => onHapus(s)}
                         >
                           <Trash2 className="size-3.5" />
@@ -518,67 +641,53 @@ export function ImporSoalPage({
 }) {
   const [model, setModel] = useState<"manual" | "teks">("manual")
   const [tersimpan, setTersimpan] = useState<SoalForm[]>(soalFormAwal)
-  const [edit, setEdit] = useState<{ qid: string; pertanyaan: string; opsi: string[]; kunci: string } | null>(null)
+  const [ubah, setUbah] = useState<SoalForm | null>(null)
   const [hapus, setHapus] = useState<SoalForm | null>(null)
-  const [sedangUbah, startUbah] = useTransition()
+  const [proses, setProses] = useState(false)
 
-  function tambah(data: Isian) {
-    return new Promise<boolean>((resolve) => {
-      startUbah(async () => {
-        const hasil = await tambahSoal(bankId, data)
-        if (!hasil.ok) {
-          toast.error(hasil.message)
-          resolve(false)
-          return
-        }
-        if (hasil.soal) setTersimpan(hasil.soal)
-        toast.success(hasil.message)
-        resolve(true)
-      })
-    })
+  async function tambah(data: Isian) {
+    setProses(true)
+    const hasil = await tambahSoal(bankId, data)
+    setProses(false)
+    if (!hasil.ok) {
+      toast.error(hasil.message)
+      return false
+    }
+    if (hasil.soal) setTersimpan(hasil.soal)
+    toast.success(hasil.message)
+    return true
   }
 
-  function bukaEdit(s: SoalForm) {
-    const opsi = [...s.opsi]
-    while (opsi.length < 5) opsi.push("")
-    setEdit({ qid: s.qid, pertanyaan: s.pertanyaan, opsi, kunci: s.kunci })
+  async function simpanUbah(data: Isian) {
+    if (!ubah) return false
+    setProses(true)
+    const hasil = await ubahSoal(bankId, ubah.qid, data)
+    setProses(false)
+    if (!hasil.ok) {
+      toast.error(hasil.message)
+      return false
+    }
+    if (hasil.soal) setTersimpan(hasil.soal)
+    toast.success(hasil.message)
+    return true
   }
 
-  function simpanEdit() {
-    if (!edit) return
-    startUbah(async () => {
-      const hasil = await ubahSoal(bankId, edit.qid, {
-        pertanyaan: edit.pertanyaan,
-        opsi: edit.opsi.filter((o) => o.trim()),
-        hurufKunci: edit.kunci,
-      })
-      if (!hasil.ok) {
-        toast.error(hasil.message)
-        return
-      }
-      if (hasil.soal) setTersimpan(hasil.soal)
-      setEdit(null)
-      toast.success(hasil.message)
-    })
-  }
-
-  function konfirmasiHapus() {
+  async function konfirmasiHapus() {
     if (!hapus) return
-    startUbah(async () => {
-      const hasil = await hapusSoal(bankId, hapus.qid)
-      if (!hasil.ok) {
-        toast.error(hasil.message)
-        return
-      }
-      if (hasil.soal) setTersimpan(hasil.soal)
-      setHapus(null)
-      toast.success(hasil.message)
-    })
+    setProses(true)
+    const hasil = await hapusSoal(bankId, hapus.qid)
+    setProses(false)
+    if (!hasil.ok) {
+      toast.error(hasil.message)
+      return
+    }
+    if (hasil.soal) setTersimpan(hasil.soal)
+    setHapus(null)
+    toast.success(hasil.message)
   }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-      {/* Identitas bank soal */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar className="size-10 rounded-sm">
@@ -628,90 +737,50 @@ export function ImporSoalPage({
         </TabsList>
 
         <TabsContent value="manual">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PanelManual onTambah={tambah} />
-            <DaftarSoal soal={tersimpan} onEdit={bukaEdit} onHapus={setHapus} />
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <Card className="gap-0 rounded-sm py-0">
+              <CardHeader className="gap-1 border-b px-4 py-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Keyboard className="size-4 text-muted-foreground" />
+                  Editor soal
+                </CardTitle>
+                <CardDescription className="text-[11px]">
+                  Soal langsung tersimpan ke Google Form milik bank soal ini.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-4 py-4">
+                <EditorSoal mode="tambah" onSimpan={tambah} backHref={backHref} />
+              </CardContent>
+            </Card>
+            <DaftarSoal soal={tersimpan} onUbah={setUbah} onHapus={setHapus} />
           </div>
         </TabsContent>
 
         <TabsContent value="teks">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PanelTeks
-              bankId={bankId}
-              tersimpan={tersimpan}
-              onSelesai={(soal) => setTersimpan(soal)}
-            />
-            <DaftarSoal soal={tersimpan} onEdit={bukaEdit} onHapus={setHapus} />
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <PanelTeks bankId={bankId} tersimpan={tersimpan} onSelesai={setTersimpan} />
+            <DaftarSoal soal={tersimpan} onUbah={setUbah} onHapus={setHapus} />
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Dialog edit soal */}
-      <Dialog open={Boolean(edit)} onOpenChange={(buka) => !buka && setEdit(null)}>
+      {/* Dialog ubah soal */}
+      <Dialog open={Boolean(ubah)} onOpenChange={(buka) => !buka && setUbah(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit soal</DialogTitle>
-            <DialogDescription>Ubah pertanyaan, opsi, atau kunci. Perubahan langsung ke Google Form.</DialogDescription>
+            <DialogTitle>Ubah soal</DialogTitle>
+            <DialogDescription>Perubahan langsung dikirim ke Google Form.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Pertanyaan</label>
-              <Textarea
-                value={edit?.pertanyaan ?? ""}
-                onChange={(e) => setEdit((v) => (v ? { ...v, pertanyaan: e.target.value } : v))}
-                className="min-h-20 rounded-sm text-xs"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Opsi</label>
-              <div className="space-y-1.5">
-                {(edit?.opsi ?? []).map((o, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-4 text-xs font-medium text-muted-foreground">{HURUF[i]}</span>
-                    <Input
-                      value={o}
-                      onChange={(e) =>
-                        setEdit((v) =>
-                          v ? { ...v, opsi: v.opsi.map((x, j) => (j === i ? e.target.value : x)) } : v,
-                        )
-                      }
-                      placeholder={`Opsi ${HURUF[i]} (kosongkan bila tidak dipakai)`}
-                      className="h-8 rounded-sm text-xs"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Kunci jawaban</label>
-              <div className="flex flex-wrap gap-1.5">
-                {[...HURUF].map((huruf, i) => {
-                  const aktif = (edit?.kunci ?? "").toUpperCase() === huruf
-                  const kosong = !(edit?.opsi?.[i] ?? "").trim()
-                  return (
-                    <Button
-                      key={huruf}
-                      type="button"
-                      size="sm"
-                      variant={aktif ? "default" : "outline"}
-                      disabled={kosong}
-                      className="h-8 w-8 rounded-sm p-0 font-mono text-xs"
-                      onClick={() => setEdit((v) => (v ? { ...v, kunci: huruf } : v))}
-                    >
-                      {huruf}
-                    </Button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+          {ubah ? <EditorSoal awal={ubah} mode="ubah" onSimpan={simpanUbah} /> : null}
           <DialogFooter>
-            <Button variant="outline" size="sm" className="h-11 rounded-sm sm:h-8" onClick={() => setEdit(null)} disabled={sedangUbah}>
-              Batal
-            </Button>
-            <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpanEdit} disabled={sedangUbah}>
-              {sedangUbah ? <Loader2 className="size-4 animate-spin" /> : null}
-              Simpan ke form
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11 rounded-sm sm:h-8"
+              onClick={() => setUbah(null)}
+              disabled={proses}
+            >
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -727,9 +796,9 @@ export function ImporSoalPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={sedangUbah}>Batal</AlertDialogCancel>
-            <AlertDialogAction disabled={sedangUbah} onClick={konfirmasiHapus}>
-              {sedangUbah ? <Loader2 className="size-4 animate-spin" /> : null}
+            <AlertDialogCancel disabled={proses}>Batal</AlertDialogCancel>
+            <AlertDialogAction disabled={proses} onClick={konfirmasiHapus}>
+              {proses ? <Loader2 className="size-4 animate-spin" /> : null}
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

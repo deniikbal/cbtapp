@@ -9,9 +9,53 @@ import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 import { parseSoalDocx, parseSoalTeks, type SoalImpor } from "@/lib/impor-docx"
 import { rapikanSoal, rapikanSoalAI } from "@/lib/rapikan-soal"
-import { ambilForm, daftarSoalDariItems, hapusSoalForm, tambahSoalKeForm, ubahSoalForm } from "@/lib/google-forms"
+import {
+  ambilForm,
+  daftarSoalDariItems,
+  hapusSoalForm,
+  tambahSoalKeForm,
+  ubahSoalForm,
+  type JenisSoal,
+  type SoalMasukan,
+} from "@/lib/google-forms"
 
 type Pratinjau = { ok: true; soal: SoalImpor[]; peringatan: string[] } | { ok: false; message: string }
+
+type SoalRingkas = ReturnType<typeof daftarSoalDariItems>[number]
+
+type MasukanSoal = {
+  pertanyaan: string
+  jenis?: JenisSoal
+  bobot?: number
+  opsi: string[]
+  /** Huruf kunci untuk soal pilihan (A–E). */
+  hurufKunci?: string
+  /** Kunci teks untuk jawaban singkat. */
+  kunciTeks?: string
+}
+
+/** Validasi masukan guru lalu ubah ke bentuk yang dipakai lapisan Google Forms. */
+function keSoalMasukan(d: MasukanSoal): SoalMasukan | { error: string } {
+  const jenis = d.jenis ?? "PILIHAN_GANDA"
+  const bobot = d.bobot && d.bobot > 0 ? d.bobot : 1
+  const pertanyaan = d.pertanyaan.trim()
+  if (!pertanyaan) return { error: "Pertanyaan masih kosong." }
+
+  if (jenis === "JAWABAN_SINGKAT" || jenis === "URAIAN") {
+    return { pertanyaan, jenis, bobot, opsi: [], kunci: (d.kunciTeks ?? "").trim() }
+  }
+
+  const opsi = d.opsi.map((o) => o.trim()).filter(Boolean)
+  if (opsi.length < 2) return { error: "Isi minimal 2 opsi." }
+  const kembar = opsi
+    .map((o, i) => ({ o: o.toLowerCase(), i }))
+    .filter((v, i, arr) => arr.findIndex((w) => w.o === v.o) !== i)
+    .map((v) => `${"ABCDE"[v.i]} ("${opsi[v.i]}")`)
+  if (kembar.length) return { error: `Opsi tidak boleh kembar: ${kembar.join(", ")} sudah ada di opsi sebelumnya.` }
+  const idx = "ABCDE".indexOf((d.hurufKunci ?? "").toUpperCase())
+  if (idx < 0 || idx >= opsi.length) return { error: "Pilih kunci jawaban yang sesuai dengan opsi." }
+  return { pertanyaan, jenis, bobot, opsi, kunci: "ABCDE"[idx] }
+}
 
 type Baca = { ok: true; buffer: Buffer } | { ok: false; error: string }
 
@@ -162,7 +206,7 @@ export async function rapikanSoalTeks(
 /** Daftar soal yang sudah ada di form, untuk ditampilkan di halaman impor. */
 export async function daftarSoalForm(
   bankId: string,
-): Promise<{ ok: true; soal: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] } | { ok: false; message: string }> {
+): Promise<{ ok: true; soal: SoalRingkas[] } | { ok: false; message: string }> {
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
   if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
   try {
@@ -182,14 +226,16 @@ function kunciTeks(teks: string): string {
 export async function ubahSoal(
   bankId: string,
   qid: string,
-  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
-): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+  data: MasukanSoal,
+): Promise<{ ok: boolean; message: string; soal?: SoalRingkas[] }> {
   const akses = await cekAkses(bankId)
   if (!akses.ok) return akses
+  const siap = keSoalMasukan(data)
+  if ("error" in siap) return { ok: false, message: siap.error }
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
   if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
   try {
-    const items = await ubahSoalForm(bank.formId, qid, data)
+    const items = await ubahSoalForm(bank.formId, qid, siap)
     await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
     revalidatePath("/guru/dashboard")
     return { ok: true, message: "Soal diperbarui.", soal: daftarSoalDariItems(items) }
@@ -202,7 +248,7 @@ export async function ubahSoal(
 export async function hapusSoal(
   bankId: string,
   qid: string,
-): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+): Promise<{ ok: boolean; message: string; soal?: SoalRingkas[] }> {
   const akses = await cekAkses(bankId)
   if (!akses.ok) return akses
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
@@ -220,32 +266,24 @@ export async function hapusSoal(
 /** Tambah satu soal manual (diketik langsung di aplikasi). */
 export async function tambahSoal(
   bankId: string,
-  data: { pertanyaan: string; opsi: string[]; hurufKunci: string },
-): Promise<{ ok: boolean; message: string; soal?: { no: number; qid: string; pertanyaan: string; opsi: string[]; kunci: string }[] }> {
+  data: MasukanSoal,
+): Promise<{ ok: boolean; message: string; soal?: SoalRingkas[] }> {
   const akses = await cekAkses(bankId)
   if (!akses.ok) return akses
-  const [bank] = await db.select({ formId: questionBanks.formId, formItems: questionBanks.formItems }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  const siap = keSoalMasukan(data)
+  if ("error" in siap) return { ok: false, message: siap.error }
+  const [bank] = await db
+    .select({ formId: questionBanks.formId })
+    .from(questionBanks)
+    .where(eq(questionBanks.id, bankId))
+    .limit(1)
   if (!bank?.formId) return { ok: false, message: "Bank soal belum punya Google Form." }
 
-  const pertanyaan = data.pertanyaan.trim()
-  const opsi = data.opsi.map((o) => o.trim()).filter(Boolean)
-  const idxKunci = "ABCDE".indexOf((data.hurufKunci || "").toUpperCase())
-  if (!pertanyaan) return { ok: false, message: "Pertanyaan masih kosong." }
-  if (opsi.length < 2) return { ok: false, message: "Isi minimal 2 opsi." }
-  if (idxKunci < 0 || idxKunci >= opsi.length) return { ok: false, message: "Pilih kunci jawaban yang sesuai dengan opsi." }
-  const kembar = opsi
-    .map((o, i) => ({ o: o.toLowerCase(), i }))
-    .filter((v, i, arr) => arr.findIndex((w) => w.o === v.o) !== i)
-    .map((v) => `${"ABCDE"[v.i]} ("${opsi[v.i]}")`)
-  if (kembar.length)
-    return { ok: false, message: `Opsi tidak boleh kembar: ${kembar.join(", ")} sudah ada di opsi sebelumnya.` }
-
   try {
-    const soalBaru: SoalImpor = { no: 1, pertanyaan, opsi, kunci: "abcde"[idxKunci] }
-    const items = await tambahSoalKeForm(bank.formId, [soalBaru])
+    const items = await tambahSoalKeForm(bank.formId, [{ no: 1, pertanyaan: siap.pertanyaan, opsi: siap.opsi, kunci: siap.kunci, jenis: siap.jenis, bobot: siap.bobot } as SoalImpor])
     await db.update(questionBanks).set({ formItems: items, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
     revalidatePath("/guru/dashboard")
-    return { ok: true, message: "Soal ditambahkan ke form.", soal: daftarSoalDariItems(items) }
+    return { ok: true, message: "Soal disimpan ke Google Form.", soal: daftarSoalDariItems(items) }
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Gagal menambah soal." }
   }
