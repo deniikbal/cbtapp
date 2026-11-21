@@ -140,8 +140,11 @@ export default async function SiswaDashboardPage({
 
   const attemptBySchedule = new Map(attemptRows.map((attempt) => [attempt.scheduleId, attempt]))
   const completedAttempts = attemptRows.filter((attempt) => attempt.submittedAt)
-  const completedIds = completedAttempts.map((attempt) => attempt.scheduleId)
-  const completedExamRows = completedIds.length
+  // Ujian dianggap selesai bila sudah disubmit di aplikasi ATAU hasilnya sudah masuk lewat sync Google Form.
+  const selesaiIds = [
+    ...new Set([...completedAttempts.map((attempt) => attempt.scheduleId), ...hasilRows.map((hasil) => hasil.scheduleId)]),
+  ]
+  const completedExamRows = selesaiIds.length
     ? await db
         .select({
           id: examSchedules.id,
@@ -156,7 +159,7 @@ export default async function SiswaDashboardPage({
         .from(examSchedules)
         .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
         .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
-        .where(inArray(examSchedules.id, completedIds))
+        .where(inArray(examSchedules.id, selesaiIds))
         .orderBy(desc(examSchedules.examDate), desc(examSchedules.startTime))
     : []
   const completedBySchedule = new Map(completedAttempts.map((attempt) => [attempt.scheduleId, attempt]))
@@ -173,7 +176,7 @@ export default async function SiswaDashboardPage({
     (schedule) => getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) === "ACTIVE"
   )
   const todaySchedules = schedules.filter((schedule) => schedule.examDate === today).length
-  const completedSchedules = attemptRows.filter((attempt) => attempt.submittedAt).length
+  const completedSchedules = selesaiIds.length
   const activeNowSchedules = visibleSchedules.length
 
   const { tab } = await searchParams
@@ -235,7 +238,8 @@ export default async function SiswaDashboardPage({
             <div className="space-y-2">
               {completedExamRows.map((schedule) => {
                 const hasil = hasilBySchedule.get(schedule.id)
-                const submittedAt = completedBySchedule.get(schedule.id)?.submittedAt
+                const submittedAt =
+                  completedBySchedule.get(schedule.id)?.submittedAt ?? hasil?.submittedAt ?? null
 
                 return (
                   <Card key={schedule.id} className="rounded-lg">
@@ -439,7 +443,8 @@ export default async function SiswaDashboardPage({
                   schedule.durationMinutes
                 )
                 const attempt = attemptBySchedule.get(schedule.id)
-                const attemptStatus = attempt?.submittedAt
+                const sudahSelesai = Boolean(attempt?.submittedAt) || hasilBySchedule.has(schedule.id)
+                const attemptStatus = sudahSelesai
                   ? "SUBMITTED"
                   : attempt?.startedAt
                     ? "STARTED"
