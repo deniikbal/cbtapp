@@ -139,7 +139,7 @@ export default async function GuruDashboardPage() {
         </section>
 
         {/* Stat cards: flat, neutral, green icon as the only accent — sama dengan dashboard admin */}
-        <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
           <StatCard label="Bank Soal Saya" value={ringkas.length} description="Bank assesmen terhubung" icon={BookOpen} />
           <StatCard label="Jadwal Ujian" value={jadwal.length} description="Jadwal assesmen Anda" icon={CalendarDays} />
           <StatCard label="Respons Masuk" value={totalRespons} description="Jawaban tersinkron" icon={ClipboardList} />
@@ -171,7 +171,7 @@ export default async function GuruDashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="hidden overflow-x-auto rounded-lg border md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -285,6 +285,94 @@ export default async function GuruDashboardPage() {
                 </Table>
               </div>
             )}
+
+            {/* Daftar kartu mobile: pengganti tabel 6 kolom di layar sempit (R-03). */}
+            <div className="space-y-3 md:hidden">
+              {ringkas.map((bank) => (
+                <div key={bank.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{bank.title}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{bank.code}</p>
+                    </div>
+                    {bank.jumlahJadwal > 0 && (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Badge variant="secondary" className="rounded-sm font-normal">
+                          {bank.jumlahJadwal} jadwal
+                        </Badge>
+                        <KelasTooltip kelas={bank.kelas} />
+                      </div>
+                    )}
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Mapel / Tingkat</dt>
+                      <dd>
+                        {bank.subjectName ?? "-"} <span className="text-xs text-muted-foreground">{bank.grade}</span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Soal</dt>
+                      <dd className="tabular-nums">{bank.formId ? hitungSoal(bank.formItems) : "-"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Respons</dt>
+                      <dd className="tabular-nums">{bank.jumlahJadwal === 0 ? "Belum dijadwalkan" : `${bank.respons} respons`}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Rata-rata</dt>
+                      <dd>
+                        {bank.respons ? (
+                          <span
+                            className={
+                              bank.rataRata >= Number(identitas.kkm || 0)
+                                ? "font-medium tabular-nums text-lime-700"
+                                : "font-medium tabular-nums text-amber-700"
+                            }
+                          >
+                            {bank.rataRata.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">Belum ada</span>
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                    {bank.formId ? (
+                      <a
+                        href={`https://docs.google.com/forms/d/${bank.formId}/edit`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 rounded-sm" })}
+                      >
+                        <ExternalLink className="size-4" />
+                        Form
+                      </a>
+                    ) : (
+                      <Button variant="outline" size="sm" disabled className="h-11 rounded-sm" title="Form belum dibuat">
+                        <ExternalLink className="size-4" />
+                        Form
+                      </Button>
+                    )}
+                    <Button
+                      nativeButton={false}
+                      variant="outline"
+                      size="sm"
+                      disabled={!bank.formId}
+                      className="h-11 rounded-sm"
+                      render={<Link href={`/guru/dashboard/impor?bank=${bank.id}`} />}
+                    >
+                      <FileUp className="size-4" />
+                      Impor soal
+                    </Button>
+                    <GuruAnalisisButton bankId={bank.id} judul={bank.code} akses={aksesPdf} tampilan="teks" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 

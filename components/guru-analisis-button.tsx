@@ -14,10 +14,12 @@ export function GuruAnalisisButton({
   bankId,
   judul,
   akses,
+  tampilan = "ikon",
 }: {
   bankId: string
   judul: string
   akses: { status: string; nominal: number; waAdmin: string; qris: string }
+  tampilan?: "ikon" | "teks"
 }) {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<AnalisisBank | null>(null)
@@ -37,12 +39,19 @@ export function GuruAnalisisButton({
 
   return (
     <>
-      <AksiIkon label="Analisis butir">
-        <Button variant="ghost" size="icon-sm" onClick={buka} disabled={pending} className="rounded-sm">
+      {tampilan === "teks" ? (
+        <Button variant="outline" size="sm" onClick={buka} disabled={pending} className="h-11 rounded-sm">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
-          <span className="sr-only">Analisis butir</span>
+          Analisis
         </Button>
-      </AksiIkon>
+      ) : (
+        <AksiIkon label="Analisis butir">
+          <Button variant="ghost" size="icon-sm" onClick={buka} disabled={pending} className="rounded-sm">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
+            <span className="sr-only">Analisis butir</span>
+          </Button>
+        </AksiIkon>
+      )}
       <AnalisisButirDialog open={open} onOpenChange={setOpen} judul={judul} data={data} bankId={bankId} akses={akses} />
     </>
   )
