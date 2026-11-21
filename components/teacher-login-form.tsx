@@ -20,7 +20,7 @@ export function TeacherLoginForm() {
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <BookOpenCheck className="size-6" />
+          <BookOpenCheck className="size-6" aria-hidden="true" />
         </div>
         <CardTitle className="text-xl">{APP_NAME}</CardTitle>
         <CardDescription>{APP_TAGLINE}</CardDescription>
@@ -58,7 +58,7 @@ export function TeacherLoginForm() {
                 className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 onClick={() => setShowPassword((value) => !value)}
               >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -70,7 +70,7 @@ export function TeacherLoginForm() {
           ) : null}
 
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <LogIn className="size-4" aria-hidden="true" />}
             Masuk
           </Button>
           <p className="text-center text-sm text-muted-foreground">

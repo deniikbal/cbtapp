@@ -54,8 +54,8 @@ export function ProgressDetailDialog({
         if (!nextOpen) setFilter("ALL")
       }}
     >
-      <DialogTrigger render={<Button variant="ghost" size="icon-sm" />}>
-        <Eye className="size-4" />
+      <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" />}>
+        <Eye className="size-4" aria-hidden="true" />
         <span className="sr-only">Lihat detail pengerjaan</span>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">

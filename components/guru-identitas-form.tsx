@@ -97,7 +97,7 @@ export function GuruIdentitasForm({ identitas }: { identitas: IdentitasLaporan }
 
       <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-3">
         <Button type="submit" size="sm" disabled={pending} className="h-11 gap-1 rounded-sm px-2 text-[11px] sm:h-6">
-          {pending ? <Loader2 className="size-3.5 animate-spin" /> : state.ok ? <Check className="size-3.5" /> : <Save className="size-3.5" />}
+          {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : state.ok ? <Check className="size-3.5" aria-hidden="true" /> : <Save className="size-3.5" aria-hidden="true" />}
           Simpan identitas
         </Button>
         {state.message ? (

@@ -41,7 +41,7 @@ export function MajorCreateDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button className="gap-2" />}>
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden="true" />
         Tambah Jurusan
       </DialogTrigger>
       <DialogContent>
@@ -66,7 +66,7 @@ export function MajorCreateDialog() {
               Batal
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>

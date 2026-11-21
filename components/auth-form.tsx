@@ -54,7 +54,7 @@ export function AuthForm() {
         />
         <div className="relative flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-full bg-background text-lime-500 shadow-md ring-1 ring-border">
-            <GraduationCap className="size-6" />
+            <GraduationCap className="size-6" aria-hidden="true" />
           </div>
           <div>
             <h1 className="text-base font-bold leading-tight">{APP_NAME}</h1>
@@ -63,7 +63,7 @@ export function AuthForm() {
         </div>
 
         <div className="relative mt-9 inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium text-lime-500 shadow-sm">
-          <ShieldCheck className="size-4" />
+          <ShieldCheck className="size-4" aria-hidden="true" />
           Aplikasi Assesmen
         </div>
 
@@ -84,7 +84,7 @@ export function AuthForm() {
         <div className="mx-auto max-w-md">
           <div className="md:hidden mb-8 flex items-center gap-3">
             <div className="flex size-11 items-center justify-center rounded-full bg-background text-lime-500 shadow-md ring-1 ring-border">
-              <GraduationCap className="size-5" />
+              <GraduationCap className="size-5" aria-hidden="true" />
             </div>
             <div>
               <h1 className="font-bold leading-tight">{APP_NAME}</h1>
@@ -157,7 +157,7 @@ export function AuthForm() {
                   onClick={() => setShowPassword((value) => !value)}
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
                 </button>
               </div>
             </div>
@@ -169,7 +169,7 @@ export function AuthForm() {
               className="h-10 w-full bg-lime-400 text-foreground shadow-none hover:bg-lime-500"
               disabled={isPending}
             >
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Memproses..." : mode === "login" ? "Masuk" : "Daftar"}
             </Button>
           </form>

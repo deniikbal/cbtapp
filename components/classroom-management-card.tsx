@@ -124,7 +124,7 @@ export function ClassroomManagementCard({
             <CardDescription>Kelola kelas berdasarkan tingkat dan jurusan.</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
-            <Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>
+            <Button variant="outline" className="gap-2"><Download className="size-4" aria-hidden="true" />Export</Button>
             {majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}
           </div>
         </div>
@@ -132,7 +132,7 @@ export function ClassroomManagementCard({
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="relative md:col-span-5">
             <Label htmlFor="search-class" className="sr-only">Cari kelas</Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-class" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari kelas atau jurusan..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
@@ -140,7 +140,7 @@ export function ClassroomManagementCard({
             <Select value={majorId} onValueChange={handleMajorChange}>
               <SelectTrigger id="filter-major" className="w-full">
                 <div className="flex items-center gap-2 truncate">
-                  <Filter className="size-4 text-muted-foreground" />
+                  <Filter className="size-4 text-muted-foreground" aria-hidden="true" />
                   <SelectValue>{selectedMajor ? selectedMajor.code : "Semua jurusan"}</SelectValue>
                 </div>
               </SelectTrigger>
@@ -162,17 +162,17 @@ export function ClassroomManagementCard({
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" />Reset</Button></div>
+          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
         </div>
       </CardHeader>
 
       <CardContent>
-        <div className="hidden overflow-hidden rounded-lg border md:block">
+        <div className="hidden overflow-hidden rounded-lg border lg:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Kelas</TableHead><TableHead>Tingkat</TableHead><TableHead>Jurusan</TableHead><TableHead>Peserta</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={7} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><GraduationCap className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada kelas"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : majorOptions.length === 0 ? "Tambahkan jurusan terlebih dahulu." : "Tambahkan kelas untuk mengelompokkan peserta."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={7} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><GraduationCap className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada kelas"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : majorOptions.length === 0 ? "Tambahkan jurusan terlebih dahulu." : "Tambahkan kelas untuk mengelompokkan peserta."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button> : majorOptions.length === 0 ? <MajorCreateDialog /> : <ClassroomCreateDialog majors={majorOptions} />}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
                 <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-normal">{row.grade}</Badge></TableCell><TableCell><div className="flex flex-col"><span>{row.majorName}</span><span className="text-xs text-muted-foreground">{row.majorCode}</span></div></TableCell><TableCell className="tabular-nums">{row.studentCount}</TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.studentCount > 0 ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.studentCount > 0 ? "Terisi" : "Kosong"}</Badge></TableCell><TableCell className="text-right"><ClassroomRowActions classroom={row} majors={majorOptions} /></TableCell></TableRow>
               ))}
@@ -181,14 +181,14 @@ export function ClassroomManagementCard({
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginatedRows.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada kelas."}
             </div>
           ) : (
             paginatedRows.map((row) => (
-              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={row.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{row.name}</p>
@@ -222,7 +222,7 @@ export function ClassroomManagementCard({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Per halaman</span>
               <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger>
                 <SelectContent align="end">{PAGE_SIZE_OPTIONS.map((option) => <SelectItem key={option} value={String(option)}>{option}</SelectItem>)}</SelectContent>
               </Select>
             </div>

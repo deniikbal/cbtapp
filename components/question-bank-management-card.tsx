@@ -145,7 +145,7 @@ export function QuestionBankManagementCard({
             {selectedIds.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger render={<Button variant="destructive" className="gap-2" disabled={deletePending} />}>
-                  {deletePending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  {deletePending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
                   Hapus terpilih ({selectedIds.length})
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -160,7 +160,7 @@ export function QuestionBankManagementCard({
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button>
+            <Button variant="outline" className="gap-2"><Download className="size-4" aria-hidden="true" />Export</Button>
             {subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} />}
           </div>
         </div>
@@ -168,12 +168,12 @@ export function QuestionBankManagementCard({
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="relative md:col-span-5">
             <Label htmlFor="search-bank" className="sr-only">Cari bank soal</Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-bank" value={search} onChange={(event) => { setSearch(event.target.value); setCurrentPage(1) }} placeholder="Cari kode, judul, atau mapel..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
             <Select value={subjectId} onValueChange={(value) => { setSubjectId(value ?? "ALL"); setCurrentPage(1) }}>
-              <SelectTrigger className="w-full"><div className="flex items-center gap-2 truncate"><BookOpen className="size-4 text-muted-foreground" /><SelectValue>{selectedSubject ? selectedSubject.code : "Semua mapel"}</SelectValue></div></SelectTrigger>
+              <SelectTrigger className="w-full"><div className="flex items-center gap-2 truncate"><BookOpen className="size-4 text-muted-foreground" aria-hidden="true" /><SelectValue>{selectedSubject ? selectedSubject.code : "Semua mapel"}</SelectValue></div></SelectTrigger>
               <SelectContent align="start"><SelectItem value="ALL">Semua mapel</SelectItem>{subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} - {subject.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
@@ -183,29 +183,29 @@ export function QuestionBankManagementCard({
               <SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" />Reset</Button></div>
+          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
         </div>
         {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
 
       <CardContent>
-        <div className="hidden overflow-hidden rounded-lg border md:block">
+        <div className="hidden overflow-hidden rounded-lg border lg:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua bank soal di halaman ini" /></TableHead><TableHead>Bank Soal</TableHead><TableHead>Mapel / Guru</TableHead><TableHead className="text-center">Soal</TableHead><TableHead className="text-right">GForm</TableHead><TableHead className="w-28 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><FileText className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada bank soal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : subjects.length === 0 ? "Tambahkan mapel terlebih dahulu." : "Tambahkan link Google Form untuk mulai membuat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}>Reset filter</Button> : subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} />}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
-                <TableRow key={row.id} data-state={selectedIds.includes(row.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedIds.includes(row.id)} onCheckedChange={() => toggleRow(row.id)} aria-label={`Pilih ${row.code}`} /></TableCell><TableCell><div className="flex flex-col gap-0.5"><span className="font-medium">{row.title}</span><div className="flex flex-wrap items-center gap-1.5"><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge><Badge variant="outline" className="font-normal">{row.grade}</Badge><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Nonaktif"}</Badge></div></div></TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.teacherName || "Tanpa guru"}</span></div></TableCell><TableCell className="text-center"><div className="flex flex-col items-center"><span className="text-sm font-medium tabular-nums">{row.formId ? hitungSoal(row.formItems) : "-"}</span>{row.syncedAt ? <span className="text-[10px] text-muted-foreground">{new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(row.syncedAt))}</span> : null}</div></TableCell><TableCell className="text-right"><div className="flex items-center justify-end gap-0.5">{row.googleFormUrl ? <Button nativeButton={false} variant="ghost" size="icon-sm" title="Form untuk siswa" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" /></Button> : <span className="text-xs text-muted-foreground pr-1">Belum ada</span>}{row.formId && <Button nativeButton={false} variant="ghost" size="icon-sm" title="Edit form" render={<a href={`https://docs.google.com/forms/d/${row.formId}/edit`} target="_blank" rel="noreferrer" />}><FileText className="size-4" /></Button>}</div></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} teachers={teachers} /></TableCell></TableRow>
+                <TableRow key={row.id} data-state={selectedIds.includes(row.id) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedIds.includes(row.id)} onCheckedChange={() => toggleRow(row.id)} aria-label={`Pilih ${row.code}`} /></TableCell><TableCell><div className="flex flex-col gap-0.5"><span className="font-medium">{row.title}</span><div className="flex flex-wrap items-center gap-1.5"><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge><Badge variant="outline" className="font-normal">{row.grade}</Badge><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Nonaktif"}</Badge></div></div></TableCell><TableCell><div className="flex flex-col"><span>{row.subjectName}</span><span className="text-xs text-muted-foreground">{row.teacherName || "Tanpa guru"}</span></div></TableCell><TableCell className="text-center"><div className="flex flex-col items-center"><span className="text-sm font-medium tabular-nums">{row.formId ? hitungSoal(row.formItems) : "-"}</span>{row.syncedAt ? <span className="text-[10px] text-muted-foreground">{new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(row.syncedAt))}</span> : null}</div></TableCell><TableCell className="text-right"><div className="flex items-center justify-end gap-0.5">{row.googleFormUrl ? <Button nativeButton={false} variant="ghost" size="icon-sm" title="Form untuk siswa" render={<a href={row.googleFormUrl} target="_blank" rel="noreferrer" />}><LinkIcon className="size-4" aria-hidden="true" /></Button> : <span className="text-xs text-muted-foreground pr-1">Belum ada</span>}{row.formId && <Button nativeButton={false} variant="ghost" size="icon-sm" title="Edit form" render={<a href={`https://docs.google.com/forms/d/${row.formId}/edit`} target="_blank" rel="noreferrer" />}><FileText className="size-4" aria-hidden="true" /></Button>}</div></TableCell><TableCell><QuestionBankRowActions bank={row} subjects={subjects} teachers={teachers} /></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel 6 kolom di layar sempit. */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginatedRows.length === 0 ? (
-            <div className="rounded-sm border bg-card p-6 text-center text-sm text-muted-foreground shadow-sm">
+            <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
               {hasActiveFilter
                 ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau atur ulang filter."
                 : subjects.length === 0
@@ -213,7 +213,7 @@ export function QuestionBankManagementCard({
                   : "Belum ada bank soal. Tambahkan link Google Form untuk mulai membuat jadwal."}
             </div>
           ) : paginatedRows.map((row) => (
-            <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+            <div key={row.id} className="rounded-lg border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{row.title}</p>
@@ -244,8 +244,8 @@ export function QuestionBankManagementCard({
                 <div className="col-span-2">
                   <dt className="text-xs text-muted-foreground">Google Form</dt>
                   <dd className="flex flex-wrap items-center gap-3">
-                    {row.googleFormUrl ? <a href={row.googleFormUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-4 hover:underline">Form siswa <ExternalLink className="size-3" /></a> : <span className="text-muted-foreground">Belum ada</span>}
-                    {row.formId && <a href={`https://docs.google.com/forms/d/${row.formId}/edit`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-4 hover:underline">Edit form <ExternalLink className="size-3" /></a>}
+                    {row.googleFormUrl ? <a href={row.googleFormUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-4 hover:underline">Form siswa <ExternalLink className="size-3" aria-hidden="true" /></a> : <span className="text-muted-foreground">Belum ada</span>}
+                    {row.formId && <a href={`https://docs.google.com/forms/d/${row.formId}/edit`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-4 hover:underline">Edit form <ExternalLink className="size-3" aria-hidden="true" /></a>}
                   </dd>
                 </div>
               </dl>
@@ -257,7 +257,7 @@ export function QuestionBankManagementCard({
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <p className="text-sm text-muted-foreground">Menampilkan <span className="font-medium text-foreground">{from}</span>–<span className="font-medium text-foreground">{to}</span> dari <span className="font-medium text-foreground">{filteredRows.length}</span> entri</p>
-            <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Per halaman</span><Select value={String(pageSize)} onValueChange={(value) => { if (!value) return; setPageSize(Number(value)); setCurrentPage(1) }}><SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger><SelectContent align="end">{PAGE_SIZE_OPTIONS.map((option) => <SelectItem key={option} value={String(option)}>{option}</SelectItem>)}</SelectContent></Select></div>
+            <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Per halaman</span><Select value={String(pageSize)} onValueChange={(value) => { if (!value) return; setPageSize(Number(value)); setCurrentPage(1) }}><SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger><SelectContent align="end">{PAGE_SIZE_OPTIONS.map((option) => <SelectItem key={option} value={String(option)}>{option}</SelectItem>)}</SelectContent></Select></div>
           </div>
 
           {totalPages > 1 && (

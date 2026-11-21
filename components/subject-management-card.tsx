@@ -89,21 +89,21 @@ export function SubjectManagementCard({ rows }: { rows: SubjectManagementRow[] }
             </div>
             <CardDescription>Mapel dipakai untuk mengelompokkan bank soal/link Google Form.</CardDescription>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button><SubjectCreateDialog /></div>
+          <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" aria-hidden="true" />Export</Button><SubjectCreateDialog /></div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-12">
-          <div className="relative md:col-span-8"><Label htmlFor="search-subject" className="sr-only">Cari mapel</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-subject" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari nama atau kode mapel..." className="pl-8" /></div>
+          <div className="relative md:col-span-8"><Label htmlFor="search-subject" className="sr-only">Cari mapel</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input id="search-subject" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari nama atau kode mapel..." className="pl-8" /></div>
           <div className="md:col-span-2"><Select value={status} onValueChange={handleStatusChange}><SelectTrigger className="w-full"><SelectValue>{status === "ACTIVE" ? "Aktif" : status === "INACTIVE" ? "Tidak aktif" : "Semua status"}</SelectValue></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua status</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent></Select></div>
-          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" />Reset</Button></div>
+          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="hidden overflow-hidden rounded-lg border md:block">
+        <div className="hidden overflow-hidden rounded-lg border lg:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Mapel</TableHead><TableHead>Kode</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><BookOpen className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada mapel"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan mapel untuk membuat bank ujian."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <SubjectCreateDialog />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><BookOpen className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada mapel"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan mapel untuk membuat bank ujian."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button> : <SubjectCreateDialog />}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
                 <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{row.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell><TableCell><SubjectRowActions subject={row} /></TableCell></TableRow>
               ))}
@@ -112,14 +112,14 @@ export function SubjectManagementCard({ rows }: { rows: SubjectManagementRow[] }
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginatedRows.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada mapel. Tambahkan mapel untuk membuat bank ujian."}
             </div>
           ) : (
             paginatedRows.map((row) => (
-              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={row.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 truncate font-medium">{row.name}</p>
                   <Badge variant="secondary" className={cn("shrink-0 font-normal", row.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>
@@ -138,7 +138,7 @@ export function SubjectManagementCard({ rows }: { rows: SubjectManagementRow[] }
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
           <div className="flex flex-col items-center gap-3 sm:flex-row">
             <p className="text-sm text-muted-foreground">Menampilkan <span className="font-medium text-foreground">{from}</span>–<span className="font-medium text-foreground">{to}</span> dari <span className="font-medium text-foreground">{filteredRows.length}</span> entri</p>
-            <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Per halaman</span><Select value={String(pageSize)} onValueChange={handlePageSizeChange}><SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger><SelectContent align="end">{PAGE_SIZE_OPTIONS.map((option) => <SelectItem key={option} value={String(option)}>{option}</SelectItem>)}</SelectContent></Select></div>
+            <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Per halaman</span><Select value={String(pageSize)} onValueChange={handlePageSizeChange}><SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger><SelectContent align="end">{PAGE_SIZE_OPTIONS.map((option) => <SelectItem key={option} value={String(option)}>{option}</SelectItem>)}</SelectContent></Select></div>
           </div>
           {totalPages > 1 && <Pagination className="mx-0 w-auto"><PaginationContent><PaginationItem><PaginationPrevious href="#" text="Sebelumnya" className={activePage === 1 ? "pointer-events-none opacity-50" : undefined} onClick={(event) => { event.preventDefault(); setCurrentPage((page) => Math.max(1, page - 1)) }} /></PaginationItem>{pageRange.map((page, index) => page === "..." ? <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem> : <PaginationItem key={page}><PaginationLink href="#" isActive={page === activePage} onClick={(event) => { event.preventDefault(); setCurrentPage(page) }}>{page}</PaginationLink></PaginationItem>)}<PaginationItem><PaginationNext href="#" text="Berikutnya" className={activePage === totalPages ? "pointer-events-none opacity-50" : undefined} onClick={(event) => { event.preventDefault(); setCurrentPage((page) => Math.min(totalPages, page + 1)) }} /></PaginationItem></PaginationContent></Pagination>}
         </div>

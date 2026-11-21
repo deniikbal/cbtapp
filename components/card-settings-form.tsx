@@ -121,7 +121,7 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
       </div>
 
       <Button type="submit" size="sm" className="gap-2" disabled={isPending}>
-        {isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+        {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Save className="size-4" aria-hidden="true" />}
         Simpan Pengaturan Kartu
       </Button>
     </form>

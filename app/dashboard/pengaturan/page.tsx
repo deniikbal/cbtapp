@@ -41,7 +41,7 @@ export default async function PengaturanPage() {
           </section>
 
           <Alert>
-            <Smartphone className="size-4" />
+            <Smartphone className="size-4" aria-hidden="true" />
             <AlertTitle>Cara mengambil User-Agent</AlertTitle>
             <AlertDescription>
               Buka <Link href="/cek-browser" className="font-medium underline underline-offset-4">/cek-browser</Link> dari aplikasi ExamBro yang akan dipakai siswa, lalu salin keyword uniknya ke pengaturan ini.

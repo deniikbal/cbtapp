@@ -102,7 +102,7 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
       }}
     >
       <DialogTrigger render={<Button className="gap-2" disabled={disabled} />}>
-        <Plus className="size-4" />Tambah Jadwal
+        <Plus className="size-4" aria-hidden="true" />Tambah Jadwal
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
@@ -205,7 +205,7 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
             <div className="space-y-2"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan Jadwal"}</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan Jadwal"}</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

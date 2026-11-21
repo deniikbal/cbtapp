@@ -158,7 +158,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground">{lastSync ? `Diperbarui ${lastSync.toLocaleTimeString("id-ID")}` : "Otomatis tiap 2 menit"}</span>
             <Button variant="outline" size="sm" className="gap-2" onClick={refresh} disabled={refreshing}>
-              <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} />
+              <RefreshCw className={refreshing ? "size-4 animate-spin" : "size-4"} aria-hidden="true" />
               Perbarui
             </Button>
           </div>
@@ -166,30 +166,30 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="relative md:col-span-6">
             <Label htmlFor="search-progress" className="sr-only">Cari pengerjaan</Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-progress" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari bank soal, kode, atau kelas..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
             <Button variant={todayOnly ? "default" : "outline"} className="w-full gap-2" onClick={handleTodayFilterClick}>
-              <CalendarDays className="size-4" />
+              <CalendarDays className="size-4" aria-hidden="true" />
               Hari ini
             </Button>
           </div>
           <div className="md:col-span-3">
             <Button variant="outline" className="w-full gap-2" onClick={resetFilters} disabled={!hasActiveFilter}>
-              <RotateCcw className="size-4" />
+              <RotateCcw className="size-4" aria-hidden="true" />
               Reset
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <div className="hidden overflow-x-auto rounded-lg border lg:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Jadwal</TableHead><TableHead className="text-center">Target</TableHead><TableHead className="text-center">Belum</TableHead><TableHead className="text-center">Sedang</TableHead><TableHead className="text-center">Selesai</TableHead><TableHead>Progress</TableHead><TableHead className="w-20 text-right">Detail</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada data pengerjaan"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Data akan muncul setelah jadwal dibuat dan siswa mulai mengerjakan."}</p></div>{hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button>}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada data pengerjaan"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Data akan muncul setelah jadwal dibuat dan siswa mulai mengerjakan."}</p></div>{hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button>}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
                 <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell className="whitespace-normal min-w-44"><div className="flex flex-col"><span className="font-medium">{row.title}</span><span className="font-mono text-xs text-muted-foreground">{row.code} • {row.subjectCode}</span></div></TableCell><TableCell><Badge variant="outline" className="font-normal">{row.className}</Badge><p className="text-xs text-muted-foreground">{row.majorCode}</p></TableCell><TableCell><div className="flex flex-col"><span>{formatDate(row.examDate)}</span><span className="text-xs text-muted-foreground">{row.startTime.slice(0, 5)} • {row.durationMinutes} mnt</span></div></TableCell><TableCell className="text-center tabular-nums">{row.totalStudents}</TableCell><TableCell className="text-center tabular-nums">{row.notStarted}</TableCell><TableCell className="text-center tabular-nums">{row.started}</TableCell><TableCell className="text-center tabular-nums">{row.submitted}</TableCell><TableCell><div className="flex items-center gap-2"><div className="h-2 w-24 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${row.percent}%` }} /></div><span className="text-xs tabular-nums text-muted-foreground">{row.percent}%</span></div></TableCell><TableCell className="text-right"><ProgressDetailDialog title={row.title} className={row.className} students={row.students} /></TableCell></TableRow>
               ))}
@@ -198,18 +198,18 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel 10 kolom di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {filteredRows.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-sm border bg-card p-4 text-center text-muted-foreground shadow-sm">
-              <div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" /></div>
+            <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-4 text-center text-muted-foreground">
+              <div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" aria-hidden="true" /></div>
               <div className="space-y-1">
                 <div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada data pengerjaan"}</div>
                 <p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Data akan muncul setelah jadwal dibuat dan siswa mulai mengerjakan."}</p>
               </div>
-              {hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button>}
+              {hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button>}
             </div>
           ) : paginatedRows.map((row) => (
-            <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+            <div key={row.id} className="rounded-lg border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{row.title}</p>
@@ -261,7 +261,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Per halaman</span>
               <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger>
                 <SelectContent align="end">{PAGE_SIZE_OPTIONS.map((opt) => <SelectItem key={opt} value={String(opt)}>{opt}</SelectItem>)}</SelectContent>
               </Select>
             </div>

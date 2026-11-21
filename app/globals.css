@@ -155,6 +155,15 @@
   html {
     @apply font-sans;
   }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 /* Kartu ujian: A4, 4 x 8 = 32 kartu per lembar, border 1pt penuh + jarak antar kartu. */
 @media print {

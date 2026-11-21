@@ -125,14 +125,14 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
       <CardHeader className="gap-3 pb-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2 text-base">
-            <UserRound className="size-4 text-muted-foreground" />
+            <UserRound className="size-4 text-muted-foreground" aria-hidden="true" />
             Data Guru
           </CardTitle>
           <CardDescription>{teachers.length} guru terdaftar. Password dipakai untuk login guru.</CardDescription>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               placeholder="Cari nama, NIP, NUPTK..."
               className="pl-9 sm:w-64"
@@ -141,7 +141,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
             />
           </div>
           <Button className="gap-2" onClick={() => { setError(null); setCreateOpen(true) }}>
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-hidden="true" />
             Tambah Guru
           </Button>
         </div>
@@ -151,7 +151,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
           <p className="text-sm text-destructive" role="alert">{error}</p>
         )}
 
-        <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <div className="hidden overflow-x-auto rounded-lg border lg:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -209,19 +209,19 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                          <MoreHorizontal className="size-4" />
+                          <MoreHorizontal className="size-4" aria-hidden="true" />
                           <span className="sr-only">Aksi guru</span>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setError(null); setEditTarget(teacher) }}>
-                            <Edit className="size-4" />
+                            <Edit className="size-4" aria-hidden="true" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => { setError(null); setDeleteTarget(teacher) }}
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-4" aria-hidden="true" />
                             Hapus
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -235,14 +235,14 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginatedRows.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               Tidak ada data guru yang cocok.
             </div>
           ) : (
             paginatedRows.map((teacher) => (
-              <div key={teacher.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={teacher.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 truncate font-medium">{teacher.name}</p>
                   <Badge variant={teacher.active ? "secondary" : "outline"} className="shrink-0">
@@ -278,19 +278,19 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                 <div className="mt-3 flex justify-end border-t pt-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
-                      <MoreHorizontal className="size-4" />
+                      <MoreHorizontal className="size-4" aria-hidden="true" />
                       <span className="sr-only">Aksi guru</span>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => { setError(null); setEditTarget(teacher) }}>
-                        <Edit className="size-4" />
+                        <Edit className="size-4" aria-hidden="true" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => { setError(null); setDeleteTarget(teacher) }}
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-4" aria-hidden="true" />
                         Hapus
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -316,7 +316,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                 setCurrentPage(1)
               }}
             >
-              <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+              <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger>
               <SelectContent align="end">
                 {PAGE_SIZE_OPTIONS.map((option) => (
                   <SelectItem key={option} value={String(option)}>{option}</SelectItem>
@@ -433,7 +433,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                 Batal
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                 {isPending ? "Menyimpan..." : "Simpan"}
               </Button>
             </DialogFooter>
@@ -516,7 +516,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                   Batal
                 </Button>
                 <Button type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="size-4 animate-spin" />}
+                  {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                   {isPending ? "Menyimpan..." : "Simpan"}
                 </Button>
               </DialogFooter>
@@ -532,7 +532,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia>
-              <Trash2 className="size-5" />
+              <Trash2 className="size-5" aria-hidden="true" />
             </AlertDialogMedia>
             <AlertDialogTitle>Hapus guru?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -547,7 +547,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
               disabled={isPending}
               onClick={handleDelete}
             >
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>

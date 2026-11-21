@@ -93,7 +93,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
   return (
     <div className="flex justify-end gap-1.5">
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" /><span className="sr-only">Edit bank soal</span></DialogTrigger>
+        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" aria-hidden="true" /><span className="sr-only">Edit bank soal</span></DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Edit Bank Soal</DialogTitle><DialogDescription>Kode dan judul dibuat otomatis. Ubah mapel, guru, link, atau status.</DialogDescription></DialogHeader>
           <form action={handleUpdate} className="space-y-4">
@@ -108,45 +108,47 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
             <div className="space-y-2"><Label htmlFor={`formid-${bank.id}`}>Form ID (sync hasil)</Label><Input id={`formid-${bank.id}`} name="formId" defaultValue={bank.formId} placeholder="tempel link /d/…/edit atau ID-nya" /><p className="text-xs text-muted-foreground">Ambil dari URL saat form dibuka lewat tombol Edit. Link viewform/forms.gle tidak bisa dipakai.</p></div>
             <div className="space-y-2"><Label htmlFor={`active-${bank.id}`}>Status</Label><Select name="active" defaultValue={String(bank.active)}><SelectTrigger id={`active-${bank.id}`} className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
+            <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       <Button
               variant="ghost"
               size="icon-sm"
+              className="size-11 sm:size-6"
               disabled={!bank.formId || isPending}
               title={bank.formId ? "Sinkron jumlah soal dari Google" : "Buat form dulu"}
               onClick={handleSinkron}
             >
-              {isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+              {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}
               <span className="sr-only">Sinkron jumlah soal</span>
             </Button>
             <Button
               nativeButton={false}
               variant="ghost"
               size="icon-sm"
+              className="size-11 sm:size-6"
               disabled={!bank.formId}
               title={bank.formId ? "Impor soal dari Word" : "Buat form dulu"}
               render={<Link href={`/dashboard/bank-soal/impor?bank=${bank.id}`} />}
             >
-              <FileUp className="size-4" />
+              <FileUp className="size-4" aria-hidden="true" />
               <span className="sr-only">Impor soal dari Word</span>
             </Button>
       <AlertDialog open={buatOpen} onOpenChange={setBuatOpen}>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" disabled={Boolean(bank.formId)} title={bank.formId ? "Sudah punya form" : "Buat form kosong"} />}><FilePlus2 className="size-4" /><span className="sr-only">Buat form kosong</span></AlertDialogTrigger>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" disabled={Boolean(bank.formId)} title={bank.formId ? "Sudah punya form" : "Buat form kosong"} />}><FilePlus2 className="size-4" aria-hidden="true" /><span className="sr-only">Buat form kosong</span></AlertDialogTrigger>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogMedia><FilePlus2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Buat form kosong?</AlertDialogTitle><AlertDialogDescription>Form baru berjudul “{bank.code} | {bank.title}” dibuat di akun Google sekolah (akun pemilik token) dalam <span className="font-medium">mode kuis</span>, sudah berisi butir wajib <span className="font-medium">NIS, Nama Lengkap, Kelas</span>, dan bagian kosong “Soal” untuk diisi guru. Yang disimpan ke bank soal: Form ID dan link siswa (viewform).</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogMedia><FilePlus2 className="size-5" aria-hidden="true" /></AlertDialogMedia><AlertDialogTitle>Buat form kosong?</AlertDialogTitle><AlertDialogDescription>Form baru berjudul “{bank.code} | {bank.title}” dibuat di akun Google sekolah (akun pemilik token) dalam <span className="font-medium">mode kuis</span>, sudah berisi butir wajib <span className="font-medium">NIS, Nama Lengkap, Kelas</span>, dan bagian kosong “Soal” untuk diisi guru. Yang disimpan ke bank soal: Form ID dan link siswa (viewform).</AlertDialogDescription></AlertDialogHeader>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction disabled={isPending} onClick={handleBuatForm}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Membuat..." : "Buat form"}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction disabled={isPending} onClick={handleBuatForm}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Membuat..." : "Buat form"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}><Trash2 className="size-4" /><span className="sr-only">Hapus bank soal</span></AlertDialogTrigger>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" />}><Trash2 className="size-4" aria-hidden="true" /><span className="sr-only">Hapus bank soal</span></AlertDialogTrigger>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Hapus bank soal?</AlertDialogTitle><AlertDialogDescription>Bank soal “{bank.title}” akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" aria-hidden="true" /></AlertDialogMedia><AlertDialogTitle>Hapus bank soal?</AlertDialogTitle><AlertDialogDescription>Bank soal “{bank.title}” akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

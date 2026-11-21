@@ -36,7 +36,7 @@ export function ExamScheduleStatusSwitch({
 
   return (
     <div className="flex justify-end">
-      <Switch checked={checked} onCheckedChange={handleChange} disabled={isPending} aria-label="Ubah status jadwal" />
+      <Switch checked={checked} onCheckedChange={handleChange} disabled={isPending} aria-label="Ubah status jadwal" className="relative after:absolute after:-inset-x-3 after:-inset-y-3.5 after:content-[''] sm:after:hidden" />
     </div>
   )
 }

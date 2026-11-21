@@ -76,14 +76,14 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
           {rooms.length} ruangan • {belumDitempatkan} dari {students.length} siswa belum ditempatkan
         </p>
         <Button onClick={() => { setNamaBaru(""); setTambahTerbuka(true) }} disabled={pending}>
-          <Plus className="size-4" /> Tambah Ruangan
+          <Plus className="size-4" aria-hidden="true" /> Tambah Ruangan
         </Button>
       </div>
 
       {rooms.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-            <DoorOpen className="size-8 text-muted-foreground" />
+            <DoorOpen className="size-8 text-muted-foreground" aria-hidden="true" />
             <p className="font-medium">Belum ada ruangan</p>
             <p className="max-w-md text-sm text-muted-foreground">
               Buat ruangan ujian lalu tempatkan siswa dari kelas mana pun, satu ruangan boleh berisi kelas campuran.
@@ -98,7 +98,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <DoorOpen className="size-4" />
+                      <DoorOpen className="size-4" aria-hidden="true" />
                     </div>
                     <div>
                       <p className="font-semibold leading-tight">{room.name}</p>
@@ -106,11 +106,11 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="size-8" aria-label={`Ubah ${room.name}`} onClick={() => { setEditTarget(room); setNamaEdit(room.name) }}>
-                      <Pencil className="size-4" />
+                    <Button variant="ghost" size="icon" className="size-11 sm:size-8" aria-label={`Ubah ${room.name}`} onClick={() => { setEditTarget(room); setNamaEdit(room.name) }}>
+                      <Pencil className="size-4" aria-hidden="true" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="size-8 text-destructive" aria-label={`Hapus ${room.name}`} onClick={() => setHapusTarget(room)}>
-                      <Trash2 className="size-4" />
+                    <Button variant="ghost" size="icon" className="size-11 text-destructive sm:size-8" aria-label={`Hapus ${room.name}`} onClick={() => setHapusTarget(room)}>
+                      <Trash2 className="size-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
                 )}
 
                 <Button variant="outline" className="w-full" onClick={() => setKelolaTarget(room)}>
-                  <Users className="size-4" /> Kelola Siswa
+                  <Users className="size-4" aria-hidden="true" /> Kelola Siswa
                 </Button>
               </CardContent>
             </Card>
@@ -300,7 +300,7 @@ function KelolaRuanganDialog({
                 disabled={pending || dipilihTambah.size === 0}
                 onClick={() => { onTambah([...dipilihTambah]); setDipilihTambah(new Set()) }}
               >
-                <Plus className="size-4" /> Masukkan ({dipilihTambah.size})
+                <Plus className="size-4" aria-hidden="true" /> Masukkan ({dipilihTambah.size})
               </Button>
             </div>
             <Select value={kelasDipilih} onValueChange={(v) => { setKelasDipilih(v ?? ""); setDipilihTambah(new Set()) }}>

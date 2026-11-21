@@ -54,7 +54,7 @@ export function QuestionBankCreateDialog({
       }}
     >
       <DialogTrigger render={<Button className="gap-2" disabled={subjects.length === 0} />}>
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden="true" />
         Tambah Bank Soal
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -115,7 +115,7 @@ export function QuestionBankCreateDialog({
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

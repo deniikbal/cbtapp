@@ -56,7 +56,7 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
     <div className="flex justify-end gap-1.5">
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
-          <Edit className="size-4" />
+          <Edit className="size-4" aria-hidden="true" />
           <span className="sr-only">Edit mapel</span>
         </DialogTrigger>
         <DialogContent>
@@ -88,20 +88,20 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
             {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button>
-              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
+              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}>
-          <Trash2 className="size-4" />
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" />}>
+          <Trash2 className="size-4" aria-hidden="true" />
           <span className="sr-only">Hapus mapel</span>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia>
+            <AlertDialogMedia><Trash2 className="size-5" aria-hidden="true" /></AlertDialogMedia>
             <AlertDialogTitle>Hapus mapel?</AlertDialogTitle>
             <AlertDialogDescription>Mapel “{subject.name}” akan dihapus permanen.</AlertDialogDescription>
           </AlertDialogHeader>
@@ -109,7 +109,7 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>

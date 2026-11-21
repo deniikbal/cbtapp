@@ -87,21 +87,21 @@ export default async function JurusanPage() {
                   <div className="flex items-center gap-2"><CardTitle>Daftar Jurusan</CardTitle><Badge variant="secondary" className="font-normal">{rows.length} hasil</Badge></div>
                   <CardDescription>Kelola nama dan kode jurusan untuk relasi kelas.</CardDescription>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" />Export</Button><MajorCreateDialog /></div>
+                <div className="flex flex-col gap-2 sm:flex-row md:shrink-0"><Button variant="outline" className="gap-2"><Download className="size-4" aria-hidden="true" />Export</Button><MajorCreateDialog /></div>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-12">
-                <div className="relative md:col-span-8"><Label htmlFor="search-major" className="sr-only">Cari jurusan</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="search-major" placeholder="Cari nama atau kode jurusan..." className="pl-8" /></div>
+                <div className="relative md:col-span-8"><Label htmlFor="search-major" className="sr-only">Cari jurusan</Label><Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" /><Input id="search-major" placeholder="Cari nama atau kode jurusan..." className="pl-8" /></div>
                 <div className="md:col-span-2"><Select defaultValue="ALL"><SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger><SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="USED">Terpakai</SelectItem><SelectItem value="EMPTY">Belum terpakai</SelectItem></SelectContent></Select></div>
-                <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" />Reset</Button></div>
+                <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="hidden overflow-x-auto rounded-lg border md:block">
+              <div className="hidden overflow-x-auto rounded-lg border lg:block">
                 <Table>
                   <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Jurusan</TableHead><TableHead>Kode</TableHead><TableHead>Total Kelas</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {rows.length === 0 ? (
-                      <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><Building2 className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada jurusan</div><p className="text-sm">Tambahkan jurusan sebelum membuat kelas.</p></div><MajorCreateDialog /></div></TableCell></TableRow>
+                      <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><Building2 className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">Belum ada jurusan</div><p className="text-sm">Tambahkan jurusan sebelum membuat kelas.</p></div><MajorCreateDialog /></div></TableCell></TableRow>
                     ) : rows.map((row, index) => (
                       <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{index + 1}</TableCell><TableCell className="font-medium">{row.name}</TableCell><TableCell><Badge variant="outline" className="font-mono font-normal">{row.code}</Badge></TableCell><TableCell className="tabular-nums">{row.classCount}</TableCell><TableCell><Badge variant="secondary" className={cn("font-normal", row.classCount > 0 ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.classCount > 0 ? "Terpakai" : "Belum terpakai"}</Badge></TableCell><TableCell className="text-right"><MajorRowActions major={row} /></TableCell></TableRow>
                     ))}
@@ -110,10 +110,10 @@ export default async function JurusanPage() {
               </div>
 
               {/* Daftar kartu mobile: pengganti tabel 6 kolom di layar sempit (R-03). */}
-              <div className="space-y-3 md:hidden">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
                 {rows.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 rounded-sm border bg-card p-4 text-center text-muted-foreground shadow-sm">
-                    <div className="rounded-full bg-muted p-4"><Building2 className="size-7" /></div>
+                  <div className="flex flex-col items-center gap-3 rounded-lg border bg-card p-4 text-center text-muted-foreground">
+                    <div className="rounded-full bg-muted p-4"><Building2 className="size-7" aria-hidden="true" /></div>
                     <div className="space-y-1">
                       <div className="font-medium text-foreground">Belum ada jurusan</div>
                       <p className="text-sm">Tambahkan jurusan sebelum membuat kelas.</p>
@@ -121,7 +121,7 @@ export default async function JurusanPage() {
                     <MajorCreateDialog />
                   </div>
                 ) : rows.map((row, index) => (
-                  <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                  <div key={row.id} className="rounded-lg border bg-card p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate font-medium">{row.name}</p>

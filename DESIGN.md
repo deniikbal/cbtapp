@@ -6,19 +6,20 @@ Design Read: aplikasi ujian sekolah untuk guru dan panitia, bahasa visual instit
 Tenang, rapi, dan berwarna. Warna dipakai untuk menandai jenis data (bank soal, jadwal, hasil), bukan hiasan. Tidak ada gradien, glow, orb, atau pola latar.
 
 ## Palet
-- `--brand` oklch(0.3616 0.0689 166.5) hijau tua sekolah, header dan blok utama. Teks di atasnya putih.
-- `--token-jadwal` oklch(0.4244 0.1202 254.6) biru, hanya untuk metrik jadwal ujian.
-- `--token-respons` oklch(0.4551 0.0985 62.3) amber tua, hanya untuk metrik respons masuk.
+- `--primary` lime oklch(0.768 0.233 130.85) dipilih pemilik aplikasi sebagai warna aksi dan fokus. Alasan: identitas sekolah yang segar dan mudah dikenali di semua halaman, termasuk login.
+- `--color-brand` hijau oklch(0.453 0.124 130.933) tetap dipakai untuk header dan blok identitas sekolah, dibedakan dari lime aksi.
+- `--color-token-jadwal` biru oklch(0.4244 0.1202 254.6), hanya untuk metrik jadwal ujian.
+- `--color-token-respons` amber oklch(0.4551 0.0985 62.3), hanya untuk metrik respons masuk.
 - Netral: background, card, muted dari tema shadcn yang sudah ada.
-- Status hasil: emerald (mencapai KKM) dan amber (di bawah KKM), hanya pada angka rata-rata.
+- Merah hanya untuk aksi destruktif, amber/rose hanya untuk peringatan. Maknanya fungsional, bukan dekorasi.
 
-Batas: maksimal 3 warna brand + netral. Warna tidak boleh mengulang label teks.
+Batas: maksimal 3 warna inti + netral. Warna tidak boleh mengulang label teks.
 
 ## Tipografi
 Outfit (bawaan tema), 11-14px untuk data padat, 16px untuk judul halaman. Tanpa uppercase ber-tracking lebar.
 
 ## Radius dan jarak
-Radius `rounded-sm` (4.8px) untuk kartu, input, tombol, badge. Jarak antar blok `gap-1.5` sampai `gap-2`, padding kartu `px-2.5 py-1.5`.
+Dua tingkat radius, masing-masing punya alasan: `rounded-lg` untuk panel, wrapper tabel, kartu data, dan seksi dialog karena membungkus sekelompok informasi; `rounded-sm` untuk tombol, input, badge, dan kartu data padat karena berisi kontrol atau satu baris fakta. Jarak antar blok `gap-1.5` sampai `gap-3`, padding kartu data `p-4`.
 
 ## Ikon
 Lucide yang relevan domain (BookOpen, CalendarDays, ClipboardList, ExternalLink, LogOut), selalu `aria-hidden`. Dilarang Sparkles, Star, Rocket, Magic, Lightning, Diamond, Orb, Robot.

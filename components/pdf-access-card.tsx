@@ -101,7 +101,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
             <Label htmlFor="search-akses-pdf" className="sr-only">
               Cari guru
             </Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               id="search-akses-pdf"
               value={search}
@@ -135,7 +135,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
           </div>
           <div className="md:col-span-3">
             <Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}>
-              <RotateCcw className="size-4" />
+              <RotateCcw className="size-4" aria-hidden="true" />
               Reset
             </Button>
           </div>
@@ -143,7 +143,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-hidden rounded-lg border">
+        <div className="hidden overflow-hidden rounded-lg border lg:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -161,7 +161,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                   <TableCell colSpan={6} className="h-48 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                       <div className="rounded-full bg-muted p-4">
-                        <Search className="size-7" />
+                        <Search className="size-7" aria-hidden="true" />
                       </div>
                       <div className="space-y-1">
                         <div className="font-medium text-foreground">
@@ -175,7 +175,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                       </div>
                       {hasActiveFilter && (
                         <Button size="sm" variant="outline" onClick={resetFilters}>
-                          <RotateCcw className="size-4" />
+                          <RotateCcw className="size-4" aria-hidden="true" />
                           Reset filter
                         </Button>
                       )}
@@ -216,9 +216,9 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                           onClick={() => ubah(row.id, true)}
                         >
                           {pendingId === row.id ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                           ) : (
-                            <Check className="size-4" />
+                            <Check className="size-4" aria-hidden="true" />
                           )}
                           <span className="sr-only">Aktifkan</span>
                         </Button>
@@ -230,7 +230,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                           disabled={pendingId === row.id || row.status === "belum"}
                           onClick={() => ubah(row.id, false)}
                         >
-                          <X className="size-4" />
+                          <X className="size-4" aria-hidden="true" />
                           <span className="sr-only">Tolak</span>
                         </Button>
                       </div>
@@ -243,14 +243,14 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginated.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               Belum ada pengajuan akses PDF.
             </div>
           ) : (
             paginated.map((row) => (
-              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={row.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar className="size-8">
@@ -277,7 +277,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                     disabled={pendingId === row.id || row.status === "aktif"}
                     onClick={() => ubah(row.id, true)}
                   >
-                    {pendingId === row.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                    {pendingId === row.id ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
                     <span className="sr-only">Aktifkan</span>
                   </Button>
                   <Button
@@ -288,7 +288,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                     disabled={pendingId === row.id || row.status === "belum"}
                     onClick={() => ubah(row.id, false)}
                   >
-                    <X className="size-4" />
+                    <X className="size-4" aria-hidden="true" />
                     <span className="sr-only">Tolak</span>
                   </Button>
                 </div>
@@ -314,7 +314,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                   setCurrentPage(1)
                 }}
               >
-                <SelectTrigger className="h-8 w-[80px]">
+                <SelectTrigger className="h-11 w-[80px] sm:h-8">
                   <span>{pageSize}</span>
                 </SelectTrigger>
                 <SelectContent align="end">

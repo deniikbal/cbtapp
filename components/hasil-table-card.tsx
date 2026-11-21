@@ -93,7 +93,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         <CardDescription>Satu baris = satu bank soal (satu Google Form); respons semua kelas yang dijadwalkan digabung.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <div className="hidden overflow-x-auto rounded-lg border lg:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -129,7 +129,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">{row.examDate} · {row.startTime.slice(0, 5)}</TableCell>
                 <TableCell className="text-center tabular-nums">
-                  {row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" />tanpa Form ID</Badge>}
+                  {row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" aria-hidden="true" />tanpa Form ID</Badge>}
                 </TableCell>
                 <TableCell className="text-center tabular-nums">{row.respons}</TableCell>
                 <TableCell className="text-center tabular-nums">{row.rataRata === null ? "-" : row.rataRata.toFixed(1)}</TableCell>
@@ -146,15 +146,15 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                 <TableCell>
                   <div className="flex justify-end gap-1.5">
                     <Button variant="ghost" size="icon-sm" disabled={!row.adaFormId || pendingId === row.id} onClick={() => handleSync(row)} title="Sync hasil">
-                      {pendingId === row.id ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                      {pendingId === row.id ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}
                       <span className="sr-only">Sync hasil</span>
                     </Button>
                     <Button variant="ghost" size="icon-sm" disabled={!row.respons || pendingId === row.id} onClick={() => handleDetail(row)} title="Rincian jawaban">
-                      <FileSearch className="size-4" />
+                      <FileSearch className="size-4" aria-hidden="true" />
                       <span className="sr-only">Rincian jawaban</span>
                     </Button>
                     <Button variant="ghost" size="icon-sm" disabled={!row.respons || pendingId === row.id} onClick={() => handleAnalisis(row)} title="Analisis butir soal">
-                      <ChartColumn className="size-4" />
+                      <ChartColumn className="size-4" aria-hidden="true" />
                       <span className="sr-only">Analisis butir soal</span>
                     </Button>
                   </div>
@@ -166,11 +166,11 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel 8 kolom di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {rows.length === 0 ? (
-            <div className="rounded-sm border bg-card p-4 text-center text-sm text-muted-foreground shadow-sm">Belum ada bank soal yang dijadwalkan.</div>
+            <div className="rounded-lg border bg-card p-4 text-center text-sm text-muted-foreground">Belum ada bank soal yang dijadwalkan.</div>
           ) : rows.map((row) => (
-            <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+            <div key={row.id} className="rounded-lg border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{row.code}</p>
@@ -190,7 +190,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Soal Dinilai</dt>
-                  <dd className="tabular-nums">{row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" />tanpa Form ID</Badge>}</dd>
+                  <dd className="tabular-nums">{row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" aria-hidden="true" />tanpa Form ID</Badge>}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Respons</dt>
@@ -208,15 +208,15 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
 
               <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
                 <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.adaFormId || pendingId === row.id} onClick={() => handleSync(row)} title="Sync hasil">
-                  {pendingId === row.id ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                  {pendingId === row.id ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}
                   <span className="sr-only">Sync hasil</span>
                 </Button>
                 <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.respons || pendingId === row.id} onClick={() => handleDetail(row)} title="Rincian jawaban">
-                  <FileSearch className="size-4" />
+                  <FileSearch className="size-4" aria-hidden="true" />
                   <span className="sr-only">Rincian jawaban</span>
                 </Button>
                 <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.respons || pendingId === row.id} onClick={() => handleAnalisis(row)} title="Analisis butir soal">
-                  <ChartColumn className="size-4" />
+                  <ChartColumn className="size-4" aria-hidden="true" />
                   <span className="sr-only">Analisis butir soal</span>
                 </Button>
               </div>
@@ -259,7 +259,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                         const v = s.sel[q.qid]
                         return (
                           <TableCell key={q.qid} className="text-center">
-                            {v === "benar" ? <span className="text-lime-600">✓</span> : v === "salah" ? <span className="text-destructive">✗</span> : <span className="text-muted-foreground">—</span>}
+                            {v === "benar" ? <span className="text-lime-600">✓</span> : v === "salah" ? <span className="text-destructive">✗</span> : <span className="text-muted-foreground">-</span>}
                           </TableCell>
                         )
                       })}

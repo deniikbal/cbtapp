@@ -59,7 +59,7 @@ export function StudentImportDialog() {
       }}
     >
       <DialogTrigger render={<Button variant="outline" className="gap-2" />}>
-        <Upload className="size-4" />
+        <Upload className="size-4" aria-hidden="true" />
         Import
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
@@ -75,7 +75,7 @@ export function StudentImportDialog() {
           </div>
 
           <Button nativeButton={false} type="button" variant="outline" className="w-full gap-2" render={<a href="/templates/import-peserta.xlsx" download />}>
-            <Download className="size-4" />
+            <Download className="size-4" aria-hidden="true" />
             Download Template Excel
           </Button>
 
@@ -96,7 +96,7 @@ export function StudentImportDialog() {
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Mengimport..." : "Import Peserta"}</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Mengimport..." : "Import Peserta"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

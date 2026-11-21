@@ -176,7 +176,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
             {selectedGroups.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger render={<Button variant="destructive" className="gap-2" disabled={deletePending} />}>
-                  {deletePending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  {deletePending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
                   Hapus terpilih ({selectedScheduleIds.length})
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -197,7 +197,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="relative md:col-span-4">
             <Label htmlFor="search-schedule" className="sr-only">Cari jadwal</Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-schedule" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari kode, judul, atau kelas..." className="pl-8" />
           </div>
           <div className="md:col-span-2">
@@ -215,18 +215,18 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
               <SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2"><Button variant={todayOnly ? "default" : "outline"} className="w-full gap-2" onClick={handleTodayFilterClick}><CalendarDays className="size-4" />Hari ini</Button></div>
-          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" onClick={resetFilters} disabled={!hasActiveFilter}><RotateCcw className="size-4" />Reset</Button></div>
+          <div className="md:col-span-2"><Button variant={todayOnly ? "default" : "outline"} className="w-full gap-2" onClick={handleTodayFilterClick}><CalendarDays className="size-4" aria-hidden="true" />Hari ini</Button></div>
+          <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" onClick={resetFilters} disabled={!hasActiveFilter}><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
         </div>
         {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
       <CardContent>
-        <div className="hidden overflow-x-auto rounded-lg border md:block">
+        <div className="hidden overflow-x-auto rounded-lg border lg:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua jadwal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Status</TableHead><TableHead>Respons</TableHead><TableHead className="w-24 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filteredRows.length === 0 ? (
-                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
+                <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><CalendarDays className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada jadwal"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan bank soal dan kelas terlebih dahulu, lalu buat jadwal."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button> : <ExamScheduleCreateDialog banks={banks} classrooms={sortedClassrooms} />}</div></TableCell></TableRow>
               ) : (
                 paginatedRows.map((group, index) => <TableRow key={group.key} data-state={selectedKeys.includes(group.key) ? "selected" : undefined} className="transition-colors data-[state=selected]:bg-muted/60 hover:bg-muted/40"><TableCell><Checkbox checked={selectedKeys.includes(group.key)} onCheckedChange={() => toggleGroup(group.key)} aria-label={`Pilih ${group.title}`} /></TableCell><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell className="whitespace-normal min-w-44"><div className="flex flex-col"><span className="font-medium">{group.title}</span><span className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</span></div></TableCell><TableCell><Popover><PopoverTrigger render={<Button variant="outline" size="sm" className="h-8 font-normal" />}>{group.rows.length} kelas</PopoverTrigger><PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent></Popover></TableCell><TableCell><div className="flex flex-wrap items-center gap-1.5">{formatDate(group.examDate)}{group.status === "berlangsung" && <Badge className="border-token-respons bg-transparent px-1.5 text-[10px] font-normal text-amber-700">Live</Badge>}</div></TableCell><TableCell><div className="flex items-center gap-1.5">{group.startTime.slice(0, 5)}<Badge variant="outline" className="font-normal">Sesi {group.session ?? 1}</Badge></div></TableCell><TableCell>{group.durationMinutes} mnt</TableCell><TableCell><ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} /></TableCell><TableCell><div className="flex flex-col leading-tight"><span className="text-sm font-medium tabular-nums">{group.respons}/{group.peserta}</span><span className="text-xs text-muted-foreground">{group.syncedAt ? `sync ${relWaktu(group.syncedAt)}` : "belum sync"}</span></div></TableCell><TableCell><div className="flex justify-end gap-1.5"><ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} /></div></TableCell></TableRow>)
               )}
@@ -235,14 +235,14 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {paginatedRows.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada jadwal."}
             </div>
           ) : (
             paginatedRows.map((group) => (
-              <div key={group.key} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={group.key} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{group.title}</p>

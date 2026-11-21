@@ -88,10 +88,10 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
             <span className="font-mono text-2xl font-bold tracking-[0.3em]">{code || "----"}</span>
           </div>
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleCopy} disabled={!code}>
-            <Copy className="size-3.5" /> Salin
+            <Copy className="size-3.5" aria-hidden="true" /> Salin
           </Button>
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            {isGenerating ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-3.5" aria-hidden="true" />}
             Generate Kode Baru
           </Button>
         </div>
@@ -134,7 +134,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
           Dipakai kalau kotak di atas tidak dicentang: email ini diberi akses EDITOR ke setiap Google Form yang dibuat otomatis dari bank soal. Pisahkan dengan baris baru atau koma.
         </p>
         <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={isSharing || isPending} onClick={handleShare}>
-          {isSharing ? <Loader2 className="size-3.5 animate-spin" /> : <Share2 className="size-3.5" />}
+          {isSharing ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Share2 className="size-3.5" aria-hidden="true" />}
           Bagikan akses ke semua form yang sudah ada
         </Button>
       </div>
@@ -148,7 +148,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button nativeButton={false} variant="outline" className="gap-2" disabled={isPending} render={<Link href="/cek-browser" />}>Cek User-Agent</Button>
-        <Button type="submit" className="gap-2" disabled={isPending}>{isPending ? <Loader2 className="size-4 animate-spin" /> : <Settings className="size-4" />}{isPending ? "Menyimpan..." : "Simpan Pengaturan"}</Button>
+        <Button type="submit" className="gap-2" disabled={isPending}>{isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Settings className="size-4" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan Pengaturan"}</Button>
       </div>
     </form>
   )

@@ -100,16 +100,16 @@ export function StudentRowActions({
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
-            <MoreHorizontal className="size-4" />
+            <MoreHorizontal className="size-4" aria-hidden="true" />
             <span className="sr-only">Aksi peserta</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setEditOpen(true)}>
-              <Edit className="size-4" />
+              <Edit className="size-4" aria-hidden="true" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteOpen(true)}>
-              <Trash2 className="size-4" />
+              <Trash2 className="size-4" aria-hidden="true" />
               Hapus
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -218,7 +218,7 @@ export function StudentRowActions({
                 Batal
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                 {isPending ? "Menyimpan..." : "Simpan"}
               </Button>
             </DialogFooter>
@@ -230,7 +230,7 @@ export function StudentRowActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia>
-              <Trash2 className="size-5" />
+              <Trash2 className="size-5" aria-hidden="true" />
             </AlertDialogMedia>
             <AlertDialogTitle>Hapus peserta?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -245,7 +245,7 @@ export function StudentRowActions({
               disabled={isPending}
               onClick={handleDelete}
             >
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>

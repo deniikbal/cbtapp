@@ -34,7 +34,7 @@ export function SubjectCreateDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button className="gap-2" />}>
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden="true" />
         Tambah Mapel
       </DialogTrigger>
       <DialogContent>
@@ -66,7 +66,7 @@ export function SubjectCreateDialog() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
+            <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

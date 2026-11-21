@@ -26,7 +26,7 @@ export function SeedMasterDataButton() {
         })
       }
     >
-      {isPending ? <Loader2 className="size-4 animate-spin" /> : <Database className="size-4" />}
+      {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Database className="size-4" aria-hidden="true" />}
       Buat Data Awal
     </Button>
   )

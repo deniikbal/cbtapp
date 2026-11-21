@@ -89,7 +89,7 @@ export function StudentNisImportDialog() {
       }}
     >
       <DialogTrigger render={<Button variant="outline" className="gap-2" />}>
-        <RefreshCw className="size-4" />
+        <RefreshCw className="size-4" aria-hidden="true" />
         Update NIS
       </DialogTrigger>
       <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto overflow-x-hidden sm:max-w-3xl">
@@ -105,7 +105,7 @@ export function StudentNisImportDialog() {
           </div>
 
           <Button nativeButton={false} type="button" variant="outline" className="w-full gap-2" render={<a href="/dashboard/peserta/template-update-nis" download />}>
-            <Download className="size-4" />
+            <Download className="size-4" aria-hidden="true" />
             Download Template dari Data Peserta
           </Button>
 
@@ -120,11 +120,11 @@ export function StudentNisImportDialog() {
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Card size="sm" className="border-lime-500/20 bg-lime-500/5">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-lime-700 dark:text-lime-300"><CheckCircle2 className="size-5" />Valid</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-lime-700 dark:text-lime-300"><CheckCircle2 className="size-5" aria-hidden="true" />Valid</CardTitle></CardHeader>
                   <CardContent><p className="text-3xl font-semibold">{preview.valid}</p></CardContent>
                 </Card>
                 <Card size="sm" className="border-rose-500/20 bg-rose-500/5">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-300"><XCircle className="size-5" />Tidak Valid</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-300"><XCircle className="size-5" aria-hidden="true" />Tidak Valid</CardTitle></CardHeader>
                   <CardContent><p className="text-3xl font-semibold">{preview.invalid}</p></CardContent>
                 </Card>
               </div>
@@ -165,10 +165,10 @@ export function StudentNisImportDialog() {
             {preview ? (
               <>
                 <Button type="button" variant="outline" disabled={isPending} onClick={resetState}>Upload Ulang</Button>
-                <Button type="button" disabled={isPending || preview.valid === 0} onClick={handleConfirm}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Mengupdate..." : `Update ${preview.valid} Data Valid`}</Button>
+                <Button type="button" disabled={isPending || preview.valid === 0} onClick={handleConfirm}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Mengupdate..." : `Update ${preview.valid} Data Valid`}</Button>
               </>
             ) : (
-              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Mereview..." : "Review File"}</Button>
+              <Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Mereview..." : "Review File"}</Button>
             )}
           </DialogFooter>
         </form>

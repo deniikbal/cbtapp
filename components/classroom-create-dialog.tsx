@@ -66,7 +66,7 @@ export function ClassroomCreateDialog({ majors }: { majors: MajorOption[] }) {
       }}
     >
       <DialogTrigger render={<Button className="gap-2" disabled={majors.length === 0} />}>
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden="true" />
         Tambah Kelas
       </DialogTrigger>
       <DialogContent>
@@ -125,7 +125,7 @@ export function ClassroomCreateDialog({ majors }: { majors: MajorOption[] }) {
               Batal
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>

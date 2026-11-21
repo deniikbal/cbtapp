@@ -211,7 +211,7 @@ function EditorSoal({
                       : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
                   }`}
                 >
-                  {aktif ? <Check className="size-3.5" /> : HURUF[i]}
+                  {aktif ? <Check className="size-3.5" aria-hidden="true" /> : HURUF[i]}
                 </button>
                 <Input
                   value={o}
@@ -241,7 +241,7 @@ function EditorSoal({
                       else if (kunciIdx > i) setKunciIdx(kunciIdx - 1)
                     }}
                   >
-                    <X className="size-3.5" />
+                    <X className="size-3.5" aria-hidden="true" />
                     <span className="sr-only">Hapus opsi</span>
                   </Button>
                 ) : null}
@@ -255,7 +255,7 @@ function EditorSoal({
               className="h-11 gap-1.5 rounded-sm px-2 text-[11px] text-muted-foreground sm:h-8"
               onClick={() => setOpsi((v) => [...v, ""])}
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-3.5" aria-hidden="true" />
               Tambah opsi {HURUF[opsi.length]}
             </Button>
           ) : null}
@@ -277,7 +277,7 @@ function EditorSoal({
 
       {pesan ? (
         <Alert className="rounded-sm border-lime-300/60 bg-lime-50 px-3 py-2 dark:border-lime-500/30 dark:bg-lime-950/40">
-          <CheckCircle2 className="text-lime-700 dark:text-lime-400" />
+          <CheckCircle2 className="text-lime-700 dark:text-lime-400" aria-hidden="true" />
           <AlertDescription className="text-[11px] text-lime-900 dark:text-lime-200">{pesan}</AlertDescription>
         </Alert>
       ) : null}
@@ -287,7 +287,7 @@ function EditorSoal({
           <>
             {backHref ? (
               <Button variant="ghost" size="sm" className="h-11 gap-1.5 rounded-sm sm:h-8" render={<Link href={backHref} />}>
-                <X className="size-4" />
+                <X className="size-4" aria-hidden="true" />
                 Selesai
               </Button>
             ) : null}
@@ -298,13 +298,13 @@ function EditorSoal({
               onClick={simpan}
               disabled={proses || !siap}
             >
-              {proses ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {proses ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
               Simpan &amp; tulis lagi
             </Button>
           </>
         ) : null}
         <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpan} disabled={proses || !siap}>
-          {proses ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {proses ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {mode === "tambah" ? "Simpan soal" : "Simpan perubahan"}
         </Button>
       </div>
@@ -381,7 +381,7 @@ function PanelTeks({
     <Card className="gap-0 rounded-sm py-0">
       <CardHeader className="gap-1 border-b px-4 py-3">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <FileText className="size-4 text-muted-foreground" />
+          <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
           Tempel teks soal
         </CardTitle>
         <CardDescription className="text-[11px]">
@@ -407,7 +407,7 @@ function PanelTeks({
             onClick={rapikan}
             disabled={merapikan || pending || teks.trim().length === 0}
           >
-            {merapikan ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+            {merapikan ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Sparkles className="size-4" aria-hidden="true" />}
             Rapikan dengan AI
           </Button>
           <Button
@@ -417,14 +417,14 @@ function PanelTeks({
             onClick={periksa}
             disabled={pending || merapikan || teks.trim().length === 0}
           >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileText className="size-4" aria-hidden="true" />}
             Periksa format
           </Button>
         </div>
 
         {error ? (
           <Alert variant="destructive" className="rounded-sm px-3 py-2">
-            <TriangleAlert />
+            <TriangleAlert aria-hidden="true" />
             <AlertTitle className="text-xs">Gagal membaca soal</AlertTitle>
             <AlertDescription className="text-[11px]">{error}</AlertDescription>
           </Alert>
@@ -483,7 +483,7 @@ function PanelTeks({
 
             {peringatan.length ? (
               <Alert className="rounded-sm border-amber-300/60 bg-amber-50 px-3 py-2 dark:border-amber-500/30 dark:bg-amber-950/40">
-                <TriangleAlert className="text-amber-700 dark:text-amber-400" />
+                <TriangleAlert className="text-amber-700 dark:text-amber-400" aria-hidden="true" />
                 <AlertTitle className="text-xs text-amber-900 dark:text-amber-200">Catatan pembacaan</AlertTitle>
                 <AlertDescription className="text-[11px] text-amber-900 dark:text-amber-200/90">
                   <ul className="list-disc space-y-0.5 pl-3">
@@ -505,7 +505,7 @@ function PanelTeks({
             Kunci boleh huruf (<span className="font-mono">Kunci: C</span>) atau teks opsinya.
           </p>
           <Button size="sm" className="h-11 gap-2 rounded-sm sm:h-8" onClick={simpan} disabled={pending || siap === 0}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
             Masukkan {siap || ""} soal
           </Button>
         </div>
@@ -568,8 +568,7 @@ function DaftarSoal({
                       </span>
                     </span>
                     <ChevronDown
-                      className={`mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform ${terbuka ? "rotate-180" : ""}`}
-                    />
+                      className={`mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform ${terbuka ? "rotate-180" : ""}`} aria-hidden="true" />
                   </button>
 
                   {terbuka ? (
@@ -593,7 +592,7 @@ function DaftarSoal({
                                   {HURUF[i]}.
                                 </span>
                                 <span className={`min-w-0 flex-1 ${benar ? "font-medium" : ""}`}>{o}</span>
-                                {benar ? <Check className="size-4 shrink-0 text-lime-600 dark:text-lime-400" /> : null}
+                                {benar ? <Check className="size-4 shrink-0 text-lime-600 dark:text-lime-400" aria-hidden="true" /> : null}
                               </li>
                             )
                           })}
@@ -611,7 +610,7 @@ function DaftarSoal({
                           className="h-11 w-11 rounded-sm text-primary hover:bg-primary/10 hover:text-primary sm:h-8 sm:w-8"
                           onClick={() => onUbah(s)}
                         >
-                          <Pencil className="size-4" />
+                          <Pencil className="size-4" aria-hidden="true" />
                           <span className="sr-only">Ubah soal</span>
                         </Button>
                         <Button
@@ -620,7 +619,7 @@ function DaftarSoal({
                           className="h-11 w-11 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-8 sm:w-8"
                           onClick={() => onHapus(s)}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-4" aria-hidden="true" />
                           <span className="sr-only">Hapus soal</span>
                         </Button>
                       </div>
@@ -728,11 +727,11 @@ export function ImporSoalPage({
             rel="noopener noreferrer"
             className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-2 rounded-sm sm:h-8" })}
           >
-            <ExternalLink className="size-4" />
+            <ExternalLink className="size-4" aria-hidden="true" />
             Buka form
           </a>
           <Button variant="outline" size="sm" className="h-11 gap-2 rounded-sm sm:h-8" render={<Link href={backHref} />}>
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-4" aria-hidden="true" />
             Kembali
           </Button>
         </div>
@@ -741,11 +740,11 @@ export function ImporSoalPage({
       <Tabs value={model} onValueChange={(v) => setModel(v as "manual" | "teks")} className="flex flex-col gap-4">
         <TabsList className="h-11 w-fit sm:h-9">
           <TabsTrigger value="manual" className="gap-1.5">
-            <Keyboard data-icon="inline-start" />
+            <Keyboard data-icon="inline-start" aria-hidden="true" />
             Input manual
           </TabsTrigger>
           <TabsTrigger value="teks" className="gap-1.5">
-            <FileText data-icon="inline-start" />
+            <FileText data-icon="inline-start" aria-hidden="true" />
             Tempel teks
           </TabsTrigger>
         </TabsList>
@@ -755,7 +754,7 @@ export function ImporSoalPage({
             <Card className="gap-0 rounded-sm py-0">
               <CardHeader className="gap-1 border-b px-4 py-3">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <Keyboard className="size-4 text-muted-foreground" />
+                  <Keyboard className="size-4 text-muted-foreground" aria-hidden="true" />
                   Editor soal
                 </CardTitle>
                 <CardDescription className="text-[11px]">
@@ -812,7 +811,7 @@ export function ImporSoalPage({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={proses}>Batal</AlertDialogCancel>
             <AlertDialogAction disabled={proses} onClick={konfirmasiHapus}>
-              {proses ? <Loader2 className="size-4 animate-spin" /> : null}
+              {proses ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
               Hapus
             </AlertDialogAction>
           </AlertDialogFooter>

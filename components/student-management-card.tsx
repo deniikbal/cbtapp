@@ -219,7 +219,7 @@ export function StudentManagementCard({
         <div className="mt-4 grid gap-3 md:grid-cols-12">
           <div className="relative md:col-span-5">
             <Label htmlFor="search-student" className="sr-only">Cari peserta</Label>
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-student" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari nama atau NIS..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
@@ -227,7 +227,7 @@ export function StudentManagementCard({
             <Select value={classroomId} onValueChange={handleClassroomChange}>
               <SelectTrigger id="filter-class" className="w-full">
                 <div className="flex items-center gap-2 truncate">
-                  <Filter className="size-4 text-muted-foreground" />
+                  <Filter className="size-4 text-muted-foreground" aria-hidden="true" />
                   <SelectValue>{selectedClassroom ? selectedClassroom.name : "Semua kelas"}</SelectValue>
                 </div>
               </SelectTrigger>
@@ -254,7 +254,7 @@ export function StudentManagementCard({
           </div>
           <div className="md:col-span-2">
             <Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}>
-              <RotateCcw className="size-4" />Reset
+              <RotateCcw className="size-4" aria-hidden="true" />Reset
             </Button>
           </div>
         </div>
@@ -298,7 +298,7 @@ export function StudentManagementCard({
           </div>
         )}
 
-        <div className="hidden overflow-hidden rounded-lg border md:block">
+        <div className="hidden overflow-hidden rounded-lg border lg:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -328,7 +328,7 @@ export function StudentManagementCard({
                 <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={10} className="h-48 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
-                      <div className="rounded-full bg-muted p-4"><Users className="size-7" /></div>
+                      <div className="rounded-full bg-muted p-4"><Users className="size-7" aria-hidden="true" /></div>
                       <div className="space-y-1">
                         <div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada peserta"}</div>
                         <p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : classrooms.length === 0 ? "Buat data awal kelas dan jurusan terlebih dahulu." : "Tambahkan peserta untuk mulai mengatur akun ujian."}</p>
@@ -363,14 +363,14 @@ export function StudentManagementCard({
         </div>
 
         {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
-        <div className="space-y-3 md:hidden">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
           {filteredStudents.length === 0 ? (
-            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
               {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada peserta."}
             </div>
           ) : (
             paginatedStudents.map((student) => (
-              <div key={student.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div key={student.id} className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-3">
                     <Checkbox
@@ -426,7 +426,7 @@ export function StudentManagementCard({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Per halaman</span>
               <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="h-8 w-[80px]"><span>{pageSize}</span></SelectTrigger>
+                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger>
                 <SelectContent align="end">
                   {PAGE_SIZE_OPTIONS.map((option) => (
                     <SelectItem key={option} value={String(option)}>{option}</SelectItem>

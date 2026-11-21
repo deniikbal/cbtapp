@@ -128,7 +128,7 @@ export function ExamScheduleRowActions({
   return (
     <div className="flex justify-end gap-1.5">
       <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" onClick={openDuplicate} title="Duplikat ke sesi berikutnya">
-        <Copy className="size-4" />
+        <Copy className="size-4" aria-hidden="true" />
         <span className="sr-only">Duplikat ke sesi berikutnya</span>
       </Button>
       <Dialog
@@ -142,7 +142,7 @@ export function ExamScheduleRowActions({
           if (!nextOpen) setError(null)
         }}
       >
-        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
+        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" aria-hidden="true" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Edit Jadwal</DialogTitle><DialogDescription>Ubah satu jadwal ini untuk beberapa kelas sekaligus.</DialogDescription></DialogHeader>
           <form action={handleUpdate} className="space-y-4">
@@ -181,7 +181,7 @@ export function ExamScheduleRowActions({
             <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Tanggal</Label><Input name="examDate" type="date" defaultValue={schedule.examDate} required /></div><div className="space-y-2"><Label>Jam Mulai</Label><Input name="startTime" type="time" defaultValue={schedule.startTime.slice(0, 5)} required /></div><div className="space-y-2"><Label>Durasi</Label><Input name="durationMinutes" type="number" min="1" defaultValue={schedule.durationMinutes} required /></div></div>
             <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div></div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
+            <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -201,15 +201,15 @@ export function ExamScheduleRowActions({
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isPending} onClick={() => setDupOpen(false)}>Batal</Button>
             <Button disabled={isPending || !/^\d{2}:\d{2}$/.test(dupTime)} onClick={handleDuplicate}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menyimpan..." : "Duplikat"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" />}><Trash2 className="size-4" /><span className="sr-only">Hapus jadwal</span></AlertDialogTrigger>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Hapus jadwal?</AlertDialogTitle><AlertDialogDescription>Jadwal “{schedule.title}” untuk {groupIds.length} kelas akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>{error && <p className="text-sm text-destructive">{error}</p>}<AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" />}><Trash2 className="size-4" aria-hidden="true" /><span className="sr-only">Hapus jadwal</span></AlertDialogTrigger>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" aria-hidden="true" /></AlertDialogMedia><AlertDialogTitle>Hapus jadwal?</AlertDialogTitle><AlertDialogDescription>Jadwal “{schedule.title}” untuk {groupIds.length} kelas akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>{error && <p className="text-sm text-destructive">{error}</p>}<AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   )

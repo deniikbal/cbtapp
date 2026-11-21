@@ -162,14 +162,14 @@ export default async function DashboardPage() {
                   </CardDescription>
                 </div>
                 <Button nativeButton={false} size="sm" className="gap-2" render={<Link href="/dashboard/jadwal" />}>
-                  <CalendarDays className="size-4" />
+                  <CalendarDays className="size-4" aria-hidden="true" />
                   Kelola Jadwal
                 </Button>
               </div>
             </CardHeader>
 
             <CardContent>
-              <div className="hidden overflow-x-auto rounded-lg border md:block">
+              <div className="hidden overflow-x-auto rounded-lg border lg:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
                       <TableRow className="hover:bg-transparent">
                         <TableCell colSpan={7} className="h-48 text-center">
                           <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
-                            <CalendarDays className="size-8 text-muted-foreground/60" />
+                            <CalendarDays className="size-8 text-muted-foreground/60" aria-hidden="true" />
                             <div className="space-y-1">
                               <div className="font-medium text-foreground">Belum ada jadwal</div>
                               <p className="text-sm">Buat jadwal pertama di menu Jadwal untuk melihatnya di sini.</p>
@@ -232,11 +232,11 @@ export default async function DashboardPage() {
                         <TableCell>
                           <div className="flex justify-end gap-1">
                             <Button nativeButton={false} variant="ghost" size="icon-sm" render={<Link href="/dashboard/jadwal" />}>
-                              <Clock3 className="size-4" />
+                              <Clock3 className="size-4" aria-hidden="true" />
                               <span className="sr-only">Detail</span>
                             </Button>
                             <Button nativeButton={false} variant="ghost" size="icon-sm" render={<Link href="/dashboard/jadwal" />}>
-                              <Settings className="size-4" />
+                              <Settings className="size-4" aria-hidden="true" />
                               <span className="sr-only">Atur</span>
                             </Button>
                           </div>
@@ -249,9 +249,9 @@ export default async function DashboardPage() {
 
               {/* Daftar kartu mobile: pengganti tabel 7 kolom di layar sempit (R-03). */}
               {recentExams.length > 0 && (
-                <div className="space-y-3 md:hidden">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
                   {recentExams.map((exam) => (
-                    <div key={exam.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                    <div key={exam.id} className="rounded-lg border bg-card p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-3">
                           <Avatar className="size-8">
@@ -287,11 +287,11 @@ export default async function DashboardPage() {
 
                       <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
                         <Button nativeButton={false} variant="outline" size="sm" className="h-11 rounded-sm" render={<Link href="/dashboard/jadwal" />}>
-                          <Clock3 className="size-4" />
+                          <Clock3 className="size-4" aria-hidden="true" />
                           Detail
                         </Button>
                         <Button nativeButton={false} variant="outline" size="sm" className="h-11 rounded-sm" render={<Link href="/dashboard/jadwal" />}>
-                          <Settings className="size-4" />
+                          <Settings className="size-4" aria-hidden="true" />
                           Atur
                         </Button>
                       </div>

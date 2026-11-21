@@ -53,7 +53,7 @@ export function UserNav({ name, email }: { name: string; email: string }) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
-            <LogOut className="size-4" />
+            <LogOut className="size-4" aria-hidden="true" />
             Logout
           </DropdownMenuItem>
         </DropdownMenuGroup>

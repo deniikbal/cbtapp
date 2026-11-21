@@ -60,7 +60,7 @@ export async function DashboardSidebar({ active }: { active: string }) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />}>
               <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Home className="size-4" />
+                <Home className="size-4" aria-hidden="true" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">SMANSABA Assesmen</span>
@@ -81,9 +81,9 @@ export async function DashboardSidebar({ active }: { active: string }) {
               <Collapsible defaultOpen={masterAktif} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger render={<SidebarMenuButton tooltip="Master Data" isActive={masterAktif} />}>
-                    <Database className="size-4" />
+                    <Database className="size-4" aria-hidden="true" />
                     <span className="truncate">Master Data</span>
-                    <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[open]/collapsible:rotate-90" />
+                    <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[open]/collapsible:rotate-90" aria-hidden="true" />
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>

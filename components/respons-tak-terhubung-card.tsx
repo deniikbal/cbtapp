@@ -85,7 +85,7 @@ export function ResponsTakTerhubungCard({
         </div>
       </CardHeader>
       <CardContent className="pt-4">
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto lg:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -109,13 +109,53 @@ export function ResponsTakTerhubungCard({
                   <TableCell className="whitespace-nowrap">{row.submittedAt ?? "-"}</TableCell>
                   <TableCell>
                     <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => buka(row)}>
-                      <Link2 className="size-3" /> Hubungkan
+                      <Link2 className="size-3" aria-hidden="true" /> Hubungkan
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* State kartu untuk layar sempit, menggantikan tabel 7 kolom. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
+          {rows.length === 0 ? (
+            <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground sm:col-span-2">
+              Tidak ada respons dengan NIS yang belum cocok.
+            </div>
+          ) : (
+            rows.map((row, i) => (
+              <div key={row.id} className="rounded-lg border bg-card p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{row.nama || "-"}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{row.nis || "-"}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground tabular-nums">#{i + 1}</span>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Bank soal</dt>
+                    <dd className="truncate">{row.bank}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Kelas jadwal</dt>
+                    <dd>{row.kelas}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-xs text-muted-foreground">Dikirim</dt>
+                    <dd className="text-muted-foreground">{row.submittedAt ?? "-"}</dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <Button size="sm" variant="outline" className="h-11 text-sm sm:h-8" onClick={() => buka(row)}>
+                    <Link2 className="size-4" aria-hidden="true" /> Hubungkan
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </CardContent>
 
@@ -167,7 +207,7 @@ export function ResponsTakTerhubungCard({
               Batal
             </Button>
             <Button onClick={hubungkan} disabled={!siswaId || pending}>
-              {pending && <Loader2 className="size-4 animate-spin" />} Hubungkan
+              {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />} Hubungkan
             </Button>
           </DialogFooter>
         </DialogContent>

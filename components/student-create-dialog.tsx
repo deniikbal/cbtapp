@@ -66,7 +66,7 @@ export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOptio
       }}
     >
       <DialogTrigger render={<Button className="gap-2" disabled={classrooms.length === 0} />}>
-        <Plus className="size-4" />
+        <Plus className="size-4" aria-hidden="true" />
         Tambah Peserta
       </DialogTrigger>
       <DialogContent>
@@ -139,7 +139,7 @@ export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOptio
               Batal
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>

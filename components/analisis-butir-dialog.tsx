@@ -295,7 +295,7 @@ function PanelUnduh({
         href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
         className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-7 w-fit gap-1 px-2 text-[11px]" })}
       >
-        <FileDown className="size-3.5" /> Unduh PDF
+        <FileDown className="size-3.5" aria-hidden="true" /> Unduh PDF
       </a>
     )
   }
@@ -367,7 +367,7 @@ function PanelUnduh({
                 rel="noreferrer"
                 className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
               >
-                <MessageCircle className="size-3.5" /> Kirim bukti via WA
+                <MessageCircle className="size-3.5" aria-hidden="true" /> Kirim bukti via WA
               </a>
             ) : null}
             {status === "belum" || status === "ditolak" ? (
@@ -386,7 +386,7 @@ function PanelUnduh({
                   })
                 }
               >
-                {pending ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+                {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="size-3.5" aria-hidden="true" />}
                 Saya sudah bayar
               </Button>
             ) : null}

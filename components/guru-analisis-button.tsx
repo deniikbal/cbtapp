@@ -41,13 +41,13 @@ export function GuruAnalisisButton({
     <>
       {tampilan === "teks" ? (
         <Button variant="outline" size="sm" onClick={buka} disabled={pending} className="h-11 rounded-sm">
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
+          {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <ChartColumn className="size-4" aria-hidden="true" />}
           Analisis
         </Button>
       ) : (
         <AksiIkon label="Analisis butir">
-          <Button variant="ghost" size="icon-sm" onClick={buka} disabled={pending} className="rounded-sm">
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <ChartColumn className="size-4" />}
+          <Button variant="ghost" size="icon-sm" onClick={buka} disabled={pending} className="size-11 rounded-sm sm:size-6">
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <ChartColumn className="size-4" aria-hidden="true" />}
             <span className="sr-only">Analisis butir</span>
           </Button>
         </AksiIkon>

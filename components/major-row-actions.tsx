@@ -82,12 +82,12 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
-            <MoreHorizontal className="size-4" />
+            <MoreHorizontal className="size-4" aria-hidden="true" />
             <span className="sr-only">Aksi jurusan</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setEditOpen(true)}>
-              <Edit className="size-4" />
+              <Edit className="size-4" aria-hidden="true" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -95,7 +95,7 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
               disabled={major.classCount > 0}
               onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-4" aria-hidden="true" />
               Hapus
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -126,7 +126,7 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
                 Batal
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                 {isPending ? "Menyimpan..." : "Simpan"}
               </Button>
             </DialogFooter>
@@ -138,7 +138,7 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia>
-              <Trash2 className="size-5" />
+              <Trash2 className="size-5" aria-hidden="true" />
             </AlertDialogMedia>
             <AlertDialogTitle>Hapus jurusan?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -153,7 +153,7 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
               disabled={isPending}
               onClick={handleDelete}
             >
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {isPending ? "Menghapus..." : "Hapus"}
             </AlertDialogAction>
           </AlertDialogFooter>
