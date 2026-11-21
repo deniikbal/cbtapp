@@ -3,6 +3,7 @@ import { and, asc, desc, eq, max } from "drizzle-orm"
 import {
   BookOpen,
   CalendarDays,
+  ClipboardCheck,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -11,10 +12,12 @@ import {
   RefreshCw,
   Trophy,
 } from "lucide-react"
+import Link from "next/link"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { startExam, submitExam } from "@/app/siswa/dashboard/actions"
+import { StudentDashboardNav } from "@/components/student-dashboard-nav"
 import { StudentLogoutButton } from "@/components/student-logout-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -34,7 +37,11 @@ import {
 import { canAccessStudentArea } from "@/lib/exam-browser"
 import { cn } from "@/lib/utils"
 
-export default async function SiswaDashboardPage() {
+export default async function SiswaDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const cookieStore = await cookies()
   const headerStore = await headers()
   const studentId = cookieStore.get("student_id")?.value
@@ -138,29 +145,119 @@ export default async function SiswaDashboardPage() {
   const todaySchedules = schedules.filter((schedule) => schedule.examDate === today).length
   const completedSchedules = attemptRows.filter((attempt) => attempt.submittedAt).length
   const activeNowSchedules = visibleSchedules.length
+
+  const { tab } = await searchParams
+  const tabAktif = tab === "hasil" ? "hasil" : "beranda"
   const progressPercent = schedules.length > 0 ? Math.round((completedSchedules / schedules.length) * 100) : 0
   const rataRata =
     hasilRows.length > 0
       ? hasilRows.reduce((jumlah, baris) => jumlah + Number(baris.score), 0) / hasilRows.length
       : null
 
+  if (tabAktif === "hasil") {
+    const totalBenar = hasilRows.reduce((jumlah, baris) => jumlah + baris.correct, 0)
+    const totalSoal = hasilRows.reduce((jumlah, baris) => jumlah + baris.total, 0)
+
+    return (
+      <div className="min-h-svh bg-background">
+        <HeaderSiswa name={student[0].name} kelas={student[0].className} />
+        <StudentDashboardNav active="hasil" />
+        <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-24 sm:gap-5 sm:px-6 md:pb-6 md:pt-6">
+          <section className="space-y-1">
+            <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Hasil ujian</h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              Nilai dari Google Form yang sudah disinkronkan panitia.
+            </p>
+          </section>
+
+          <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+            <MetricCard label="Jumlah hasil" value={String(hasilRows.length)} icon={ClipboardCheck} warna="bg-brand" />
+            <MetricCard
+              label="Rata-rata nilai"
+              value={rataRata === null ? "-" : rataRata.toFixed(2)}
+              icon={Trophy}
+              warna="bg-card text-foreground border"
+            />
+            <MetricCard label="Total benar" value={String(totalBenar)} icon={CheckCircle2} warna="bg-brand" />
+            <MetricCard label="Total soal" value={String(totalSoal)} icon={BookOpen} warna="bg-card text-foreground border" />
+          </section>
+
+          {hasilRows.length === 0 ? (
+            <Card className="rounded-lg">
+              <CardContent className="flex items-start gap-3 px-3 py-4">
+                <RefreshCw className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    Belum ada jawaban yang tersinkron untuk akun ini.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Nilai muncul setelah panitia menjalankan sync hasil untuk ujian yang sudah selesai.
+                  </p>
+                  <Button nativeButton={false} variant="outline" className="h-11 sm:h-9" render={<Link href="/siswa/dashboard" />}>
+                    Lihat jadwal ujian
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {hasilRows.map((hasil) => (
+                <Card key={hasil.id} className="rounded-lg">
+                  <CardContent className="px-3 py-3 sm:px-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge variant="secondary" className="font-mono text-[10px]">{hasil.code}</Badge>
+                          <span className="text-[11px] text-muted-foreground sm:text-xs">
+                            {hasil.subjectName} ({hasil.subjectCode})
+                          </span>
+                        </div>
+                        <h2 className="text-sm font-medium leading-snug">{hasil.title}</h2>
+                        <p className="text-[11px] text-muted-foreground sm:text-xs">
+                          Dikumpulkan {hasil.submittedAt ? formatTanggalJam(hasil.submittedAt) : "-"}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-2xl font-semibold tabular-nums leading-none text-primary">
+                          {Number(hasil.score).toFixed(2)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
+                      </div>
+                    </div>
+                    <Separator className="my-3" />
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Benar</p>
+                        <p className="font-semibold tabular-nums text-lime-700">{hasil.correct}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Salah</p>
+                        <p className="font-semibold tabular-nums text-amber-700">{hasil.wrong}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Jumlah soal</p>
+                        <p className="font-semibold tabular-nums">{hasil.total}</p>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-[11px] text-muted-foreground">
+                      Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-svh bg-background">
-      <header className="sticky top-0 z-10 bg-brand text-brand-foreground">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-tight">
-              SMANSABA<span className="text-brand-foreground/70">.</span>CBT
-            </p>
-            <p className="truncate text-[11px] sm:text-xs text-brand-foreground">
-              {student[0].name} · {student[0].className}
-            </p>
-          </div>
-          <StudentLogoutButton />
-        </div>
-      </header>
+      <HeaderSiswa name={student[0].name} kelas={student[0].className} />
+      <StudentDashboardNav active={tabAktif} />
 
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6">
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-24 sm:gap-5 sm:px-6 md:pb-6 md:pt-6">
         {/* Ringkasan siswa + progres */}
         <section className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
@@ -180,7 +277,7 @@ export default async function SiswaDashboardPage() {
             </p>
           </div>
 
-          <div className="rounded-sm border bg-card px-3 py-2">
+          <div className="rounded-lg border bg-card px-3 py-2">
             <div className="mb-1.5 flex items-center justify-between text-xs">
               <span className="font-medium text-foreground">Progres ujian</span>
               <span className="font-medium tabular-nums text-muted-foreground">
@@ -188,14 +285,14 @@ export default async function SiswaDashboardPage() {
               </span>
             </div>
             <div
-              className="h-1.5 overflow-hidden rounded-sm bg-muted"
+              className="h-1.5 overflow-hidden rounded-lg bg-muted"
               role="progressbar"
               aria-valuenow={progressPercent}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-label="Progres ujian selesai"
             >
-              <div className="h-full rounded-sm bg-brand" style={{ width: `${progressPercent}%` }} />
+              <div className="h-full rounded-lg bg-brand" style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         </section>
@@ -213,71 +310,37 @@ export default async function SiswaDashboardPage() {
           />
         </section>
 
-        {/* Hasil sync Google Form */}
+        {/* Ringkasan hasil terbaru, detail ada di menu Hasil ujian. */}
         <section>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Hasil ujian (sync Google Form)</h2>
-            <Badge variant="secondary" className="font-normal">
-              {hasilRows.length} hasil
-            </Badge>
+            <h2 className="text-sm font-semibold">Hasil terbaru</h2>
+            <Link
+              href="/siswa/dashboard?tab=hasil"
+              className="flex h-11 items-center text-xs font-medium text-primary hover:underline sm:h-9"
+            >
+              Lihat semua hasil
+            </Link>
           </div>
-
           {hasilRows.length === 0 ? (
-            <Card className="rounded-sm">
-              <CardContent className="flex items-center gap-3 px-3 py-3">
-                <RefreshCw className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <p className="text-xs text-muted-foreground">
-                  Belum ada jawaban tersinkron. Nilai muncul otomatis setelah panitia menjalankan sync hasil untuk
-                  ujian yang sudah selesai.
-                </p>
+            <Card className="rounded-lg">
+              <CardContent className="px-3 py-3 text-xs text-muted-foreground">
+                Belum ada nilai yang tersinkron. Nilai muncul setelah panitia menjalankan sync hasil.
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2">
-              {hasilRows.map((hasil) => (
-                <Card key={hasil.id} className="rounded-sm">
-                  <CardContent className="px-3 py-2.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-0.5">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Badge variant="secondary" className="font-mono text-[10px]">
-                            {hasil.code}
-                          </Badge>
-                          <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-                            {hasil.subjectName} ({hasil.subjectCode})
-                          </span>
-                        </div>
-                        <p className="line-clamp-2 text-sm font-medium text-foreground">{hasil.title}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Dikumpulkan {hasil.submittedAt ? formatTanggalJam(hasil.submittedAt) : "-"} · sync{" "}
-                          {formatTanggalJam(hasil.syncedAt)}
-                        </p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-xl font-semibold tabular-nums leading-none text-foreground">
-                          {Number(hasil.score).toFixed(2)}
-                        </p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
-                      </div>
-                    </div>
-
-                    <Separator className="my-2" />
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
-                      <span className="text-lime-700">
-                        Benar <span className="font-semibold tabular-nums">{hasil.correct}</span>
-                      </span>
-                      <span className="text-amber-700">
-                        Salah <span className="font-semibold tabular-nums">{hasil.wrong}</span>
-                      </span>
-                      <span className="text-muted-foreground">
-                        Jumlah soal <span className="font-semibold tabular-nums">{hasil.total}</span>
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Card className="rounded-lg">
+              <CardContent className="flex items-center justify-between gap-3 px-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{hasilRows[0].title}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {hasilRows[0].subjectName} · {formatTanggalJam(hasilRows[0].syncedAt)}
+                  </p>
+                </div>
+                <p className="shrink-0 text-xl font-semibold tabular-nums text-primary">
+                  {Number(hasilRows[0].score).toFixed(2)}
+                </p>
+              </CardContent>
+            </Card>
           )}
         </section>
 
@@ -289,7 +352,7 @@ export default async function SiswaDashboardPage() {
           </div>
 
           {visibleSchedules.length === 0 ? (
-            <Card className="rounded-sm">
+            <Card className="rounded-lg">
               <CardContent className="flex items-center gap-3 px-3 py-3">
                 <BookOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <p className="text-xs text-muted-foreground">
@@ -317,7 +380,7 @@ export default async function SiswaDashboardPage() {
                   <Card
                     key={schedule.id}
                     className={cn(
-                      "rounded-sm border-l-[3px]",
+                      "rounded-lg border-l-[3px]",
                       examStatus === "ACTIVE" ? "border-l-brand" : "border-l-muted-foreground/30"
                     )}
                   >
@@ -399,6 +462,24 @@ export default async function SiswaDashboardPage() {
   )
 }
 
+function HeaderSiswa({ name, kelas }: { name: string; kelas: string }) {
+  return (
+    <header className="sticky top-0 z-10 bg-brand text-brand-foreground">
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold tracking-tight">
+            SMANSABA<span className="text-brand-foreground/70">.</span>CBT
+          </p>
+          <p className="truncate text-[11px] sm:text-xs text-brand-foreground">
+            {name} · {kelas}
+          </p>
+        </div>
+        <StudentLogoutButton />
+      </div>
+    </header>
+  )
+}
+
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -437,7 +518,7 @@ function MetricCard({
 }) {
   const solid = warna.startsWith("bg-card") ? "" : "text-white"
   return (
-    <div className={cn("flex items-center justify-between gap-2 rounded-sm px-2.5 py-2", warna, solid)}>
+    <div className={cn("flex items-center justify-between gap-2 rounded-lg px-2.5 py-2", warna, solid)}>
       <div className="min-w-0 leading-tight">
         <p className="truncate text-[11px] sm:text-xs">{label}</p>
         <p className="text-lg font-semibold leading-none tabular-nums">{value}</p>
