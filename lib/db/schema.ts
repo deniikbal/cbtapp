@@ -246,8 +246,10 @@ export const teachers = pgTable(
     aksesPdf: text("aksesPdf").notNull().default("belum"),
     aksesPdfPada: timestamp("aksesPdfPada", { withTimezone: true }),
     aksesPdfCatatan: text("aksesPdfCatatan").notNull().default(""),
-  /** Kode unik 1..999 → nominal tagihan = NOMINAL_PDF + kode, dipakai mencocokkan mutasi. */
+  /** Kode unik 1..999 → nominal tagihan = nominal pilihan + kode, dipakai mencocokkan mutasi. */
   aksesPdfKode: integer("aksesPdfKode").notNull().default(0),
+    /** Nominal dukungan yang dipilih guru (0 = belum memilih / akses gratis). */
+    aksesPdfDasar: integer("aksesPdfDasar").notNull().default(0),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },

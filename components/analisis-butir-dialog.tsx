@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { CheckCircle2, FileDown, Loader2, MessageCircle } from "lucide-react"
+import { CheckCircle2, FileDown, Gift, HeartHandshake, Loader2, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
 
-import { konfirmasiSudahBayar } from "@/app/guru/dashboard/actions"
+import { aksesGratisPdf, konfirmasiSudahBayar, mintaDukunganPdf } from "@/app/guru/dashboard/actions"
 
 import type { AnalisisBank } from "@/lib/analisis-data"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const baik = "gap-1 bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-400"
@@ -41,7 +42,7 @@ export function AnalisisButirDialog({
   data: AnalisisBank | null
   bankId?: string
   /** Status akses unduh PDF; undefined = admin (bebas unduh). */
-  akses?: { status: string; nominal: number; waAdmin: string; qris: string }
+  akses?: { status: string; nominal: number; waAdmin: string; qris: string; punyaQris: boolean }
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -284,113 +285,233 @@ function PanelUnduh({
   akses,
 }: {
   bankId: string
-  akses: { status: string; nominal: number; waAdmin: string; qris: string }
+  akses: { status: string; nominal: number; waAdmin: string; qris: string; punyaQris: boolean }
 }) {
   const [status, setStatus] = useState(akses.status)
+  const [nominal, setNominal] = useState(akses.nominal)
+  const [qris, setQris] = useState(akses.qris)
+  const [pilihLain, setPilihLain] = useState(false)
+  const [custom, setCustom] = useState("")
   const [pending, startTransition] = useTransition()
+
+  function dukung(dasar: number) {
+    startTransition(async () => {
+      const hasil = await mintaDukunganPdf(dasar)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message)
+      setNominal(hasil.nominal)
+      setQris(hasil.qris)
+      setStatus("menunggu")
+    })
+  }
+
+  function dukungCustom() {
+    const angka = Number(custom.replace(/[^\d]/g, ""))
+    if (!Number.isInteger(angka) || angka < 1) {
+      toast.error("Nominal dukungan minimal Rp1.")
+      return
+    }
+    dukung(angka)
+  }
+
+  function gratis() {
+    startTransition(async () => {
+      const hasil = await aksesGratisPdf()
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message)
+      setStatus("aktif")
+    })
+  }
 
   if (status === "aktif") {
     return (
       <a
         href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
-        className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-7 w-fit gap-1 px-2 text-[11px]" })}
+        className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-11 w-fit gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]" })}
       >
         <FileDown className="size-3.5" aria-hidden="true" /> Unduh PDF
       </a>
     )
   }
 
-  const langkah = ["Scan QRIS dan bayar sesuai nominal.", "Kirim bukti bayar ke WA admin.", "Admin mengaktifkan akses Anda."]
-
-  return (
-    <div className="mt-2 overflow-hidden rounded-xl border bg-muted/20">
-      <div className="flex flex-col gap-3 p-3 sm:flex-row">
-        <div className="shrink-0 self-center sm:self-start">
-          {akses.qris ? (
-            <a
-              href={akses.qris}
-              target="_blank"
-              rel="noreferrer"
-              className="block w-40 rounded-lg border bg-white p-2 shadow-sm transition hover:shadow-md"
-              title="Buka QRIS ukuran penuh"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={akses.qris} alt="QRIS pembayaran" className="h-auto w-full object-contain" />
-              <span className="mt-1 block text-center text-[10px] text-muted-foreground">Klik untuk perbesar</span>
-            </a>
-          ) : (
-            <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed bg-muted/40 px-2 text-center text-[10px] leading-tight text-muted-foreground">
-              QRIS belum diatur admin
-            </div>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1 space-y-2">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Unduh PDF analisis butir
-            </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Sekali bayar, unduh sepuasnya tanpa batas.</p>
+  // Sudah memilih nominal: tampilkan QR dan menunggu verifikasi admin.
+  if (status === "menunggu" && nominal > 0) {
+    const langkah = ["Scan QRIS dan bayar sesuai nominal.", "Kirim bukti bayar ke WA admin.", "Admin mengaktifkan akses Anda."]
+    return (
+      <div className="mt-2 overflow-hidden rounded-xl border bg-muted/20">
+        <div className="flex flex-col gap-3 p-3 sm:flex-row">
+          <div className="shrink-0 self-center sm:self-start">
+            {qris ? (
+              <a
+                href={qris}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-40 rounded-lg border bg-white p-2 shadow-sm transition hover:shadow-md"
+                title="Buka QRIS ukuran penuh"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qris} alt="QRIS dukungan" className="h-auto w-full object-contain" />
+                <span className="mt-1 block text-center text-[10px] text-muted-foreground">Klik untuk perbesar</span>
+              </a>
+            ) : (
+              <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed bg-muted/40 px-2 text-center text-[10px] leading-tight text-muted-foreground">
+                QRIS belum diatur admin
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-primary px-2 py-1 text-sm font-semibold tabular-nums text-primary-foreground">
-              {rupiah(akses.nominal)}
-            </span>
-            {status === "menunggu" ? (
+          <div className="min-w-0 flex-1 space-y-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Dukung pengembangan
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">Terima kasih. Bayar tepat nominal di bawah, lalu tunggu verifikasi.</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-primary px-2 py-1 text-sm font-semibold tabular-nums text-primary-foreground">
+                {rupiah(nominal)}
+              </span>
               <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" variant="secondary">
                 Menunggu verifikasi
               </Badge>
-            ) : status === "ditolak" ? (
-              <Badge className="gap-1 bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400" variant="secondary">
-                Ditolak
-              </Badge>
-            ) : null}
-          </div>
+            </div>
 
-          <ol className="space-y-0.5 text-[11px] text-muted-foreground">
-            {langkah.map((l, i) => (
-              <li key={l} className="flex gap-1.5">
-                <span className="mt-[1px] flex size-3.5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-foreground">
-                  {i + 1}
-                </span>
-                <span>{l}</span>
-              </li>
-            ))}
-          </ol>
+            <ol className="space-y-0.5 text-[11px] text-muted-foreground">
+              {langkah.map((l, i) => (
+                <li key={l} className="flex gap-1.5">
+                  <span className="mt-[1px] flex size-3.5 shrink-0 items-center justify-center rounded-full bg-muted text-[9px] font-semibold text-foreground">
+                    {i + 1}
+                  </span>
+                  <span>{l}</span>
+                </li>
+              ))}
+            </ol>
 
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {akses.waAdmin ? (
-              <a
-                href={`https://wa.me/${akses.waAdmin}?text=${encodeURIComponent("Bukti bayar PDF analisis butir CBT")}`}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonVariants({ variant: "outline", size: "sm", className: "h-7 gap-1 px-2 text-[11px]" })}
-              >
-                <MessageCircle className="size-3.5" aria-hidden="true" /> Kirim bukti via WA
-              </a>
-            ) : null}
-            {status === "belum" || status === "ditolak" ? (
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {akses.waAdmin ? (
+                <a
+                  href={`https://wa.me/${akses.waAdmin}?text=${encodeURIComponent("Bukti dukungan PDF analisis butir CBT")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]" })}
+                >
+                  <MessageCircle className="size-3.5" aria-hidden="true" /> Kirim bukti via WA
+                </a>
+              ) : null}
               <Button
                 size="sm"
-                className="h-7 gap-1 px-2 text-[11px]"
+                className="h-11 gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]"
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
                     const hasil = await konfirmasiSudahBayar()
                     if (!hasil.ok) toast.error(hasil.message)
-                    else {
-                      toast.success(hasil.message)
-                      setStatus("menunggu")
-                    }
+                    else toast.success(hasil.message)
                   })
                 }
               >
                 {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="size-3.5" aria-hidden="true" />}
                 Saya sudah bayar
               </Button>
-            ) : null}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-11 px-3 text-xs text-muted-foreground sm:h-7 sm:px-2 sm:text-[11px]"
+                disabled={pending}
+                onClick={() => setStatus("belum")}
+              >
+                Ganti nominal
+              </Button>
+            </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Belum memilih: tawarkan akses gratis atau dukungan sukarela.
+  const saran = [2000, 5000, 10000]
+  return (
+    <div className="mt-2 overflow-hidden rounded-xl border bg-muted/20">
+      <div className="space-y-3 p-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Unduh PDF analisis butir
+          </p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+            Gratis untuk Bapak/Ibu. Jika berkenan, dukung pengembangan aplikasi seikhlasnya.
+          </p>
+          {status === "ditolak" ? (
+            <Badge className="mt-1.5 gap-1 bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-400" variant="secondary">
+              Pengajuan sebelumnya ditolak
+            </Badge>
+          ) : null}
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-medium">Dukung seikhlasnya</p>
+          <div className="flex flex-wrap gap-1.5">
+            {saran.map((n) => (
+              <Button
+                key={n}
+                size="sm"
+                variant="outline"
+                className="h-11 gap-1 px-3 text-xs tabular-nums sm:h-8 sm:text-[11px]"
+                disabled={pending}
+                onClick={() => dukung(n)}
+              >
+                <HeartHandshake className="size-3.5" aria-hidden="true" /> {rupiah(n)}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-11 px-3 text-xs sm:h-8 sm:text-[11px]"
+              disabled={pending}
+              onClick={() => setPilihLain((v) => !v)}
+            >
+              Nominal lain
+            </Button>
+          </div>
+          {pilihLain ? (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <Input
+                inputMode="numeric"
+                placeholder="Contoh: 3000"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                className="h-11 w-36 rounded-sm text-xs sm:h-8"
+                aria-label="Nominal dukungan lain"
+              />
+              <Button size="sm" className="h-11 px-3 text-xs sm:h-8 sm:text-[11px]" disabled={pending} onClick={dukungCustom}>
+                {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+                Buat QR
+              </Button>
+            </div>
+          ) : null}
+          {!akses.punyaQris ? (
+            <p className="text-[10px] text-muted-foreground">QRIS belum diatur admin. Anda tetap bisa memakai akses gratis.</p>
+          ) : null}
+        </div>
+
+        <div className="border-t pt-2.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-11 gap-1 px-3 text-xs sm:h-8 sm:text-[11px]"
+            disabled={pending}
+            onClick={gratis}
+          >
+            {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <Gift className="size-3.5" aria-hidden="true" />}
+            Akses gratis, lewati pembayaran
+          </Button>
         </div>
       </div>
     </div>

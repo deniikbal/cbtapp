@@ -62,6 +62,8 @@ export default async function AksesPdfPage() {
         nip: teachers.nip,
         status: teachers.aksesPdf,
         diaktifkanPada: teachers.aksesPdfPada,
+        dasar: teachers.aksesPdfDasar,
+        catatan: teachers.aksesPdfCatatan,
       })
       .from(teachers)
       .orderBy(asc(teachers.name))
@@ -71,6 +73,8 @@ export default async function AksesPdfPage() {
       nip: r.nip,
       status: r.status ?? "belum",
       diaktifkanPada: r.diaktifkanPada ? r.diaktifkanPada.toISOString().slice(0, 10) : null,
+      dasar: r.dasar ?? 0,
+      catatan: r.catatan ?? "",
     }))
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data akses PDF."
@@ -85,7 +89,7 @@ export default async function AksesPdfPage() {
       <SidebarInset className="bg-muted/30">
         <DashboardNavbar
           title="Akses Unduh PDF"
-          description="Verifikasi pembayaran & aktivasi laporan analisis butir"
+          description="Akses gratis & verifikasi dukungan sukarela laporan analisis butir"
           userName={session.user.name}
           userEmail={session.user.email}
         />
@@ -96,7 +100,8 @@ export default async function AksesPdfPage() {
               Akses Unduh PDF Analisis Butir
             </h1>
             <p className="text-sm text-muted-foreground">
-              Kelola status akses guru untuk mengunduh laporan analisis butir PDF. Khusus superadmin.
+              Semua guru boleh mengunduh PDF secara gratis. Guru yang berkenan dapat mendukung pengembangan seikhlasnya;
+              kelola status dan verifikasinya di sini. Khusus superadmin.
             </p>
           </section>
 

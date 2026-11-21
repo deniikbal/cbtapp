@@ -24,7 +24,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-export type AksesRow = { id: string; name: string; nip: string; status: string; diaktifkanPada: string | null }
+export type AksesRow = { id: string; name: string; nip: string; status: string; diaktifkanPada: string | null; dasar: number; catatan: string }
+
+function labelDukungan(row: AksesRow) {
+  if (row.dasar > 0) return "Rp " + row.dasar.toLocaleString("id-ID")
+  if (row.status === "aktif") return row.catatan === "Akses gratis" ? "Gratis" : "Manual"
+  return "-"
+}
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 const NATURAL_SORTER = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
@@ -91,8 +97,8 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
             </Badge>
           </div>
           <CardDescription>
-            Sekali bayar, aktif permanen. Guru menandai &quot;saya sudah bayar&quot;, superadmin memverifikasi lalu
-            mengaktifkan.
+            Akses gratis untuk semua guru. Guru yang berkenan bisa mendukung seikhlasnya; superadmin memverifikasi
+            pembayaran lalu mengaktifkan.
           </CardDescription>
         </div>
 
@@ -151,6 +157,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                 <TableHead>Nama</TableHead>
                 <TableHead>NIP</TableHead>
                 <TableHead className="w-28">Status</TableHead>
+                <TableHead className="w-28">Dukungan</TableHead>
                 <TableHead>Diaktifkan</TableHead>
                 <TableHead className="w-24 text-right">Aksi</TableHead>
               </TableRow>
@@ -158,7 +165,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={6} className="h-48 text-center">
+                  <TableCell colSpan={7} className="h-48 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                       <div className="rounded-full bg-muted p-4">
                         <Search className="size-7" aria-hidden="true" />
@@ -204,6 +211,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                         {row.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-sm tabular-nums text-muted-foreground">{labelDukungan(row)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{row.diaktifkanPada ?? "-"}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1.5">
@@ -263,11 +271,12 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                       <p className="font-mono text-xs text-muted-foreground">{row.nip}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className={cn("shrink-0 font-normal", row.status === "aktif" ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>
-                    {row.status === "aktif" ? "Aktif" : row.status === "belum" ? "Belum" : "Ditolak"}
+                  <Badge variant="secondary" className={cn("shrink-0 font-normal", gaya[row.status] ?? gaya.belum)}>
+                    {row.status === "aktif" ? "Aktif" : row.status === "menunggu" ? "Menunggu" : row.status === "belum" ? "Belum" : "Ditolak"}
                   </Badge>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Diaktifkan: {row.diaktifkanPada ?? "-"}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Dukungan: {labelDukungan(row)}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Diaktifkan: {row.diaktifkanPada ?? "-"}</p>
                 <div className="mt-3 flex justify-end gap-2 border-t pt-3">
                   <Button
                     variant="ghost"

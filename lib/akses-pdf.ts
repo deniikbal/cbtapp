@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { teachers } from "@/lib/db/schema"
 import { KODE_MAKS, KODE_MIN } from "@/lib/mutasi"
 
-/** Sekali bayar, nominal statis. */
+/** Nominal saran default untuk dukungan sukarela (bukan kewajiban). */
 export const NOMINAL_PDF = 5000
 /** Nomor WA admin penerima bukti bayar; kosongkan untuk menyembunyikan tombol WA. */
 export const WA_ADMIN = process.env.ADMIN_WA ?? ""
@@ -16,14 +16,24 @@ export type StatusAkses = "belum" | "menunggu" | "aktif" | "ditolak"
 /** Status akses unduh PDF disimpan di baris guru (kolom aksesPdf*), tanpa tabel terpisah. */
 export async function ambilAkses(
   teacherId: string
-): Promise<{ status: StatusAkses; diaktifkanPada: Date | null; kode: number } | null> {
+): Promise<{ status: StatusAkses; diaktifkanPada: Date | null; kode: number; dasar: number } | null> {
   const [baris] = await db
-    .select({ status: teachers.aksesPdf, diaktifkanPada: teachers.aksesPdfPada, kode: teachers.aksesPdfKode })
+    .select({
+      status: teachers.aksesPdf,
+      diaktifkanPada: teachers.aksesPdfPada,
+      kode: teachers.aksesPdfKode,
+      dasar: teachers.aksesPdfDasar,
+    })
     .from(teachers)
     .where(eq(teachers.id, teacherId))
     .limit(1)
   if (!baris) return null
-  return { status: baris.status as StatusAkses, diaktifkanPada: baris.diaktifkanPada, kode: baris.kode ?? 0 }
+  return {
+    status: baris.status as StatusAkses,
+    diaktifkanPada: baris.diaktifkanPada,
+    kode: baris.kode ?? 0,
+    dasar: baris.dasar ?? 0,
+  }
 }
 
 /**
@@ -49,6 +59,34 @@ export async function ambilAtauBuatKode(teacherId: string): Promise<number> {
   const kode = bebas[Math.floor(Math.random() * bebas.length)]
   await db.update(teachers).set({ aksesPdfKode: kode, updatedAt: new Date() }).where(eq(teachers.id, teacherId))
   return kode
+}
+
+/**
+ * Guru memilih nominal dukungan sukarela. Simpan nominal pilihan (dasar) dan
+ * tandai "menunggu"; nominal yang harus dibayar = dasar + kode unik.
+ * Mengembalikan total nominal, atau 0 bila kode unik habis / nominal tidak valid.
+ */
+export async function simpanDukungan(teacherId: string, dasar: number): Promise<number> {
+  if (!Number.isInteger(dasar) || dasar < 1) return 0
+  const kode = await ambilAtauBuatKode(teacherId)
+  if (kode <= 0) return 0
+  await db
+    .update(teachers)
+    .set({ aksesPdf: "menunggu", aksesPdfDasar: dasar, updatedAt: new Date() })
+    .where(eq(teachers.id, teacherId))
+  return dasar + kode
+}
+
+/** Akses gratis: aktifkan langsung tanpa pembayaran, tandai dasar 0. */
+export async function aktifkanGratis(teacherId: string): Promise<boolean> {
+  const [baris] = await db.select({ id: teachers.id }).from(teachers).where(eq(teachers.id, teacherId)).limit(1)
+  if (!baris) return false
+  const pada = new Date()
+  await db
+    .update(teachers)
+    .set({ aksesPdf: "aktif", aksesPdfPada: pada, aksesPdfDasar: 0, aksesPdfCatatan: "Akses gratis", updatedAt: pada })
+    .where(eq(teachers.id, teacherId))
+  return true
 }
 
 export async function bolehUnduhPdf(teacherId: string) {

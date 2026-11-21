@@ -27,21 +27,21 @@ export function parseNominal(teks: string): number[] {
 
 /**
  * Cocokkan nominal pada teks mutasi dengan daftar tagihan guru.
- * Hanya nominal dalam rentang dasar+1 .. dasar+999 yang bisa dipetakan ke kode unik.
+ * Tiap guru menyimpan nominal pilihannya sendiri (dasar), sehingga
+ * kode unik = nominal mutasi - dasar. Mendukung nominal berapapun (>= 1).
+ * Baris dengan dasar 0 (belum memilih / akses gratis) dilewati.
  */
-export function cocokkanNominal<T extends { id: string; kode: number }>(
+export function cocokkanNominal<T extends { id: string; kode: number; dasar: number }>(
   teks: string,
-  dasar: number,
   tagihan: T[]
 ): { cocok: T[]; nominalTidakDikenal: number[] } {
   const nominal = parseNominal(teks)
-  const perKode = new Map(tagihan.filter((t) => t.kode > 0).map((t) => [t.kode, t] as const))
+  const berlaku = tagihan.filter((t) => t.kode > 0 && t.dasar > 0)
   const cocok: T[] = []
   const nominalTidakDikenal: number[] = []
 
   for (const nilai of nominal) {
-    const kode = nilai - dasar
-    const target = kode >= KODE_MIN && kode <= KODE_MAKS ? perKode.get(kode) : undefined
+    const target = berlaku.find((t) => nilai - t.dasar === t.kode)
     if (target) {
       if (!cocok.some((item) => item.id === target.id)) cocok.push(target)
     } else {

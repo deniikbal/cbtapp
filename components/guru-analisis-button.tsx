@@ -18,7 +18,7 @@ export function GuruAnalisisButton({
 }: {
   bankId: string
   judul: string
-  akses: { status: string; nominal: number; waAdmin: string; qris: string }
+  akses: { status: string; nominal: number; waAdmin: string; qris: string; punyaQris: boolean }
   tampilan?: "ikon" | "teks"
 }) {
   const [open, setOpen] = useState(false)
