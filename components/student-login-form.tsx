@@ -36,6 +36,8 @@ export function StudentLoginForm() {
               placeholder="Masukkan Username"
               className="h-11 text-[14px] placeholder:text-muted-foreground sm:h-7 sm:text-xs/relaxed"
               required
+              onInvalid={(event) => event.currentTarget.setCustomValidity("Username wajib diisi.")}
+              onInput={(event) => event.currentTarget.setCustomValidity("")}
             />
           </div>
           <div className="space-y-2">
@@ -48,6 +50,8 @@ export function StudentLoginForm() {
                 placeholder="******"
                 className="h-11 pr-10 text-[14px] placeholder:text-muted-foreground sm:h-7 sm:text-xs/relaxed"
                 required
+                onInvalid={(event) => event.currentTarget.setCustomValidity("Password wajib diisi.")}
+                onInput={(event) => event.currentTarget.setCustomValidity("")}
               />
               <button
                 type="button"
