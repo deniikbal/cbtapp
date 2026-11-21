@@ -64,7 +64,7 @@ type Isian = {
 }
 
 const HURUF = "ABCDE"
-const OPSI_AWAL = ["", "", "", "", ""]
+const OPSI_AWAL = ["", "", "", ""]
 const JENIS: { value: Jenis; label: string }[] = [
   { value: "PILIHAN_GANDA", label: "Pilihan ganda" },
   { value: "CENTANG", label: "Centang banyak" },
@@ -104,10 +104,12 @@ function EditorSoal({
     while (isi.length < 3) isi.push("")
     return isi
   })
-  const opsiAwalIdx = HURUF.indexOf((awal?.kunci ?? "").toUpperCase())
-  const [kunciIdx, setKunciIdx] = useState<number>(
-    pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? (opsiAwalIdx >= 0 ? opsiAwalIdx : -1) : -1,
-  )
+  const [kunciIdx, setKunciIdx] = useState<number>(() => {
+    if (!pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA")) return -1
+    const kunci = (awal?.kunci ?? "").trim().toUpperCase()
+    // "ABCDE".indexOf("") = 0, jadi kunci kosong wajib dicek dulu.
+    return kunci.length === 1 ? HURUF.indexOf(kunci) : -1
+  })
   const [kunciIsi, setKunciIsi] = useState(pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? "" : (awal?.kunci ?? ""))
   const [proses, setProses] = useState(false)
   const [pesan, setPesan] = useState<string | null>(null)
@@ -136,7 +138,7 @@ function EditorSoal({
     })
     setProses(false)
     if (!ok) return
-    setPesan(mode === "tambah" ? "Soal tersimpan ke Google Form." : "Perubahan tersimpan.")
+    setPesan(mode === "tambah" ? "Soal tersimpan di topik ini." : "Perubahan tersimpan.")
     setPertanyaan("")
     setOpsi([...OPSI_AWAL])
     setKunciIdx(-1)
@@ -284,19 +286,19 @@ function EditorSoal({
         {mode === "tambah" ? (
           <>
             {backHref ? (
-              <Button variant="ghost" size="sm" className="h-11 rounded-sm sm:h-8" render={<Link href={backHref} />}>
-                <ArrowLeft className="size-4" />
+              <Button variant="ghost" size="sm" className="h-11 gap-1.5 rounded-sm sm:h-8" render={<Link href={backHref} />}>
+                <X className="size-4" />
                 Selesai
               </Button>
             ) : null}
             <Button
               variant="outline"
               size="sm"
-              className="h-11 rounded-sm sm:h-8"
+              className="h-11 gap-1.5 rounded-sm sm:h-8"
               onClick={simpan}
               disabled={proses || !siap}
             >
-              {proses ? <Loader2 className="size-4 animate-spin" /> : null}
+              {proses ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
               Simpan &amp; tulis lagi
             </Button>
           </>
@@ -543,7 +545,8 @@ function DaftarSoal({
           <ScrollArea className="max-h-[560px] rounded-sm border border-border">
             <Accordion>
               {soal.map((s) => {
-                const idx = HURUF.indexOf((s.kunci || "").toUpperCase())
+                const kunci = (s.kunci || "").trim().toUpperCase()
+                const idx = kunci.length === 1 ? HURUF.indexOf(kunci) : -1
                 return (
                   <AccordionItem key={s.qid || String(s.no)} value={String(s.no)}>
                     <AccordionTrigger className="items-center gap-2 px-3 py-2.5 text-xs hover:no-underline">
@@ -553,7 +556,7 @@ function DaftarSoal({
                         </span>
                         <span className="min-w-0 flex-1 truncate font-normal">{s.pertanyaan}</span>
                         <span className="shrink-0 text-[11px] font-normal text-muted-foreground tabular-nums">
-                          {s.poin} poin
+                          {s.poin} poin · {labelJenis(s.jenis)}
                         </span>
                       </span>
                     </AccordionTrigger>
