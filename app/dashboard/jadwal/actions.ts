@@ -16,12 +16,14 @@ function readScheduleBaseForm(formData: FormData) {
   const durationMinutes = Number(formData.get("durationMinutes") ?? 0)
   const session = Math.max(1, Number(formData.get("session") ?? 1) || 1)
   const active = String(formData.get("active") ?? "true") === "true"
+  // Checkbox yang tidak dicentang tidak dikirim FormData, jadi default false.
+  const showScore = formData.get("showScore") === "true"
 
   if (!questionBankId || !examDate || !startTime || !durationMinutes) {
     throw new Error("Bank soal, tanggal, jam mulai, dan durasi wajib diisi.")
   }
 
-  return { questionBankId, examDate, startTime, durationMinutes, active, session }
+  return { questionBankId, examDate, startTime, durationMinutes, active, session, showScore }
 }
 
 
@@ -73,6 +75,7 @@ export async function createExamSchedule(formData: FormData) {
   }
 
   revalidatePath("/dashboard/jadwal")
+  revalidatePath("/siswa/dashboard")
 
   return { created: values.length, skipped }
 }
@@ -248,6 +251,7 @@ export async function duplicateExamScheduleToNextSession(
       startTime: jam,
       durationMinutes: row.durationMinutes,
       active: row.active,
+      showScore: row.showScore,
       session: nextSession,
     }))
 

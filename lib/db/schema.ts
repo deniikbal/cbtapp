@@ -158,6 +158,8 @@ export const examSchedules = pgTable(
     active: boolean("active").notNull().default(true),
     // Sesi ujian: jadwal per (kelas + sesi). Siswa sesi N hanya melihat jadwal sesi N.
     session: integer("session").notNull().default(1),
+    // Panitia bisa menyembunyikan nilai siswa per jadwal.
+    showScore: boolean("showScore").notNull().default(true),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },

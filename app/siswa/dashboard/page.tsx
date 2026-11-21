@@ -147,6 +147,7 @@ export default async function SiswaDashboardPage({
           id: examSchedules.id,
           examDate: examSchedules.examDate,
           startTime: examSchedules.startTime,
+          showScore: examSchedules.showScore,
           title: questionBanks.title,
           code: questionBanks.code,
           subjectName: subjects.name,
@@ -160,6 +161,13 @@ export default async function SiswaDashboardPage({
     : []
   const completedBySchedule = new Map(completedAttempts.map((attempt) => [attempt.scheduleId, attempt]))
   const hasilBySchedule = new Map(hasilRows.map((hasil) => [hasil.scheduleId, hasil]))
+  const hasilTerlihat = hasilRows.filter((hasil) =>
+    completedExamRows.some((schedule) => schedule.id === hasil.scheduleId && schedule.showScore)
+  )
+  const rataRataTampil =
+    hasilTerlihat.length > 0
+      ? hasilTerlihat.reduce((jumlah, baris) => jumlah + Number(baris.score), 0) / hasilTerlihat.length
+      : null
   const today = getTodayInTimeZone("Asia/Jakarta")
   const visibleSchedules = schedules.filter(
     (schedule) => getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) === "ACTIVE"
@@ -202,7 +210,7 @@ export default async function SiswaDashboardPage({
             <MetricCard label="Menunggu sync" value={String(menungguCount)} icon={RefreshCw} warna="bg-token-respons" />
             <MetricCard
               label="Rata-rata nilai"
-              value={rataRata === null ? "-" : rataRata.toFixed(2)}
+              value={rataRataTampil === null ? "-" : rataRataTampil.toFixed(2)}
               icon={Trophy}
               warna="bg-card text-foreground border"
             />
@@ -246,13 +254,15 @@ export default async function SiswaDashboardPage({
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
-                          {hasil ? (
+                          {hasil && schedule.showScore ? (
                             <>
                               <p className="text-2xl font-semibold tabular-nums leading-none text-primary">
                                 {Number(hasil.score).toFixed(2)}
                               </p>
                               <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
                             </>
+                          ) : hasil ? (
+                            <Badge variant="outline" className="text-[11px] font-normal">Nilai disembunyikan</Badge>
                           ) : (
                             <Badge variant="outline" className="border-token-respons text-[11px] font-normal text-amber-700">
                               Menunggu sync
@@ -261,7 +271,7 @@ export default async function SiswaDashboardPage({
                         </div>
                       </div>
 
-                      {hasil ? (
+                      {hasil && schedule.showScore ? (
                         <>
                           <Separator className="my-3" />
                           <div className="grid grid-cols-3 gap-2 text-center text-xs">
@@ -282,6 +292,10 @@ export default async function SiswaDashboardPage({
                             Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}
                           </p>
                         </>
+                      ) : hasil ? (
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          Panitia menyembunyikan nilai untuk ujian ini.
+                        </p>
                       ) : (
                         <p className="mt-3 text-xs text-muted-foreground">
                           Nilai belum tersedia. Panitia belum menjalankan sync untuk ujian ini.
@@ -297,6 +311,11 @@ export default async function SiswaDashboardPage({
       </div>
     )
   }
+
+  const hasilTerbaru = hasilRows[0]
+  const nilaiTerbaruTerlihat = hasilTerbaru
+    ? completedExamRows.some((schedule) => schedule.id === hasilTerbaru.scheduleId && schedule.showScore)
+    : false
 
   return (
     <div className="min-h-svh bg-background">
@@ -382,9 +401,13 @@ export default async function SiswaDashboardPage({
                     {hasilRows[0].subjectName} · {formatTanggalJam(hasilRows[0].syncedAt)}
                   </p>
                 </div>
-                <p className="shrink-0 text-xl font-semibold tabular-nums text-primary">
-                  {Number(hasilRows[0].score).toFixed(2)}
-                </p>
+                {nilaiTerbaruTerlihat ? (
+                  <p className="shrink-0 text-xl font-semibold tabular-nums text-primary">
+                    {Number(hasilTerbaru.score).toFixed(2)}
+                  </p>
+                ) : (
+                  <Badge variant="outline" className="shrink-0 text-[11px] font-normal">Nilai disembunyikan</Badge>
+                )}
               </CardContent>
             </Card>
           )}

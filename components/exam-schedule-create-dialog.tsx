@@ -6,6 +6,7 @@ import { Loader2, Plus } from "lucide-react"
 
 import { createExamSchedule } from "@/app/dashboard/jadwal/actions"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -203,6 +204,10 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2"><Label htmlFor="session">Sesi</Label><Select name="session" defaultValue="1"><SelectTrigger id="session" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div>
             <div className="space-y-2"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+            <div className="flex items-center gap-3 rounded-lg border px-3 py-2 sm:col-span-2">
+              <Checkbox id="showScore" name="showScore" value="true" defaultChecked className="after:-inset-x-3.5 after:-inset-y-3.5" />
+              <Label htmlFor="showScore" className="text-sm font-normal">Tampilkan nilai ke siswa</Label>
+            </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan Jadwal"}</Button></DialogFooter>

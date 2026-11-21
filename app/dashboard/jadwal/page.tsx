@@ -27,6 +27,7 @@ type ScheduleRow = {
   durationMinutes: number
   active: boolean
   session: number
+  showScore: boolean
   title: string
   code: string
   className: string
@@ -64,6 +65,7 @@ export default async function JadwalPage() {
           durationMinutes: examSchedules.durationMinutes,
           session: examSchedules.session,
           active: examSchedules.active,
+          showScore: examSchedules.showScore,
           title: questionBanks.title,
           code: questionBanks.code,
           bankSyncedAt: questionBanks.syncedAt,
@@ -119,6 +121,7 @@ export default async function JadwalPage() {
         durationMinutes: row.durationMinutes,
         active: row.active,
         session: row.session,
+        showScore: row.showScore,
         title: row.title,
         code: row.code,
         className: row.className,

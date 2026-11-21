@@ -8,13 +8,14 @@ import { deleteExamSchedules, duplicateExamScheduleToNextSession, updateExamSche
 import type { ScheduleBankOption, ScheduleClassroomOption } from "@/components/exam-schedule-create-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
-export type ScheduleRowActionData = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; session?: number; title: string }
+export type ScheduleRowActionData = { id: string; questionBankId: string; classroomId: string; examDate: string; startTime: string; durationMinutes: number; active: boolean; session?: number; showScore?: boolean; title: string }
 
 export function ExamScheduleRowActions({
   schedule,
@@ -179,7 +180,12 @@ export function ExamScheduleRowActions({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Tanggal</Label><Input name="examDate" type="date" defaultValue={schedule.examDate} required /></div><div className="space-y-2"><Label>Jam Mulai</Label><Input name="startTime" type="time" defaultValue={schedule.startTime.slice(0, 5)} required /></div><div className="space-y-2"><Label>Durasi</Label><Input name="durationMinutes" type="number" min="1" defaultValue={schedule.durationMinutes} required /></div></div>
-            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div></div>
+            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+              <div className="flex items-center gap-3 rounded-lg border px-3 py-2 sm:col-span-2">
+                <Checkbox id={`showScore-${schedule.id}`} name="showScore" value="true" defaultChecked={schedule.showScore !== false} className="after:-inset-x-3.5 after:-inset-y-3.5" />
+                <Label htmlFor={`showScore-${schedule.id}`} className="text-sm font-normal">Tampilkan nilai ke siswa</Label>
+              </div>
+            </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => setEditOpen(false)}>Batal</Button><Button type="submit" disabled={isPending}>{isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}{isPending ? "Menyimpan..." : "Simpan"}</Button></DialogFooter>
           </form>
