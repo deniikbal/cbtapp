@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  ChevronDown,
   ExternalLink,
   FileText,
   Keyboard,
@@ -27,7 +28,6 @@ import {
   tambahSoal,
   ubahSoal,
 } from "@/app/actions/impor-soal"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -46,7 +46,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -438,7 +437,7 @@ function PanelTeks({
                 {soal.length} soal terbaca · {siap} siap
               </Badge>
             </div>
-            <ScrollArea className="h-64 rounded-sm border border-border">
+            <div className="max-h-64 overflow-y-auto overscroll-contain rounded-sm border border-border">
               <ul className="divide-y divide-border">
                 {soal.map((s) => {
                   const duplikat = tersimpan.some((t) => kunciTeks(t.pertanyaan) === kunciTeks(s.pertanyaan))
@@ -479,8 +478,7 @@ function PanelTeks({
                   )
                 })}
               </ul>
-              <ScrollBar />
-            </ScrollArea>
+            </div>
 
             {peringatan.length ? (
               <Alert className="rounded-sm border-amber-300/60 bg-amber-50 px-3 py-2 dark:border-amber-500/30 dark:bg-amber-950/40">
@@ -515,7 +513,9 @@ function PanelTeks({
   )
 }
 
-/** Kolom 2: daftar soal yang sudah ada di Google Form. */
+const BUKA_AWAL = -1
+
+/** Kolom 2: daftar soal yang sudah ada di Google Form (scroll sendiri, kartu ringkas). */
 function DaftarSoal({
   soal,
   onUbah,
@@ -525,44 +525,54 @@ function DaftarSoal({
   onUbah: (s: SoalForm) => void
   onHapus: (s: SoalForm) => void
 }) {
+  const [buka, setBuka] = useState<number>(BUKA_AWAL)
+
   return (
-    <Card className="gap-0 rounded-sm py-0">
+    <Card className="flex max-h-[calc(100dvh-13rem)] min-h-64 flex-col gap-0 rounded-sm py-0">
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <CardTitle className="text-sm">Soal di topik ini</CardTitle>
-          <CardDescription className="text-[11px]">Klik soal untuk melihat opsi &amp; kunci jawaban.</CardDescription>
+          <CardDescription className="text-[11px]">Klik satu soal untuk lihat opsi &amp; kunci.</CardDescription>
         </div>
         <Badge variant="secondary" className="shrink-0 rounded-sm font-normal tabular-nums">
           {soal.length} soal
         </Badge>
       </CardHeader>
-      <CardContent className="px-4 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {soal.length === 0 ? (
-          <p className="py-6 text-center text-xs text-muted-foreground">
+          <p className="px-4 py-10 text-center text-xs text-muted-foreground">
             Belum ada soal. Tambah lewat editor di sebelah kiri.
           </p>
         ) : (
-          <ScrollArea className="max-h-[560px] rounded-sm border border-border">
-            <Accordion>
-              {soal.map((s) => {
-                const kunci = (s.kunci || "").trim().toUpperCase()
-                const idx = kunci.length === 1 ? HURUF.indexOf(kunci) : -1
-                return (
-                  <AccordionItem key={s.qid || String(s.no)} value={String(s.no)}>
-                    <AccordionTrigger className="items-start gap-2 px-3 py-2.5 text-xs hover:no-underline">
-                      <span className="flex min-w-0 flex-1 items-start gap-2">
-                        <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-[11px] text-muted-foreground">
-                          {s.no}.
-                        </span>
-                        <span className="min-w-0 flex-1 space-y-0.5">
-                          <span className="block font-medium leading-snug">{s.pertanyaan}</span>
-                          <span className="block text-[11px] font-normal text-muted-foreground">
-                            {s.poin} poin · {labelJenis(s.jenis)}
-                          </span>
-                        </span>
+          <ul className="divide-y divide-border">
+            {soal.map((s) => {
+              const kunci = (s.kunci || "").trim().toUpperCase()
+              const idx = kunci.length === 1 ? HURUF.indexOf(kunci) : -1
+              const terbuka = buka === s.no
+              return (
+                <li key={s.qid || String(s.no)}>
+                  <button
+                    type="button"
+                    onClick={() => setBuka(terbuka ? BUKA_AWAL : s.no)}
+                    className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-[11px] text-muted-foreground">
+                      {s.no}.
+                    </span>
+                    <span className="min-w-0 flex-1 space-y-0.5">
+                      <span className="block text-xs font-medium leading-snug">{s.pertanyaan}</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {s.poin} poin · {labelJenis(s.jenis)}
+                        {idx >= 0 ? ` · kunci ${HURUF[idx]}` : s.kunci ? ` · kunci ${s.kunci}` : ""}
                       </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-3">
+                    </span>
+                    <ChevronDown
+                      className={`mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform ${terbuka ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {terbuka ? (
+                    <div className="space-y-2 border-t bg-muted/30 px-3 py-2.5">
                       {s.opsi.length ? (
                         <ul className="space-y-1">
                           {s.opsi.map((o, i) => {
@@ -570,8 +580,8 @@ function DaftarSoal({
                             return (
                               <li
                                 key={i}
-                                className={`flex items-start gap-2 rounded-sm px-2 py-1 text-xs ${
-                                  benar ? "bg-emerald-50 font-medium dark:bg-emerald-950/40" : ""
+                                className={`flex items-start gap-2 rounded-sm px-1.5 py-1 text-xs ${
+                                  benar ? "bg-emerald-50 dark:bg-emerald-950/40" : ""
                                 }`}
                               >
                                 <span
@@ -581,10 +591,8 @@ function DaftarSoal({
                                 >
                                   {HURUF[i]}.
                                 </span>
-                                <span className="min-w-0 flex-1">{o}</span>
-                                {benar ? (
-                                  <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                ) : null}
+                                <span className={`min-w-0 flex-1 ${benar ? "font-medium" : ""}`}>{o}</span>
+                                {benar ? <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" /> : null}
                               </li>
                             )
                           })}
@@ -595,29 +603,28 @@ function DaftarSoal({
                           <span className="font-medium text-emerald-800 dark:text-emerald-300">{s.kunci || "—"}</span>
                         </p>
                       )}
-                      <div className="mt-2 flex justify-end gap-1 border-t pt-2">
-                        <Button variant="outline" size="sm" className="h-9 rounded-sm text-[11px]" onClick={() => onUbah(s)}>
+                      <div className="flex justify-end gap-1.5">
+                        <Button variant="outline" size="sm" className="h-8 rounded-sm text-[11px]" onClick={() => onUbah(s)}>
                           Ubah
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-9 rounded-sm text-[11px] text-destructive hover:text-destructive"
+                          className="h-8 rounded-sm text-[11px] text-destructive hover:text-destructive"
                           onClick={() => onHapus(s)}
                         >
                           <Trash2 className="size-3.5" />
                           Hapus
                         </Button>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )
-              })}
-            </Accordion>
-            <ScrollBar />
-          </ScrollArea>
+                    </div>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
         )}
-      </CardContent>
+      </div>
     </Card>
   )
 }
