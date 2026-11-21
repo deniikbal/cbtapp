@@ -72,9 +72,9 @@ export function QuestionBankCreateDialog({
                 onValueChange={(value: string | null) => setSelectedSubjectId(value ?? "")}
                 required
               >
-                <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel">{selectedSubject ? `${selectedSubject.code} — ${selectedSubject.name}` : "Pilih mapel"}</SelectValue></SelectTrigger>
+                <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel">{selectedSubject ? `${selectedSubject.code} - ${selectedSubject.name}` : "Pilih mapel"}</SelectValue></SelectTrigger>
                 <SelectContent>
-                  {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} — {subject.name}</SelectItem>)}
+                  {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} - {subject.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -106,7 +106,7 @@ export function QuestionBankCreateDialog({
           <div className="space-y-1.5">
             <Label htmlFor="googleFormUrl">Link Google Form untuk siswa (opsional)</Label>
             <Input id="googleFormUrl" name="googleFormUrl" placeholder="https://docs.google.com/forms/d/…/viewform" />
-            <p className="text-xs text-muted-foreground">Link edit otomatis diubah ke viewform. Boleh dikosongkan — buat lewat tombol <span className="font-medium">Buat form kosong</span> di tabel.</p>
+            <p className="text-xs text-muted-foreground">Link edit otomatis diubah ke viewform. Boleh dikosongkan - buat lewat tombol <span className="font-medium">Buat form kosong</span> di tabel.</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="formId">Form ID (opsional, untuk sync hasil)</Label>

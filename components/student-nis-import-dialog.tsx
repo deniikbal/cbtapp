@@ -146,10 +146,10 @@ export function StudentNisImportDialog() {
                     {preview.rows.map((row) => (
                       <TableRow key={`${row.rowNumber}-${row.oldNis}-${row.newNis}`}>
                         <TableCell className="whitespace-normal text-xs">{row.rowNumber}</TableCell>
-                        <TableCell className="truncate text-xs" title={row.name}>{row.name || "—"}</TableCell>
-                        <TableCell className="truncate text-xs" title={row.className}>{row.className || "—"}</TableCell>
-                        <TableCell className="truncate font-mono text-xs" title={row.oldNis}>{row.oldNis || "—"}</TableCell>
-                        <TableCell className="truncate font-mono text-xs" title={row.newNis}>{row.newNis || "—"}</TableCell>
+                        <TableCell className="truncate text-xs" title={row.name}>{row.name || "-"}</TableCell>
+                        <TableCell className="truncate text-xs" title={row.className}>{row.className || "-"}</TableCell>
+                        <TableCell className="truncate font-mono text-xs" title={row.oldNis}>{row.oldNis || "-"}</TableCell>
+                        <TableCell className="truncate font-mono text-xs" title={row.newNis}>{row.newNis || "-"}</TableCell>
                         <TableCell><Badge variant="secondary" className={row.valid ? "bg-lime-500/10 px-1.5 text-xs text-lime-700 dark:text-lime-300" : "bg-rose-500/10 px-1.5 text-xs text-rose-700 dark:text-rose-300"}>{row.valid ? "Valid" : "Invalid"}</Badge></TableCell>
                         <TableCell className="whitespace-normal break-words text-xs text-muted-foreground">{row.message}</TableCell>
                       </TableRow>

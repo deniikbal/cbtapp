@@ -169,7 +169,7 @@ export default async function DashboardPage() {
             </CardHeader>
 
             <CardContent>
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="hidden overflow-x-auto rounded-lg border md:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -246,6 +246,59 @@ export default async function DashboardPage() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Daftar kartu mobile: pengganti tabel 7 kolom di layar sempit (R-03). */}
+              {recentExams.length > 0 && (
+                <div className="space-y-3 md:hidden">
+                  {recentExams.map((exam) => (
+                    <div key={exam.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <Avatar className="size-8">
+                            <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                              {getInitials(exam.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{exam.name}</p>
+                            <p className="font-mono text-xs text-muted-foreground">{exam.code}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Peserta</dt>
+                          <dd className="tabular-nums">{exam.participants}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">Status</dt>
+                          <dd>
+                            <Badge variant="secondary" className={cn("font-normal", getStatusBadgeClass(exam.status))}>
+                              {exam.status}
+                            </Badge>
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-xs text-muted-foreground">Jadwal</dt>
+                          <dd className="text-muted-foreground">{exam.schedule}</dd>
+                        </div>
+                      </dl>
+
+                      <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                        <Button nativeButton={false} variant="outline" size="sm" className="h-11 rounded-sm" render={<Link href="/dashboard/jadwal" />}>
+                          <Clock3 className="size-4" />
+                          Detail
+                        </Button>
+                        <Button nativeButton={false} variant="outline" size="sm" className="h-11 rounded-sm" render={<Link href="/dashboard/jadwal" />}>
+                          <Settings className="size-4" />
+                          Atur
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </main>

@@ -184,17 +184,47 @@ export function UserManagementCard({ users, currentUserId }: { users: UserManage
         </CardHeader>
 
         <CardContent>
-          <div className="overflow-hidden rounded-lg border">
+          <div className="hidden overflow-hidden rounded-lg border md:block">
             <Table>
               <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama</TableHead><TableHead>Email</TableHead><TableHead className="w-28">Peran</TableHead><TableHead>Dibuat</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow className="hover:bg-transparent"><TableCell colSpan={6} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><Users className="size-7" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada user"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Tambahkan user untuk mengatur akses dashboard."}</p></div>{hasActiveFilter ? <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button> : <Button size="sm" onClick={openCreate}><Plus className="size-4" />Tambah User</Button>}</div></TableCell></TableRow>
                 ) : paginatedUsers.map((row, index) => (
-                  <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-sky-500/15 text-xs font-medium text-sky-700 dark:text-sky-300">{getInitials(row.name)}</AvatarFallback></Avatar><div className="font-medium">{row.name}{row.id === currentUserId && <span className="ml-2 text-xs font-normal text-muted-foreground">(Anda)</span>}</div></div></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{row.email}</TableCell><TableCell>{row.role === "superadmin" ? <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300">Superadmin</Badge> : <Badge variant="secondary">Admin</Badge>}</TableCell><TableCell className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</TableCell><TableCell><div className="flex justify-end gap-1.5"><Button variant="ghost" size="icon-sm" title={row.role === "superadmin" ? "Jadikan admin" : "Jadikan superadmin"} disabled={row.id === currentUserId || rolePending === row.id} onClick={() => ubahPeran(row)}>{rolePending === row.id ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}<span className="sr-only">Ubah peran</span></Button><Button variant="ghost" size="icon-sm" onClick={() => openEdit(row)}><Edit className="size-4" /><span className="sr-only">Edit</span></Button><Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={row.id === currentUserId} onClick={() => setDeleting(row)}><Trash2 className="size-4" /><span className="sr-only">Hapus</span></Button></div></TableCell></TableRow>
+                  <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell><TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{getInitials(row.name)}</AvatarFallback></Avatar><div className="font-medium">{row.name}{row.id === currentUserId && <span className="ml-2 text-xs font-normal text-muted-foreground">(Anda)</span>}</div></div></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{row.email}</TableCell><TableCell>{row.role === "superadmin" ? <Badge className="bg-primary/15 text-primary dark:bg-primary/20 dark:text-primary">Superadmin</Badge> : <Badge variant="secondary">Admin</Badge>}</TableCell><TableCell className="text-sm text-muted-foreground">{formatDate(row.createdAt)}</TableCell><TableCell><div className="flex justify-end gap-1.5"><Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" title={row.role === "superadmin" ? "Jadikan admin" : "Jadikan superadmin"} disabled={row.id === currentUserId || rolePending === row.id} onClick={() => ubahPeran(row)}>{rolePending === row.id ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}<span className="sr-only">Ubah peran</span></Button><Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" onClick={() => openEdit(row)}><Edit className="size-4" /><span className="sr-only">Edit</span></Button><Button variant="ghost" size="icon-sm" className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" disabled={row.id === currentUserId} onClick={() => setDeleting(row)}><Trash2 className="size-4" /><span className="sr-only">Hapus</span></Button></div></TableCell></TableRow>
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+          <div className="space-y-3 md:hidden">
+            {paginatedUsers.length === 0 ? (
+              <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+                Belum ada user.
+              </div>
+            ) : (
+              paginatedUsers.map((row) => (
+                <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar className="size-8"><AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{getInitials(row.name)}</AvatarFallback></Avatar>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{row.name}{row.id === currentUserId && <span className="ml-2 text-xs font-normal text-muted-foreground">(Anda)</span>}</p>
+                        <p className="truncate font-mono text-xs text-muted-foreground">{row.email}</p>
+                      </div>
+                    </div>
+                    {row.role === "superadmin" ? <Badge className="shrink-0 bg-primary/15 text-primary dark:bg-primary/20 dark:text-primary">Superadmin</Badge> : <Badge variant="secondary" className="shrink-0">Admin</Badge>}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Dibuat {formatDate(row.createdAt)}</p>
+                  <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+                    <Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" title={row.role === "superadmin" ? "Jadikan admin" : "Jadikan superadmin"} disabled={row.id === currentUserId || rolePending === row.id} onClick={() => ubahPeran(row)}>{rolePending === row.id ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}<span className="sr-only">Ubah peran</span></Button>
+                    <Button variant="ghost" size="icon-sm" className="size-11 sm:size-6" onClick={() => openEdit(row)}><Edit className="size-4" /><span className="sr-only">Edit</span></Button>
+                    <Button variant="ghost" size="icon-sm" className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" disabled={row.id === currentUserId} onClick={() => setDeleting(row)}><Trash2 className="size-4" /><span className="sr-only">Hapus</span></Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">

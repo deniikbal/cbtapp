@@ -96,7 +96,7 @@ export function ClassroomRowActions({
     <>
       <div className="flex justify-end">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
             <MoreHorizontal className="size-4" />
             <span className="sr-only">Aksi kelas</span>
           </DropdownMenuTrigger>
@@ -148,13 +148,13 @@ export function ClassroomRowActions({
                 <Select name="majorId" defaultValue={classroom.majorId} required>
                   <SelectTrigger id={`major-${classroom.id}`} className="w-full">
                     <SelectValue>
-                      {selectedMajor ? `${selectedMajor.code} — ${selectedMajor.name}` : "Pilih jurusan"}
+                      {selectedMajor ? `${selectedMajor.code} - ${selectedMajor.name}` : "Pilih jurusan"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {majors.map((major) => (
                       <SelectItem key={major.id} value={major.id}>
-                        {major.code} — {major.name}
+                        {major.code} - {major.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

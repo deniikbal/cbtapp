@@ -96,7 +96,7 @@ export default async function JurusanPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="overflow-hidden rounded-lg border">
+              <div className="hidden overflow-x-auto rounded-lg border md:block">
                 <Table>
                   <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Jurusan</TableHead><TableHead>Kode</TableHead><TableHead>Total Kelas</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
                   <TableBody>
@@ -107,6 +107,47 @@ export default async function JurusanPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              {/* Daftar kartu mobile: pengganti tabel 6 kolom di layar sempit (R-03). */}
+              <div className="space-y-3 md:hidden">
+                {rows.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-sm border bg-card p-4 text-center text-muted-foreground shadow-sm">
+                    <div className="rounded-full bg-muted p-4"><Building2 className="size-7" /></div>
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">Belum ada jurusan</div>
+                      <p className="text-sm">Tambahkan jurusan sebelum membuat kelas.</p>
+                    </div>
+                    <MajorCreateDialog />
+                  </div>
+                ) : rows.map((row, index) => (
+                  <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{row.name}</p>
+                        <p className="text-xs text-muted-foreground tabular-nums">#{index + 1}</p>
+                      </div>
+                      <Badge variant="outline" className="shrink-0 font-mono font-normal">{row.code}</Badge>
+                    </div>
+
+                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Total Kelas</dt>
+                        <dd className="tabular-nums">{row.classCount}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Status</dt>
+                        <dd>
+                          <Badge variant="secondary" className={cn("font-normal", row.classCount > 0 ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{row.classCount > 0 ? "Terpakai" : "Belum terpakai"}</Badge>
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
+                      <MajorRowActions major={row} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

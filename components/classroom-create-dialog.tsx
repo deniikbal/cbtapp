@@ -105,13 +105,13 @@ export function ClassroomCreateDialog({ majors }: { majors: MajorOption[] }) {
             >
               <SelectTrigger id="majorId" className="w-full">
                 <SelectValue placeholder="Pilih jurusan">
-                  {selectedMajor ? `${selectedMajor.code} — ${selectedMajor.name}` : "Pilih jurusan"}
+                  {selectedMajor ? `${selectedMajor.code} - ${selectedMajor.name}` : "Pilih jurusan"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {majors.map((major) => (
                   <SelectItem key={major.id} value={major.id}>
-                    {major.code} — {major.name}
+                    {major.code} - {major.name}
                   </SelectItem>
                 ))}
               </SelectContent>

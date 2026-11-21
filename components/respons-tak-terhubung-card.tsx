@@ -102,11 +102,11 @@ export function ResponsTakTerhubungCard({
               {rows.map((row, i) => (
                 <TableRow key={row.id}>
                   <TableCell>{i + 1}</TableCell>
-                  <TableCell className="font-medium">{row.nama || "—"}</TableCell>
-                  <TableCell className="font-mono text-xs">{row.nis || "—"}</TableCell>
+                  <TableCell className="font-medium">{row.nama || "-"}</TableCell>
+                  <TableCell className="font-mono text-xs">{row.nis || "-"}</TableCell>
                   <TableCell className="max-w-52 truncate">{row.bank}</TableCell>
                   <TableCell>{row.kelas}</TableCell>
-                  <TableCell className="whitespace-nowrap">{row.submittedAt ?? "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap">{row.submittedAt ?? "-"}</TableCell>
                   <TableCell>
                     <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => buka(row)}>
                       <Link2 className="size-3" /> Hubungkan
@@ -124,7 +124,7 @@ export function ResponsTakTerhubungCard({
           <DialogHeader>
             <DialogTitle>Hubungkan respons</DialogTitle>
             <DialogDescription>
-              {terpilih?.nama || "(nama kosong)"} • NIS diketik: {terpilih?.nis || "—"} • {terpilih?.bank}
+              {terpilih?.nama || "(nama kosong)"} • NIS diketik: {terpilih?.nis || "-"} • {terpilih?.bank}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

@@ -234,7 +234,7 @@ export function StudentManagementCard({
               <SelectContent align="start">
                 <SelectItem value="ALL">Semua kelas</SelectItem>
                 {classrooms.map((classroom) => (
-                  <SelectItem key={classroom.id} value={classroom.id}>{classroom.name} — {classroom.majorName}</SelectItem>
+                  <SelectItem key={classroom.id} value={classroom.id}>{classroom.name} - {classroom.majorName}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -298,7 +298,7 @@ export function StudentManagementCard({
           </div>
         )}
 
-        <div className="overflow-hidden rounded-lg border">
+        <div className="hidden overflow-hidden rounded-lg border md:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -348,9 +348,9 @@ export function StudentManagementCard({
                     />
                   </TableCell>
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{startIndex + index + 1}</TableCell>
-                  <TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-blue-500/15 text-xs font-medium text-blue-700 dark:text-blue-300">{getInitials(student.name)}</AvatarFallback></Avatar><span className="font-medium">{student.name}</span></div></TableCell>
+                  <TableCell><div className="flex items-center gap-3"><Avatar className="size-8"><AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">{getInitials(student.name)}</AvatarFallback></Avatar><span className="font-medium">{student.name}</span></div></TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
-                  <TableCell className="font-mono text-xs">{student.kartuPassword || "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{student.kartuPassword || "-"}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal">{student.className}</Badge></TableCell>
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{student.session ?? 1}</TableCell>
                   <TableCell className="text-muted-foreground">{student.majorName}</TableCell>
@@ -360,6 +360,60 @@ export function StudentManagementCard({
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {filteredStudents.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada peserta."}
+            </div>
+          ) : (
+            paginatedStudents.map((student) => (
+              <div key={student.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Checkbox
+                      checked={selectedIds.includes(student.id)}
+                      onCheckedChange={() => toggleOne(student.id)}
+                      aria-label={`Pilih ${student.name}`}
+                      className="after:-inset-x-3.5 after:-inset-y-3.5"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{student.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{student.nis}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className={cn("shrink-0 font-normal", student.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>
+                    {student.active ? "Aktif" : "Tidak aktif"}
+                  </Badge>
+                </div>
+
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Password kartu</dt>
+                    <dd className="font-mono text-xs">{student.kartuPassword || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Sesi</dt>
+                    <dd className="tabular-nums">{student.session ?? 1}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Kelas</dt>
+                    <dd>{student.className}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Jurusan</dt>
+                    <dd className="text-muted-foreground">{student.majorName}</dd>
+                  </div>
+                </dl>
+
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <StudentRowActions student={student} classrooms={classrooms} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
@@ -436,7 +490,7 @@ export function StudentManagementCard({
           <AlertDialogHeader>
             <AlertDialogTitle>{bulkAttemptCount} peserta sudah punya percobaan ujian</AlertDialogTitle>
             <AlertDialogDescription>
-              Peserta yang sudah memulai/mengerjakan ujian di sesi lama tidak bisa melanjutkan pengerjaan tersebut setelah sesinya diubah — mereka akan mengerjakan ulang melalui jadwal sesi baru. Hasil yang sudah tersinkron tetap tersimpan. Tetap ubah sesi {selectedIds.length} peserta ke Sesi {bulkSession}?
+              Peserta yang sudah memulai/mengerjakan ujian di sesi lama tidak bisa melanjutkan pengerjaan tersebut setelah sesinya diubah, mereka akan mengerjakan ulang melalui jadwal sesi baru. Hasil yang sudah tersinkron tetap tersimpan. Tetap ubah sesi {selectedIds.length} peserta ke Sesi {bulkSession}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -145,7 +145,7 @@ export default async function KartuUjianPage({
                   <div className="flex gap-2">
                     <dt className="w-24 shrink-0 text-left text-muted-foreground">Ruang Ujian</dt>
                     <span className="shrink-0 text-muted-foreground">:</span>
-                    <dd className="font-medium">{siswa.roomName ?? "—"}</dd>
+                    <dd className="font-medium">{siswa.roomName ?? "-"}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 shrink-0 text-left text-muted-foreground">Username</dt>
@@ -156,7 +156,7 @@ export default async function KartuUjianPage({
                     <dt className="w-24 shrink-0 text-left text-muted-foreground">Password</dt>
                     <span className="shrink-0 text-muted-foreground">:</span>
                     <dd className="kartu-password font-mono text-sm font-bold tracking-[0.15em]">
-                      {siswa.kartuPassword ?? "—"}
+                      {siswa.kartuPassword ?? "-"}
                     </dd>
                   </div>
                 </dl>
@@ -170,8 +170,8 @@ export default async function KartuUjianPage({
                     <p className="text-muted-foreground">Kepala Sekolah,</p>
                     <div className="relative mx-auto mt-2 h-12 w-44">
                       <div className="absolute bottom-0 left-0 text-left" style={{ transform: `translateX(${cardSettings.nameX}px)` }}>
-                        <p className="font-semibold">{cardSettings.principalName || "—"}</p>
-                        <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "—"}</p>
+                        <p className="font-semibold">{cardSettings.principalName || "-"}</p>
+                        <p className="text-[8px] text-muted-foreground">NIP. {cardSettings.principalNip || "-"}</p>
                       </div>
                       {cardSettings.signatureUrl && <img src={cardSettings.signatureUrl} alt="TTD" className="absolute inset-0 h-full w-full object-contain opacity-90" style={{ transform: `translate(${cardSettings.sigX}px, ${cardSettings.sigY}px)`, height: cardSettings.sigSize, width: "100%", margin: "auto" }} />}
                     </div>

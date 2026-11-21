@@ -93,13 +93,13 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
   return (
     <div className="flex justify-end gap-1.5">
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogTrigger render={<Button variant="ghost" size="icon-sm" />}><Edit className="size-4" /><span className="sr-only">Edit bank soal</span></DialogTrigger>
+        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" /><span className="sr-only">Edit bank soal</span></DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Edit Bank Soal</DialogTitle><DialogDescription>Kode dan judul dibuat otomatis. Ubah mapel, guru, link, atau status.</DialogDescription></DialogHeader>
           <form action={handleUpdate} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2"><Label>Kode Otomatis</Label><Input value={bank.code} disabled /></div>
-              <div className="space-y-2"><Label htmlFor={`subject-${bank.id}`}>Mapel</Label><Select name="subjectId" defaultValue={bank.subjectId} required><SelectTrigger id={`subject-${bank.id}`} className="w-full"><SelectValue /></SelectTrigger><SelectContent>{subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} — {subject.name}</SelectItem>)}</SelectContent></Select></div>
+              <div className="space-y-2"><Label htmlFor={`subject-${bank.id}`}>Mapel</Label><Select name="subjectId" defaultValue={bank.subjectId} required><SelectTrigger id={`subject-${bank.id}`} className="w-full"><SelectValue /></SelectTrigger><SelectContent>{subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} - {subject.name}</SelectItem>)}</SelectContent></Select></div>
             </div>
             <div className="space-y-2"><Label>Judul Otomatis</Label><Input value={bank.title} disabled /></div>
             <div className="space-y-2"><Label htmlFor={`grade-${bank.id}`}>Kelas</Label><Select name="grade" defaultValue={bank.grade} required><SelectTrigger id={`grade-${bank.id}`} className="w-full"><SelectValue>{bank.grade}</SelectValue></SelectTrigger><SelectContent><SelectItem value="X">X</SelectItem><SelectItem value="XI">XI</SelectItem><SelectItem value="XII">XII</SelectItem></SelectContent></Select></div>

@@ -221,7 +221,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
         {deleteError && <p className="mt-3 text-sm text-destructive" role="alert">{deleteError}</p>}
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="hidden overflow-x-auto rounded-lg border md:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-10"><Checkbox checked={allPageSelected} onCheckedChange={togglePage} aria-label="Pilih semua jadwal di halaman ini" /></TableHead><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Tanggal</TableHead><TableHead>Mulai</TableHead><TableHead>Durasi</TableHead><TableHead>Status</TableHead><TableHead>Respons</TableHead><TableHead className="w-24 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -232,6 +232,52 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {paginatedRows.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada jadwal."}
+            </div>
+          ) : (
+            paginatedRows.map((group) => (
+              <div key={group.key} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{group.title}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{group.code} • {group.subjectCode}</p>
+                  </div>
+                  <ExamScheduleStatusSwitch ids={group.rows.map((row) => row.id)} active={group.activeCount === group.rows.length} />
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Tanggal</dt>
+                    <dd>{formatDate(group.examDate)}{group.status === "berlangsung" && <Badge className="ml-1 border-token-respons bg-transparent px-1.5 text-[10px] font-normal text-amber-700">Live</Badge>}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Mulai</dt>
+                    <dd>{group.startTime.slice(0, 5)} <Badge variant="outline" className="font-normal">Sesi {group.session ?? 1}</Badge></dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Durasi</dt>
+                    <dd className="tabular-nums">{group.durationMinutes} mnt</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Respons</dt>
+                    <dd className="tabular-nums">{group.respons}/{group.peserta} <span className="text-xs text-muted-foreground">{group.syncedAt ? `sync ${relWaktu(group.syncedAt)}` : "belum sync"}</span></dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+                  <Popover>
+                    <PopoverTrigger render={<Button variant="outline" size="sm" className="h-11 font-normal sm:h-8" />}>{group.rows.length} kelas</PopoverTrigger>
+                    <PopoverContent align="start" className="w-80"><PopoverHeader><PopoverTitle>Daftar kelas</PopoverTitle></PopoverHeader><div className="flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">{group.rows.map((row) => <Badge key={row.id} variant="outline" className="font-normal">{row.className}</Badge>)}</div></PopoverContent>
+                  </Popover>
+                  <ExamScheduleRowActions schedule={group.rows[0]} schedules={group.rows} banks={banks} classrooms={sortedClassrooms} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
           <div className="flex flex-col items-center gap-3 sm:flex-row">

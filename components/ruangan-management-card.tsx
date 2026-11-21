@@ -86,7 +86,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
             <DoorOpen className="size-8 text-muted-foreground" />
             <p className="font-medium">Belum ada ruangan</p>
             <p className="max-w-md text-sm text-muted-foreground">
-              Buat ruangan ujian lalu tempatkan siswa dari kelas mana pun — satu ruangan boleh berisi kelas campuran.
+              Buat ruangan ujian lalu tempatkan siswa dari kelas mana pun, satu ruangan boleh berisi kelas campuran.
             </p>
           </CardContent>
         </Card>
@@ -257,7 +257,7 @@ function KelolaRuanganDialog({
     <Dialog open onOpenChange={(terbuka) => !terbuka && onClose()}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Kelola Siswa — {room.name}</DialogTitle>
+          <DialogTitle>Kelola Siswa: {room.name}</DialogTitle>
           <DialogDescription>
             {anggota.length} siswa di ruangan ini. Siswa boleh berasal dari kelas apa pun.
           </DialogDescription>

@@ -45,7 +45,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
     startGenerate(async () => {
       const newCode = await generateExamConfigCode()
       setCode(newCode)
-      toast.success(`Kode baru: ${newCode} — bagikan ke siswa.`)
+      toast.success(`Kode baru: ${newCode}, bagikan ke siswa.`)
       router.refresh()
     })
   }
@@ -125,7 +125,7 @@ export function ExamBrowserSettingsForm({ settings }: ExamBrowserSettingsFormPro
           <input id="formPublicEdit" name="formPublicEdit" type="checkbox" defaultChecked={settings.formPublicEdit} disabled={isPending} className="mt-1 size-4 rounded border-border" />
           <div className="space-y-1">
             <Label htmlFor="formPublicEdit">Siapa saja dengan link bisa edit form</Label>
-            <p className="text-sm text-muted-foreground">Setiap form baru langsung terbuka untuk diedit siapa pun yang pegang link edit. Lebih praktis, tapi link edit harus dijaga — kalau bocor, soal bisa diubah orang lain.</p>
+            <p className="text-sm text-muted-foreground">Setiap form baru langsung terbuka untuk diedit siapa pun yang pegang link edit. Lebih praktis, tapi link edit harus dijaga, kalau bocor, soal bisa diubah orang lain.</p>
           </div>
         </div>
         <Label htmlFor="formEditorEmails">Email editor Google Form</Label>

@@ -66,7 +66,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         return
       }
       setButir(hasil.data)
-      setButirJudul(`${row.code} — ${row.title}`)
+      setButirJudul(`${row.code} - ${row.title}`)
       setButirBankId(row.bankId)
       setButirOpen(true)
     })
@@ -93,6 +93,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         <CardDescription>Satu baris = satu bank soal (satu Google Form); respons semua kelas yang dijadwalkan digabung.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="hidden overflow-x-auto rounded-lg border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -162,6 +163,66 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
             ))}
           </TableBody>
         </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel 8 kolom di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {rows.length === 0 ? (
+            <div className="rounded-sm border bg-card p-4 text-center text-sm text-muted-foreground shadow-sm">Belum ada bank soal yang dijadwalkan.</div>
+          ) : rows.map((row) => (
+            <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{row.code}</p>
+                  <p className="text-xs text-muted-foreground">{row.title}</p>
+                </div>
+                <Badge variant="outline" className="shrink-0 font-normal">{row.kelas}</Badge>
+              </div>
+
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Jadwal Awal</dt>
+                  <dd className="whitespace-nowrap">{row.examDate} · {row.startTime.slice(0, 5)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Jumlah Jadwal</dt>
+                  <dd className="tabular-nums">{row.jumlahJadwal}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Soal Dinilai</dt>
+                  <dd className="tabular-nums">{row.adaFormId ? (row.soalDinilai || <span className="text-muted-foreground">-</span>) : <Badge variant="outline" className="gap-1 text-amber-600"><TriangleAlert className="size-3" />tanpa Form ID</Badge>}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Respons</dt>
+                  <dd className="tabular-nums">{row.respons}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Rata-rata</dt>
+                  <dd className="tabular-nums">{row.rataRata === null ? "-" : row.rataRata.toFixed(1)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Sync terakhir</dt>
+                  <dd className="whitespace-nowrap">{row.syncedAt ? <span className="text-xs text-muted-foreground">{new Date(row.syncedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" })} {new Date(row.syncedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span> : <Badge variant="outline" className="text-amber-600">belum</Badge>}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
+                <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.adaFormId || pendingId === row.id} onClick={() => handleSync(row)} title="Sync hasil">
+                  {pendingId === row.id ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                  <span className="sr-only">Sync hasil</span>
+                </Button>
+                <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.respons || pendingId === row.id} onClick={() => handleDetail(row)} title="Rincian jawaban">
+                  <FileSearch className="size-4" />
+                  <span className="sr-only">Rincian jawaban</span>
+                </Button>
+                <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" disabled={!row.respons || pendingId === row.id} onClick={() => handleAnalisis(row)} title="Analisis butir soal">
+                  <ChartColumn className="size-4" />
+                  <span className="sr-only">Analisis butir soal</span>
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
 
       <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} data={butir} bankId={butirBankId} />
@@ -169,8 +230,8 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Rincian jawaban — {detail?.judul}</DialogTitle>
-            <DialogDescription>Kelas {detail?.kelas}. ✓ benar, ✗ salah, — tidak dijawab.</DialogDescription>
+            <DialogTitle>Rincian jawaban - {detail?.judul}</DialogTitle>
+            <DialogDescription>Kelas {detail?.kelas}. ✓ benar, ✗ salah, - tidak dijawab.</DialogDescription>
           </DialogHeader>
           {detail && !detail.adaSoal && (
             <p className="text-sm text-muted-foreground">Form belum punya kunci jawaban. Aktifkan mode kuis di Google Form lalu sync ulang.</p>

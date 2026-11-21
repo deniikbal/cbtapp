@@ -71,7 +71,7 @@ export function StudentImportDialog() {
           <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Format kolom wajib:</p>
             <p className="mt-1 font-mono text-xs">nama, nis, password, kelas, ruangan, sesi, status</p>
-            <p className="mt-2">Nama kelas harus sama dengan data kelas di aplikasi. Sesi isi angka (1, 2, …) — kosong berarti sesi 1. Status isi <b>aktif</b> atau <b>tidak aktif</b>.</p>
+            <p className="mt-2">Nama kelas harus sama dengan data kelas di aplikasi. Sesi isi angka (1, 2, …), kosong berarti sesi 1. Status isi <b>aktif</b> atau <b>tidak aktif</b>.</p>
           </div>
 
           <Button nativeButton={false} type="button" variant="outline" className="w-full gap-2" render={<a href="/templates/import-peserta.xlsx" download />}>

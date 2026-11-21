@@ -118,8 +118,8 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
               onValueChange={(value: string | null) => setSelectedBankId(value ?? "")}
               required
             >
-              <SelectTrigger id="questionBankId" className="w-full"><SelectValue placeholder="Pilih bank soal">{selectedBank ? `${selectedBank.code} — ${selectedBank.title}` : "Pilih bank soal"}</SelectValue></SelectTrigger>
-              <SelectContent>{banks.map((bank) => <SelectItem key={bank.id} value={bank.id}>{bank.code} — {bank.title}</SelectItem>)}</SelectContent>
+              <SelectTrigger id="questionBankId" className="w-full"><SelectValue placeholder="Pilih bank soal">{selectedBank ? `${selectedBank.code} - ${selectedBank.title}` : "Pilih bank soal"}</SelectValue></SelectTrigger>
+              <SelectContent>{banks.map((bank) => <SelectItem key={bank.id} value={bank.id}>{bank.code} - {bank.title}</SelectItem>)}</SelectContent>
             </Select>
           </div>
 

@@ -151,7 +151,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
           <p className="text-sm text-destructive" role="alert">{error}</p>
         )}
 
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="hidden overflow-x-auto rounded-lg border md:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -203,7 +203,7 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
                       {teacher.bankCount > 0 ? (
                         <Badge variant="secondary" className="tabular-nums">{teacher.bankCount}</Badge>
                       ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
+                        <span className="text-sm text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -232,6 +232,73 @@ export function TeacherManagementCard({ teachers }: { teachers: TeacherItem[] })
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {paginatedRows.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              Tidak ada data guru yang cocok.
+            </div>
+          ) : (
+            paginatedRows.map((teacher) => (
+              <div key={teacher.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 truncate font-medium">{teacher.name}</p>
+                  <Badge variant={teacher.active ? "secondary" : "outline"} className="shrink-0">
+                    {teacher.active ? "Aktif" : "Tidak aktif"}
+                  </Badge>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">NIP</dt>
+                    <dd className="font-mono text-xs">{teacher.nip}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">NUPTK</dt>
+                    <dd className="font-mono text-xs">{teacher.nuptk || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Tempat / Tgl Lahir</dt>
+                    <dd className="text-muted-foreground">{[teacher.birthPlace, teacher.birthDate].filter(Boolean).join(", ") || "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Password</dt>
+                    <dd>
+                      <Badge variant={teacher.hasPassword ? "secondary" : "outline"} className="font-normal">
+                        {teacher.hasPassword ? "Terisi" : "Belum diatur"}
+                      </Badge>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Bank Soal</dt>
+                    <dd className="tabular-nums">{teacher.bankCount > 0 ? teacher.bankCount : "-"}</dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
+                      <MoreHorizontal className="size-4" />
+                      <span className="sr-only">Aksi guru</span>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => { setError(null); setEditTarget(teacher) }}>
+                        <Edit className="size-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => { setError(null); setDeleteTarget(teacher) }}
+                      >
+                        <Trash2 className="size-4" />
+                        Hapus
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">

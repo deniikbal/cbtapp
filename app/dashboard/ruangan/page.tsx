@@ -69,7 +69,7 @@ export default async function RuanganPage() {
           <section className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Ruangan Ujian</h1>
             <p className="text-sm text-muted-foreground">
-              Satu ruangan boleh berisi siswa dari beberapa kelas — kelas asli siswa tidak berubah.
+              Satu ruangan boleh berisi siswa dari beberapa kelas, kelas asli siswa tidak berubah.
             </p>
           </section>
 

@@ -127,7 +127,7 @@ export function ExamScheduleRowActions({
 
   return (
     <div className="flex justify-end gap-1.5">
-      <Button variant="ghost" size="icon-sm" onClick={openDuplicate} title="Duplikat ke sesi berikutnya">
+      <Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" onClick={openDuplicate} title="Duplikat ke sesi berikutnya">
         <Copy className="size-4" />
         <span className="sr-only">Duplikat ke sesi berikutnya</span>
       </Button>
@@ -142,15 +142,15 @@ export function ExamScheduleRowActions({
           if (!nextOpen) setError(null)
         }}
       >
-        <DialogTrigger render={<Button variant="ghost" size="icon-sm" />}><Edit className="size-4" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
+        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Edit Jadwal</DialogTitle><DialogDescription>Ubah satu jadwal ini untuk beberapa kelas sekaligus.</DialogDescription></DialogHeader>
           <form action={handleUpdate} className="space-y-4">
             <div className="space-y-2">
               <Label>Bank Soal</Label>
               <Select name="questionBankId" value={selectedBankId} onValueChange={(value: string | null) => setSelectedBankId(value ?? "")} required>
-                <SelectTrigger className="w-full"><SelectValue>{selectedBank ? `${selectedBank.code} — ${selectedBank.title}` : "Pilih bank soal"}</SelectValue></SelectTrigger>
-                <SelectContent>{banks.map((bank) => <SelectItem key={bank.id} value={bank.id}>{bank.code} — {bank.title}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="w-full"><SelectValue>{selectedBank ? `${selectedBank.code} - ${selectedBank.title}` : "Pilih bank soal"}</SelectValue></SelectTrigger>
+                <SelectContent>{banks.map((bank) => <SelectItem key={bank.id} value={bank.id}>{bank.code} - {bank.title}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
@@ -208,7 +208,7 @@ export function ExamScheduleRowActions({
         </DialogContent>
       </Dialog>
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" />}><Trash2 className="size-4" /><span className="sr-only">Hapus jadwal</span></AlertDialogTrigger>
+        <AlertDialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6" />}><Trash2 className="size-4" /><span className="sr-only">Hapus jadwal</span></AlertDialogTrigger>
         <AlertDialogContent><AlertDialogHeader><AlertDialogMedia><Trash2 className="size-5" /></AlertDialogMedia><AlertDialogTitle>Hapus jadwal?</AlertDialogTitle><AlertDialogDescription>Jadwal “{schedule.title}” untuk {groupIds.length} kelas akan dihapus permanen.</AlertDialogDescription></AlertDialogHeader>{error && <p className="text-sm text-destructive">{error}</p>}<AlertDialogFooter><AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel><AlertDialogAction className="bg-destructive/10 text-destructive hover:bg-destructive/20" disabled={isPending} onClick={handleDelete}>{isPending && <Loader2 className="size-4 animate-spin" />}{isPending ? "Menghapus..." : "Hapus"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>

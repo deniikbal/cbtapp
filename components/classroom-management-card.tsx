@@ -146,7 +146,7 @@ export function ClassroomManagementCard({
               </SelectTrigger>
               <SelectContent align="start">
                 <SelectItem value="ALL">Semua jurusan</SelectItem>
-                {majorOptions.map((major) => <SelectItem key={major.id} value={major.id}>{major.code} — {major.name}</SelectItem>)}
+                {majorOptions.map((major) => <SelectItem key={major.id} value={major.id}>{major.code} - {major.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -167,7 +167,7 @@ export function ClassroomManagementCard({
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-hidden rounded-lg border">
+        <div className="hidden overflow-hidden rounded-lg border md:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Kelas</TableHead><TableHead>Tingkat</TableHead><TableHead>Jurusan</TableHead><TableHead>Peserta</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -178,6 +178,42 @@ export function ClassroomManagementCard({
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {paginatedRows.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada kelas."}
+            </div>
+          ) : (
+            paginatedRows.map((row) => (
+              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{row.name}</p>
+                    <p className="text-xs text-muted-foreground">Tingkat {row.grade}</p>
+                  </div>
+                  <Badge variant="secondary" className={cn("shrink-0 font-normal", row.studentCount > 0 ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>
+                    {row.studentCount > 0 ? "Terisi" : "Kosong"}
+                  </Badge>
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Jurusan</dt>
+                    <dd>{row.majorName} <span className="text-xs text-muted-foreground">{row.majorCode}</span></dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Peserta</dt>
+                    <dd className="tabular-nums">{row.studentCount}</dd>
+                  </div>
+                </dl>
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <ClassroomRowActions classroom={row} majors={majorOptions} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">

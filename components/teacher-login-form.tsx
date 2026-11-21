@@ -24,7 +24,7 @@ export function TeacherLoginForm() {
         </div>
         <CardTitle className="text-xl">{APP_NAME}</CardTitle>
         <CardDescription>{APP_TAGLINE}</CardDescription>
-        <CardDescription>Area guru — masuk dengan NIP dan password.</CardDescription>
+        <CardDescription>Area guru - masuk dengan NIP dan password.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">

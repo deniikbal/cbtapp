@@ -118,14 +118,14 @@ export function StudentCreateDialog({ classrooms }: { classrooms: ClassroomOptio
               <SelectTrigger id="classroomId" className="w-full">
                 <SelectValue placeholder="Pilih kelas">
                   {selectedClassroom
-                    ? `${selectedClassroom.name} — ${selectedClassroom.majorName}`
+                    ? `${selectedClassroom.name} - ${selectedClassroom.majorName}`
                     : "Pilih kelas"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {classrooms.map((classroom) => (
                   <SelectItem key={classroom.id} value={classroom.id}>
-                    {classroom.name} — {classroom.majorName}
+                    {classroom.name} - {classroom.majorName}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -77,12 +77,12 @@ export function KartuUjianControls({
         </Label>
         <Select value={classroomId || undefined} onValueChange={pilihKelas}>
           <SelectTrigger id="kelas-kartu" className="mt-1 w-full">
-            <SelectValue>{terpilih ? `${terpilih.name} — ${terpilih.majorName}` : "Pilih kelas"}</SelectValue>
+            <SelectValue>{terpilih ? `${terpilih.name} - ${terpilih.majorName}` : "Pilih kelas"}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {urutNatural.map((classroom) => (
               <SelectItem key={classroom.id} value={classroom.id}>
-                {classroom.name} — {classroom.majorName}
+                {classroom.name} - {classroom.majorName}
               </SelectItem>
             ))}
           </SelectContent>

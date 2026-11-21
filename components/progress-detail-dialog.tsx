@@ -115,7 +115,7 @@ function SummaryItem({ label, value, active, accent, onClick }: { label: string;
       onClick={onClick}
       className={cn(
         "rounded-lg border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm",
-        accent === "sky" && "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+        accent === "sky" && "border-primary/20 bg-primary/10 text-primary",
         accent === "rose" && "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
         accent === "amber" && "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
         accent === "lime" && "border-lime-500/20 bg-lime-500/10 text-lime-700 dark:text-lime-300",
@@ -137,7 +137,7 @@ function StatusBadge({ status }: { status: ProgressStudent["status"] }) {
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) return "—"
+  if (!value) return "-"
 
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
@@ -149,7 +149,7 @@ function formatDateTime(value: string | null) {
 }
 
 function formatDurasi(startedAt: string | null, submittedAt: string | null) {
-  if (!startedAt) return "—"
+  if (!startedAt) return "-"
   const akhir = submittedAt ? new Date(submittedAt).getTime() : Date.now()
   const menit = Math.max(1, Math.round((akhir - new Date(startedAt).getTime()) / 60_000))
   return submittedAt ? `${menit} mnt` : `~${menit} mnt`

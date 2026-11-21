@@ -104,7 +104,7 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
             <div className="relative mx-auto mt-2 h-24 w-40">
               <div className="absolute bottom-0 left-0 text-left" style={{ transform: `translateX(${nameX}px)` }}>
                 <p className="font-semibold">{settings.principalName || "Nama Kepsek"}</p>
-                <p className="text-[8px] text-muted-foreground">NIP. {settings.principalNip || "—"}</p>
+                <p className="text-[8px] text-muted-foreground">NIP. {settings.principalNip || "-"}</p>
               </div>
               {sigPreview && (
                 <img

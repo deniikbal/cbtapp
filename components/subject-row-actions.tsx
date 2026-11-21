@@ -55,7 +55,7 @@ export function SubjectRowActions({ subject }: { subject: SubjectRowActionData }
   return (
     <div className="flex justify-end gap-1.5">
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogTrigger render={<Button variant="ghost" size="icon-sm" />}>
+        <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
           <Edit className="size-4" />
           <span className="sr-only">Edit mapel</span>
         </DialogTrigger>

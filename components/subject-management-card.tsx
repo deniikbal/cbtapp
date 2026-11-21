@@ -98,7 +98,7 @@ export function SubjectManagementCard({ rows }: { rows: SubjectManagementRow[] }
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-lg border">
+        <div className="hidden overflow-hidden rounded-lg border md:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Nama Mapel</TableHead><TableHead>Kode</TableHead><TableHead>Status</TableHead><TableHead className="w-32 text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -109,6 +109,30 @@ export function SubjectManagementCard({ rows }: { rows: SubjectManagementRow[] }
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {paginatedRows.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              {hasActiveFilter ? "Tidak ada hasil yang cocok. Coba ubah kata kunci atau filter." : "Belum ada mapel. Tambahkan mapel untuk membuat bank ujian."}
+            </div>
+          ) : (
+            paginatedRows.map((row) => (
+              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 truncate font-medium">{row.name}</p>
+                  <Badge variant="secondary" className={cn("shrink-0 font-normal", row.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>
+                    {row.active ? "Aktif" : "Tidak aktif"}
+                  </Badge>
+                </div>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">{row.code}</p>
+                <div className="mt-3 flex justify-end border-t pt-3">
+                  <SubjectRowActions subject={row} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">

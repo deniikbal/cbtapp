@@ -184,7 +184,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="hidden overflow-x-auto rounded-lg border md:block">
           <Table>
             <TableHeader><TableRow className="bg-muted/40 hover:bg-muted/40"><TableHead className="w-12 text-center">#</TableHead><TableHead>Bank Soal</TableHead><TableHead>Kelas</TableHead><TableHead>Jadwal</TableHead><TableHead className="text-center">Target</TableHead><TableHead className="text-center">Belum</TableHead><TableHead className="text-center">Sedang</TableHead><TableHead className="text-center">Selesai</TableHead><TableHead>Progress</TableHead><TableHead className="w-20 text-right">Detail</TableHead></TableRow></TableHeader>
             <TableBody>
@@ -195,6 +195,65 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel 10 kolom di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {filteredRows.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-sm border bg-card p-4 text-center text-muted-foreground shadow-sm">
+              <div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" /></div>
+              <div className="space-y-1">
+                <div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada data pengerjaan"}</div>
+                <p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Data akan muncul setelah jadwal dibuat dan siswa mulai mengerjakan."}</p>
+              </div>
+              {hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" />Reset filter</Button>}
+            </div>
+          ) : paginatedRows.map((row) => (
+            <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{row.title}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{row.code} • {row.subjectCode}</p>
+                </div>
+                <Badge variant="outline" className="shrink-0 font-normal">{row.className}</Badge>
+              </div>
+
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Jadwal</dt>
+                  <dd>{formatDate(row.examDate)} · {row.startTime.slice(0, 5)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Durasi</dt>
+                  <dd className="tabular-nums">{row.durationMinutes} mnt</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Target</dt>
+                  <dd className="tabular-nums">{row.totalStudents}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Progress</dt>
+                  <dd className="flex items-center gap-2"><div className="h-2 w-16 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${row.percent}%` }} /></div><span className="text-xs tabular-nums text-muted-foreground">{row.percent}%</span></dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Belum</dt>
+                  <dd className="tabular-nums">{row.notStarted}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Sedang</dt>
+                  <dd className="tabular-nums">{row.started}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Selesai</dt>
+                  <dd className="tabular-nums">{row.submitted}</dd>
+                </div>
+              </dl>
+
+              <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
+                <ProgressDetailDialog title={row.title} className={row.className} students={row.students} />
+              </div>
+            </div>
+          ))}
         </div>
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
           <div className="flex flex-col items-center gap-3 sm:flex-row">

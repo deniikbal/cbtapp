@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { setAksesPdf } from "@/app/dashboard/guru/actions"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -190,7 +191,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="size-8">
-                          <AvatarFallback className="bg-sky-500/15 text-xs font-medium text-sky-700 dark:text-sky-300">
+                          <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
                             {getInitials(row.name)}
                           </AvatarFallback>
                         </Avatar>
@@ -210,7 +211,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                           variant="ghost"
                           size="icon-sm"
                           title="Aktifkan akses"
-                          className="text-lime-600 hover:bg-lime-500/10 hover:text-lime-600"
+                          className="size-11 text-lime-600 hover:bg-lime-500/10 hover:text-lime-600 sm:size-6"
                           disabled={pendingId === row.id || row.status === "aktif"}
                           onClick={() => ubah(row.id, true)}
                         >
@@ -225,7 +226,7 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
                           variant="ghost"
                           size="icon-sm"
                           title="Tolak akses"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6"
                           disabled={pendingId === row.id || row.status === "belum"}
                           onClick={() => ubah(row.id, false)}
                         >
@@ -239,6 +240,61 @@ export function PdfAccessCard({ rows }: { rows: AksesRow[] }) {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Daftar kartu mobile: pengganti tabel di layar sempit (R-03). */}
+        <div className="space-y-3 md:hidden">
+          {paginated.length === 0 ? (
+            <div className="rounded-sm border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+              Belum ada pengajuan akses PDF.
+            </div>
+          ) : (
+            paginated.map((row) => (
+              <div key={row.id} className="rounded-sm border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="size-8">
+                      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                        {getInitials(row.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{row.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{row.nip}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className={cn("shrink-0 font-normal", row.status === "aktif" ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>
+                    {row.status === "aktif" ? "Aktif" : row.status === "belum" ? "Belum" : "Ditolak"}
+                  </Badge>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Diaktifkan: {row.diaktifkanPada ?? "-"}</p>
+                <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Aktifkan akses"
+                    className="size-11 text-lime-600 hover:bg-lime-500/10 hover:text-lime-600 sm:size-6"
+                    disabled={pendingId === row.id || row.status === "aktif"}
+                    onClick={() => ubah(row.id, true)}
+                  >
+                    {pendingId === row.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                    <span className="sr-only">Aktifkan</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Tolak akses"
+                    className="size-11 text-destructive hover:bg-destructive/10 hover:text-destructive sm:size-6"
+                    disabled={pendingId === row.id || row.status === "belum"}
+                    onClick={() => ubah(row.id, false)}
+                  >
+                    <X className="size-4" />
+                    <span className="sr-only">Tolak</span>
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">

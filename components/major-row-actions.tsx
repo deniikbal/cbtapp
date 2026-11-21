@@ -81,7 +81,7 @@ export function MajorRowActions({ major }: { major: MajorRowActionData }) {
     <>
       <div className="flex justify-end">
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}>
             <MoreHorizontal className="size-4" />
             <span className="sr-only">Aksi jurusan</span>
           </DropdownMenuTrigger>
