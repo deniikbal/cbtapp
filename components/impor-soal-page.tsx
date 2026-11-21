@@ -106,11 +106,13 @@ function EditorSoal({
   mode,
   onSimpan,
   backHref,
+  compact = false,
 }: {
   awal?: SoalForm
   mode: "tambah" | "ubah"
   onSimpan: (data: Isian) => Promise<boolean>
   backHref?: string
+  compact?: boolean
 }) {
   const [pertanyaan, setPertanyaan] = useState(awal?.pertanyaan ?? "")
   const [jenis, setJenis] = useState<Jenis>(awal?.jenis ?? "PILIHAN_GANDA")
@@ -129,15 +131,21 @@ function EditorSoal({
   const [kunciIsi, setKunciIsi] = useState(pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? "" : (awal?.kunci ?? ""))
   const [proses, setProses] = useState(false)
   const [pesan, setPesan] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
-  const simpanRef = (elemen: HTMLInputElement | HTMLTextAreaElement | null) => {
-    inputRef.current = elemen
-  }
+  const pertanyaanRef = useRef<HTMLTextAreaElement | null>(null)
+  const kunciRef = useRef<HTMLInputElement | null>(null)
+  const opsiRefs = useRef<Record<number, HTMLInputElement | null>>({})
   const [fieldAktif, setFieldAktif] = useState<"pertanyaan" | "kunci" | number | null>(null)
 
   function terapkanFormat(peta: Record<string, string>, contoh: string) {
-    const el = inputRef.current
-    if (!el || fieldAktif === null) {
+    const el =
+      fieldAktif === "pertanyaan"
+        ? pertanyaanRef.current
+        : fieldAktif === "kunci"
+          ? kunciRef.current
+          : fieldAktif === null
+            ? null
+            : opsiRefs.current[fieldAktif]
+    if (!el) {
       toast.info("Klik kolom teks dulu, lalu pilih bagian yang mau diubah.")
       return
     }
@@ -152,11 +160,9 @@ function EditorSoal({
     else setOpsi((v) => v.map((isi, i) => (i === fieldAktif ? nilaiBaru : isi)))
 
     requestAnimationFrame(() => {
-      const fokus = inputRef.current
-      if (!fokus) return
-      fokus.focus()
+      el.focus()
       const posisi = mulai + ganti.length
-      fokus.setSelectionRange(posisi, posisi)
+      el.setSelectionRange(posisi, posisi)
     })
   }
 
@@ -193,7 +199,7 @@ function EditorSoal({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={compact ? "flex flex-col gap-3" : "flex flex-col gap-4"}>
       <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
         <div className="space-y-1">
           <label className="text-xs font-medium">Jenis</label>
@@ -257,13 +263,13 @@ function EditorSoal({
           Pilih huruf atau angka, lalu tekan x² atau x₂. Karakter tanpa bentuk khusus tetap ditulis biasa.
         </p>
         <Textarea
-          ref={simpanRef}
+          ref={pertanyaanRef}
           onFocus={() => setFieldAktif("pertanyaan")}
           value={pertanyaan}
           maxLength={2000}
           onChange={(e) => setPertanyaan(e.target.value)}
           placeholder="Tulis pertanyaan lengkapnya di sini..."
-          className="min-h-28 rounded-sm text-xs"
+          className={compact ? "min-h-20 rounded-sm text-xs" : "min-h-28 rounded-sm text-xs"}
         />
         <p className="text-right font-mono text-[11px] text-muted-foreground">{pertanyaan.length}/2000</p>
       </div>
@@ -294,7 +300,7 @@ function EditorSoal({
                   {aktif ? <Check className="size-3.5" aria-hidden="true" /> : HURUF[i]}
                 </button>
                 <Input
-                  ref={simpanRef}
+                  ref={(elemen) => { opsiRefs.current[i] = elemen }}
                   onFocus={() => setFieldAktif(i)}
                   value={o}
                   onChange={(e) => {
@@ -348,7 +354,7 @@ function EditorSoal({
             {jenis === "URAIAN" ? "Kunci jawaban (tidak dinilai otomatis)" : "Kunci jawaban"}
           </label>
           <Input
-            ref={simpanRef}
+            ref={kunciRef}
             onFocus={() => setFieldAktif("kunci")}
             value={kunciIsi}
             disabled={jenis === "URAIAN"}
@@ -863,13 +869,15 @@ export function ImporSoalPage({
 
       {/* Dialog ubah soal */}
       <Dialog open={Boolean(ubah)} onOpenChange={(buka) => !buka && setUbah(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Ubah soal</DialogTitle>
-            <DialogDescription>Perubahan langsung dikirim ke Google Form.</DialogDescription>
+        <DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-lg">
+          <DialogHeader className="space-y-1 pb-2">
+            <DialogTitle className="text-base">Ubah soal</DialogTitle>
+            <DialogDescription className="text-xs">Perubahan langsung dikirim ke Google Form.</DialogDescription>
           </DialogHeader>
-          {ubah ? <EditorSoal awal={ubah} mode="ubah" onSimpan={simpanUbah} /> : null}
-          <DialogFooter>
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            {ubah ? <EditorSoal awal={ubah} mode="ubah" onSimpan={simpanUbah} compact /> : null}
+          </div>
+          <DialogFooter className="border-t pt-2">
             <Button
               variant="outline"
               size="sm"
