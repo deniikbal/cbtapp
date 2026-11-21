@@ -152,7 +152,7 @@ export default async function SiswaDashboardPage() {
             <p className="truncate text-sm font-semibold tracking-tight">
               SMANSABA<span className="text-brand-foreground/70">.</span>CBT
             </p>
-            <p className="truncate text-[11px] text-brand-foreground/85">
+            <p className="truncate text-[11px] sm:text-xs text-brand-foreground">
               {student[0].name} · {student[0].className}
             </p>
           </div>
@@ -172,9 +172,11 @@ export default async function SiswaDashboardPage() {
                 NIS {student[0].nis} · {student[0].className} · {student[0].majorCode}
               </p>
             </div>
-            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <RefreshCw className="size-3.5" aria-hidden="true" />
-              Sync terakhir: {syncTerakhir ? formatTanggalJam(syncTerakhir) : "belum pernah"}
+            <p className="flex min-w-0 max-w-[45%] shrink items-center gap-1.5 text-[11px] text-muted-foreground sm:max-w-none">
+              <RefreshCw className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">
+                Sync terakhir: {syncTerakhir ? formatTanggalJam(syncTerakhir) : "belum pernah"}
+              </span>
             </p>
           </div>
 
@@ -199,7 +201,7 @@ export default async function SiswaDashboardPage() {
         </section>
 
         {/* Metrik */}
-        <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           <MetricCard label="Total ujian" value={String(schedules.length)} icon={CalendarDays} warna="bg-brand" />
           <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} warna="bg-token-jadwal" />
           <MetricCard label="Berlangsung" value={String(activeNowSchedules)} icon={Flame} warna="bg-token-respons" />
@@ -343,7 +345,7 @@ export default async function SiswaDashboardPage() {
 
                       <Separator className="my-2" />
 
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:gap-4 md:grid-cols-4">
                         <InfoItem label="Tanggal" value={formatDate(schedule.examDate)} />
                         <InfoItem label="Mulai" value={schedule.startTime.slice(0, 5)} />
                         <InfoItem label="Durasi" value={`${schedule.durationMinutes} menit`} />
@@ -400,7 +402,7 @@ export default async function SiswaDashboardPage() {
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
       <p className="font-medium tabular-nums text-foreground">{value}</p>
     </div>
   )
@@ -437,7 +439,7 @@ function MetricCard({
   return (
     <div className={cn("flex items-center justify-between gap-2 rounded-sm px-2.5 py-2", warna, solid)}>
       <div className="min-w-0 leading-tight">
-        <p className="truncate text-[11px]">{label}</p>
+        <p className="truncate text-[11px] sm:text-xs">{label}</p>
         <p className="text-lg font-semibold leading-none tabular-nums">{value}</p>
       </div>
       <Icon className="size-5 shrink-0 opacity-90" aria-hidden="true" />
