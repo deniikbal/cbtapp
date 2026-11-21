@@ -23,36 +23,36 @@ export function StudentLoginForm() {
           <BookOpenCheck className="size-6" aria-hidden="true" />
         </div>
         <CardTitle className="text-xl">{APP_NAME}</CardTitle>
-        <CardDescription>{APP_TAGLINE}</CardDescription>
-        <CardDescription>Masuk menggunakan Username dan password dari Panitia.</CardDescription>
+        <CardDescription className="text-[14px] sm:text-xs">{APP_TAGLINE}</CardDescription>
+        <CardDescription className="text-[14px] sm:text-xs">Masuk menggunakan Username dan password dari Panitia.</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nis">Username</Label>
+            <Label htmlFor="nis" className="text-[14px] sm:text-xs">Username</Label>
             <Input
               id="nis"
               name="nis"
-              placeholder="Masukan Username"
-              className="placeholder:text-muted-foreground/60"
+              placeholder="Masukkan Username"
+              className="h-11 text-[14px] placeholder:text-muted-foreground sm:h-7 sm:text-xs/relaxed"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-[14px] sm:text-xs">Password</Label>
             <div className="relative">
               <Input
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="******"
-                className="pr-10 placeholder:text-muted-foreground/60"
+                className="h-11 pr-10 text-[14px] placeholder:text-muted-foreground sm:h-7 sm:text-xs/relaxed"
                 required
               />
               <button
                 type="button"
                 aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
-                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                className="absolute top-1/2 right-3 flex size-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/30 sm:size-6"
                 onClick={() => setShowPassword((value) => !value)}
               >
                 {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
@@ -62,7 +62,7 @@ export function StudentLoginForm() {
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
-          <Button type="submit" className="w-full gap-2" disabled={pending}>
+          <Button type="submit" className="h-11 w-full gap-2 sm:h-7" disabled={pending}>
             {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <LogIn className="size-4" aria-hidden="true" />}
             {pending ? "Memproses..." : "Masuk"}
           </Button>
