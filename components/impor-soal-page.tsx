@@ -63,7 +63,7 @@ type Isian = {
 }
 
 const HURUF = "ABCDE"
-const OPSI_AWAL = ["", "", "", ""]
+const OPSI_AWAL = ["", "", "", "", ""]
 const JENIS: { value: Jenis; label: string }[] = [
   { value: "PILIHAN_GANDA", label: "Pilihan ganda" },
   { value: "CENTANG", label: "Centang banyak" },
