@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import {
@@ -74,6 +74,22 @@ const JENIS: { value: Jenis; label: string }[] = [
 const labelJenis = (j: Jenis) => JENIS.find((x) => x.value === j)?.label ?? j
 const pakaiOpsi = (j: Jenis) => j === "PILIHAN_GANDA" || j === "CENTANG"
 
+const SUPER: Record<string, string> = {
+  "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+  "+": "⁺", "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾", n: "ⁿ", i: "ⁱ",
+}
+const SUB: Record<string, string> = {
+  "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉",
+  "+": "₊", "-": "₋", "=": "₌", "(": "₍", ")": "₎",
+  a: "ₐ", e: "ₑ", h: "ₕ", k: "ₖ", l: "ₗ", m: "ₘ", n: "ₙ", o: "ₒ", p: "ₚ", s: "ₛ", t: "ₜ", u: "ᵤ", x: "ₓ",
+}
+
+function keUnicode(teks: string, peta: Record<string, string>) {
+  return Array.from(teks)
+    .map((kar) => peta[kar.toLowerCase()] ?? peta[kar] ?? kar)
+    .join("")
+}
+
 const kunciTeks = (teks: string) => teks.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
 
 const CONTOH = `1. Hasil dari 12 x 2 adalah ...
@@ -113,6 +129,36 @@ function EditorSoal({
   const [kunciIsi, setKunciIsi] = useState(pakaiOpsi(awal?.jenis ?? "PILIHAN_GANDA") ? "" : (awal?.kunci ?? ""))
   const [proses, setProses] = useState(false)
   const [pesan, setPesan] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const simpanRef = (elemen: HTMLInputElement | HTMLTextAreaElement | null) => {
+    inputRef.current = elemen
+  }
+  const [fieldAktif, setFieldAktif] = useState<"pertanyaan" | "kunci" | number | null>(null)
+
+  function terapkanFormat(peta: Record<string, string>, contoh: string) {
+    const el = inputRef.current
+    if (!el || fieldAktif === null) {
+      toast.info("Klik kolom teks dulu, lalu pilih bagian yang mau diubah.")
+      return
+    }
+    const mulai = el.selectionStart ?? 0
+    const akhir = el.selectionEnd ?? 0
+    const pilihan = el.value.slice(mulai, akhir)
+    const ganti = pilihan ? keUnicode(pilihan, peta) : contoh
+    const nilaiBaru = el.value.slice(0, mulai) + ganti + el.value.slice(akhir)
+
+    if (fieldAktif === "pertanyaan") setPertanyaan(nilaiBaru)
+    else if (fieldAktif === "kunci") setKunciIsi(nilaiBaru)
+    else setOpsi((v) => v.map((isi, i) => (i === fieldAktif ? nilaiBaru : isi)))
+
+    requestAnimationFrame(() => {
+      const fokus = inputRef.current
+      if (!fokus) return
+      fokus.focus()
+      const posisi = mulai + ganti.length
+      fokus.setSelectionRange(posisi, posisi)
+    })
+  }
 
   const perluOpsi = pakaiOpsi(jenis)
   const opsiTerisi = opsi.filter((o) => o.trim())
@@ -177,8 +223,42 @@ function EditorSoal({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium">Pertanyaan</label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="text-xs font-medium">Pertanyaan</label>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground">Teks khusus</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              title="Ubah huruf/angka terpilih jadi superscript"
+              aria-label="Terapkan superscript"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => terapkanFormat(SUPER, "²")}
+              className="h-11 min-w-11 rounded-sm px-2 text-xs sm:h-8 sm:min-w-8"
+            >
+              x²
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              title="Ubah huruf/angka terpilih jadi subscript"
+              aria-label="Terapkan subscript"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => terapkanFormat(SUB, "₂")}
+              className="h-11 min-w-11 rounded-sm px-2 text-xs sm:h-8 sm:min-w-8"
+            >
+              x₂
+            </Button>
+          </div>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Pilih huruf atau angka, lalu tekan x² atau x₂. Karakter tanpa bentuk khusus tetap ditulis biasa.
+        </p>
         <Textarea
+          ref={simpanRef}
+          onFocus={() => setFieldAktif("pertanyaan")}
           value={pertanyaan}
           maxLength={2000}
           onChange={(e) => setPertanyaan(e.target.value)}
@@ -214,6 +294,8 @@ function EditorSoal({
                   {aktif ? <Check className="size-3.5" aria-hidden="true" /> : HURUF[i]}
                 </button>
                 <Input
+                  ref={simpanRef}
+                  onFocus={() => setFieldAktif(i)}
                   value={o}
                   onChange={(e) => {
                     const nilai = e.target.value
@@ -266,6 +348,8 @@ function EditorSoal({
             {jenis === "URAIAN" ? "Kunci jawaban (tidak dinilai otomatis)" : "Kunci jawaban"}
           </label>
           <Input
+            ref={simpanRef}
+            onFocus={() => setFieldAktif("kunci")}
             value={kunciIsi}
             disabled={jenis === "URAIAN"}
             onChange={(e) => setKunciIsi(e.target.value)}
