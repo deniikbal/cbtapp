@@ -1,15 +1,13 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Geist, Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand"
+import { cn } from "@/lib/utils";
 
-const fontSans = Geist({
-  subsets: ["latin"],
-  variable: "--font-sans",
-})
+const inter = Inter({subsets:['latin'],variable:'--font-sans'})
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -33,7 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body>
         <TooltipProvider>
