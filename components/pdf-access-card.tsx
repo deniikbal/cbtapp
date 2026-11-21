@@ -27,7 +27,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export type AksesRow = { id: string; name: string; nip: string; status: string; diaktifkanPada: string | null; dasar: number; catatan: string }
 
 function labelDukungan(row: AksesRow) {
-  if (row.dasar > 0) return "Rp " + row.dasar.toLocaleString("id-ID")
+  if (row.dasar > 0) {
+    const nominal = "Rp " + row.dasar.toLocaleString("id-ID")
+    if (row.catatan === "Dukungan menunggu verifikasi") return nominal + " · menunggu"
+    if (row.catatan === "Dukungan diterima") return nominal + " · diterima"
+    return nominal
+  }
   if (row.status === "aktif") return row.catatan === "Akses gratis" ? "Gratis" : "Manual"
   return "-"
 }

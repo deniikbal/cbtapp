@@ -13,7 +13,7 @@ import { ambilAnalisisButir, type AnalisisBank } from "@/lib/analisis-data"
 import { existsSync } from "node:fs"
 import path from "node:path"
 
-import { QRIS_SRC, WA_ADMIN, aktifkanGratis, ambilAkses, simpanDukungan } from "@/lib/akses-pdf"
+import { QRIS_SRC, WA_ADMIN, aktifkanGratis, ambilAkses, simpanDukungan, simpanDukunganSukarela } from "@/lib/akses-pdf"
 import { nominalTagihan } from "@/lib/mutasi"
 
 async function guruDariCookie() {
@@ -175,6 +175,42 @@ export async function aksesGratisPdf(): Promise<{ ok: boolean; message: string }
   } catch (error) {
     console.error("Gagal mengaktifkan akses gratis:", error)
     return { ok: false, message: getDatabaseErrorMessage(error) }
+  }
+}
+
+/**
+ * Dukungan sukarela kapan saja, termasuk setelah akses aktif (gratis).
+ * Akses tidak dicabut; nominal dicatat dan menunggu verifikasi admin lewat mutasi.
+ */
+export async function dukungSukarelaPdf(
+  dasar: number
+): Promise<{ ok: boolean; message: string; nominal: number; qris: string }> {
+  const guru = await guruDariCookie()
+  if (!guru) return { ok: false, message: "Sesi habis. Silakan login ulang.", nominal: 0, qris: "" }
+  if (!Number.isInteger(dasar) || dasar < 1 || dasar > 100_000_000) {
+    return { ok: false, message: "Nominal dukungan minimal Rp1.", nominal: 0, qris: "" }
+  }
+  try {
+    const lama = await ambilAkses(guru.id)
+    const total =
+      lama?.status === "aktif"
+        ? await simpanDukunganSukarela(guru.id, dasar)
+        : await simpanDukungan(guru.id, dasar)
+    if (total <= 0) {
+      return { ok: false, message: "Kode unik sedang habis. Hubungi admin.", nominal: 0, qris: "" }
+    }
+    revalidatePath("/dashboard/akses-pdf")
+    revalidatePath("/guru/dashboard")
+    revalidatePath("/dashboard/guru")
+    return {
+      ok: true,
+      message: `Terima kasih. Bayar tepat Rp ${total.toLocaleString("id-ID")} lewat QRIS. Akses Anda tetap aktif.`,
+      nominal: total,
+      qris: urlQris(total),
+    }
+  } catch (error) {
+    console.error("Gagal menyimpan dukungan sukarela:", error)
+    return { ok: false, message: getDatabaseErrorMessage(error), nominal: 0, qris: "" }
   }
 }
 

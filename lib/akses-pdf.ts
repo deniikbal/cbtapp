@@ -89,6 +89,22 @@ export async function aktifkanGratis(teacherId: string): Promise<boolean> {
   return true
 }
 
+/**
+ * Dukungan sukarela dari guru yang SUDAH aktif (mis. setelah akses gratis).
+ * Status akses tetap aktif (tidak dicabut); nominal dicatat dan menunggu verifikasi
+ * admin lewat mutasi. Mengembalikan total nominal, atau 0 bila tidak valid.
+ */
+export async function simpanDukunganSukarela(teacherId: string, dasar: number): Promise<number> {
+  if (!Number.isInteger(dasar) || dasar < 1) return 0
+  const kode = await ambilAtauBuatKode(teacherId)
+  if (kode <= 0) return 0
+  await db
+    .update(teachers)
+    .set({ aksesPdfDasar: dasar, aksesPdfCatatan: "Dukungan menunggu verifikasi", updatedAt: new Date() })
+    .where(eq(teachers.id, teacherId))
+  return dasar + kode
+}
+
 export async function bolehUnduhPdf(teacherId: string) {
   const akses = await ambilAkses(teacherId)
   return akses?.status === "aktif"

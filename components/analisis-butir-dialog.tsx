@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { CheckCircle2, FileDown, Gift, HeartHandshake, Loader2, MessageCircle } from "lucide-react"
 import { toast } from "sonner"
 
-import { aksesGratisPdf, konfirmasiSudahBayar, mintaDukunganPdf } from "@/app/guru/dashboard/actions"
+import { aksesGratisPdf, dukungSukarelaPdf, konfirmasiSudahBayar, mintaDukunganPdf } from "@/app/guru/dashboard/actions"
 
 import type { AnalisisBank } from "@/lib/analisis-data"
 import { Badge } from "@/components/ui/badge"
@@ -292,6 +292,7 @@ function PanelUnduh({
   const [qris, setQris] = useState(akses.qris)
   const [pilihLain, setPilihLain] = useState(false)
   const [custom, setCustom] = useState("")
+  const [bukaDukung, setBukaDukung] = useState(false)
   const [pending, startTransition] = useTransition()
 
   function dukung(dasar: number) {
@@ -331,12 +332,23 @@ function PanelUnduh({
 
   if (status === "aktif") {
     return (
-      <a
-        href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
-        className={buttonVariants({ variant: "outline", size: "sm", className: "mt-1 h-11 w-fit gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]" })}
-      >
-        <FileDown className="size-3.5" aria-hidden="true" /> Unduh PDF
-      </a>
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+        <a
+          href={`/api/analisis-butir/pdf?bankId=${encodeURIComponent(bankId)}`}
+          className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 w-fit gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]" })}
+        >
+          <FileDown className="size-3.5" aria-hidden="true" /> Unduh PDF
+        </a>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-11 gap-1 px-3 text-xs sm:h-7 sm:px-2 sm:text-[11px]"
+          onClick={() => setBukaDukung(true)}
+        >
+          <HeartHandshake className="size-3.5" aria-hidden="true" /> Dukung pengembangan
+        </Button>
+        <ModalDukung open={bukaDukung} onOpenChange={setBukaDukung} waAdmin={akses.waAdmin} punyaQris={akses.punyaQris} />
+      </div>
     )
   }
 
@@ -515,5 +527,178 @@ function PanelUnduh({
         </div>
       </div>
     </div>
+  )
+}
+
+function ModalDukung({
+  open,
+  onOpenChange,
+  waAdmin,
+  punyaQris,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  waAdmin: string
+  punyaQris: boolean
+}) {
+  const [tahap, setTahap] = useState<"pilih" | "qr">("pilih")
+  const [nominal, setNominal] = useState(0)
+  const [qris, setQris] = useState("")
+  const [pilihLain, setPilihLain] = useState(false)
+  const [custom, setCustom] = useState("")
+  const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    if (open) {
+      setTahap("pilih")
+      setNominal(0)
+      setQris("")
+      setPilihLain(false)
+      setCustom("")
+    }
+  }, [open])
+
+  function dukung(dasar: number) {
+    startTransition(async () => {
+      const hasil = await dukungSukarelaPdf(dasar)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message)
+      setNominal(hasil.nominal)
+      setQris(hasil.qris)
+      setTahap("qr")
+    })
+  }
+
+  function dukungCustom() {
+    const angka = Number(custom.replace(/[^\d]/g, ""))
+    if (!Number.isInteger(angka) || angka < 1) {
+      toast.error("Nominal dukungan minimal Rp1.")
+      return
+    }
+    dukung(angka)
+  }
+
+  const saran = [2000, 5000, 10000]
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="text-base">Dukung pengembangan</DialogTitle>
+          <DialogDescription className="text-xs">
+            Akses Anda tetap aktif. Dukungan seikhlasnya, diverifikasi admin lewat mutasi.
+          </DialogDescription>
+        </DialogHeader>
+
+        {tahap === "pilih" ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-1.5">
+              {saran.map((n) => (
+                <Button
+                  key={n}
+                  size="sm"
+                  variant="outline"
+                  className="h-11 gap-1 px-3 text-xs tabular-nums sm:h-8 sm:text-[11px]"
+                  disabled={pending}
+                  onClick={() => dukung(n)}
+                >
+                  <HeartHandshake className="size-3.5" aria-hidden="true" /> {rupiah(n)}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-11 px-3 text-xs sm:h-8 sm:text-[11px]"
+                disabled={pending}
+                onClick={() => setPilihLain((v) => !v)}
+              >
+                Nominal lain
+              </Button>
+            </div>
+            {pilihLain ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Input
+                  inputMode="numeric"
+                  placeholder="Contoh: 3000"
+                  value={custom}
+                  onChange={(e) => setCustom(e.target.value)}
+                  className="h-11 w-36 rounded-sm text-xs sm:h-8"
+                  aria-label="Nominal dukungan lain"
+                />
+                <Button size="sm" className="h-11 px-3 text-xs sm:h-8 sm:text-[11px]" disabled={pending} onClick={dukungCustom}>
+                  {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+                  Buat QR
+                </Button>
+              </div>
+            ) : null}
+            {!punyaQris ? (
+              <p className="text-[10px] text-muted-foreground">QRIS belum diatur admin.</p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="shrink-0 self-center sm:self-start">
+                {qris ? (
+                  <a
+                    href={qris}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-36 rounded-lg border bg-white p-2 shadow-sm transition hover:shadow-md"
+                    title="Buka QRIS ukuran penuh"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qris} alt="QRIS dukungan" className="h-auto w-full object-contain" />
+                    <span className="mt-1 block text-center text-[10px] text-muted-foreground">Klik untuk perbesar</span>
+                  </a>
+                ) : (
+                  <div className="flex h-36 w-36 items-center justify-center rounded-lg border border-dashed bg-muted/40 px-2 text-center text-[10px] leading-tight text-muted-foreground">
+                    QRIS belum diatur admin
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <span className="inline-block rounded-md bg-primary px-2 py-1 text-sm font-semibold tabular-nums text-primary-foreground">
+                  {rupiah(nominal)}
+                </span>
+                <Badge className="block w-fit gap-1 bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" variant="secondary">
+                  Menunggu verifikasi
+                </Badge>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Scan dan bayar tepat nominal di atas. Akses unduh PDF Anda tetap aktif.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {waAdmin ? (
+                <a
+                  href={`https://wa.me/${waAdmin}?text=${encodeURIComponent("Bukti dukungan PDF analisis butir CBT")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 gap-1 px-3 text-xs sm:h-8 sm:text-[11px]" })}
+                >
+                  <MessageCircle className="size-3.5" aria-hidden="true" /> Kirim bukti via WA
+                </a>
+              ) : null}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-11 px-3 text-xs text-muted-foreground sm:h-8 sm:text-[11px]"
+                disabled={pending}
+                onClick={() => setTahap("pilih")}
+              >
+                Ganti nominal
+              </Button>
+              <Button size="sm" className="h-11 px-3 text-xs sm:h-8 sm:text-[11px]" onClick={() => onOpenChange(false)}>
+                Tutup
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
