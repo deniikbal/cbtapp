@@ -15,16 +15,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Kode tidak ditemukan. Minta kode dari guru." }, { status: 404 })
   }
 
-  // Return config JSON that ExamBro app understands
+  // Konfigurasi yang diambil app ExamBro lewat access code (sesuai form pengaturan admin).
   const config = {
-    url: settings.downloadUrl ? new URL(settings.downloadUrl).origin : "https://asas.sman1bantarujeg.sch.id",
-    pin: "1234",
-    school: "SMAN 1 Bantarujeg",
+    url: settings.configExamUrl || "https://asas.sman1bantarujeg.sch.id",
+    pin: settings.configExitPin || "1234",
+    school: settings.configSchoolName || "SMAN 1 Bantarujeg",
+    ua: settings.configUserAgent || "smansaba",
     alarm: true,
   }
-
-  // Use the actual site URL as exam URL
-  config.url = "https://asas.sman1bantarujeg.sch.id"
 
   return NextResponse.json(config)
 }

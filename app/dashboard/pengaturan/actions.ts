@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
-import { examBrowserSettings, questionBanks } from "@/lib/db/schema"
-import { daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
-import { ensureExamBrowserSettingsTable, getExamBrowserSettings, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
+import { examBrowserSettings } from "@/lib/db/schema"
+import { ensureExamBrowserSettingsTable, EXAM_BROWSER_SETTING_ID } from "@/lib/exam-browser"
 
 export async function updateExamBrowserSettings(formData: FormData) {
   const forceExamBrowser = formData.get("forceExamBrowser") === "on"
@@ -13,8 +12,10 @@ export async function updateExamBrowserSettings(formData: FormData) {
   const blockedMessage = String(formData.get("blockedMessage") ?? "").trim()
   const downloadUrl = String(formData.get("downloadUrl") ?? "").trim()
   const configCode = String(formData.get("configCode") ?? "").trim()
-  const formEditorEmails = String(formData.get("formEditorEmails") ?? "").trim()
-  const formPublicEdit = formData.get("formPublicEdit") === "on"
+  const configExamUrl = String(formData.get("configExamUrl") ?? "").trim() || "https://asas.sman1bantarujeg.sch.id"
+  const configUserAgent = String(formData.get("configUserAgent") ?? "").trim() || "smansaba"
+  const configExitPin = String(formData.get("configExitPin") ?? "").trim() || "1234"
+  const configSchoolName = String(formData.get("configSchoolName") ?? "").trim() || "SMAN 1 Bantarujeg"
 
   if (forceExamBrowser && !allowedUserAgentPattern) {
     throw new Error("Isi minimal satu pola User-Agent sebelum mode wajib ExamBro diaktifkan.")
@@ -22,32 +23,24 @@ export async function updateExamBrowserSettings(formData: FormData) {
 
   await ensureExamBrowserSettingsTable()
 
+  const values = {
+    forceExamBrowser,
+    allowedUserAgentPattern,
+    blockedMessage: blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
+    downloadUrl,
+    configCode,
+    configExamUrl,
+    configUserAgent,
+    configExitPin,
+    configSchoolName,
+  }
+
   await db
     .insert(examBrowserSettings)
-    .values({
-      id: EXAM_BROWSER_SETTING_ID,
-      forceExamBrowser,
-      allowedUserAgentPattern,
-      blockedMessage:
-        blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
-      downloadUrl,
-      configCode,
-      formEditorEmails,
-      formPublicEdit,
-    })
+    .values({ id: EXAM_BROWSER_SETTING_ID, ...values })
     .onConflictDoUpdate({
       target: examBrowserSettings.id,
-      set: {
-        forceExamBrowser,
-        allowedUserAgentPattern,
-        blockedMessage:
-          blockedMessage || "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
-        downloadUrl,
-        configCode,
-        formEditorEmails,
-        formPublicEdit,
-        updatedAt: new Date(),
-      },
+      set: { ...values, updatedAt: new Date() },
     })
 
   revalidatePath("/dashboard/pengaturan")
@@ -67,42 +60,4 @@ export async function generateExamConfigCode() {
       set: { configCode: code, updatedAt: new Date() },
     })
   return code
-}
-
-export async function bagikanSemuaFormKeEditor(): Promise<{ ok: boolean; message: string }> {
-  await ensureExamBrowserSettingsTable()
-  const settings = await getExamBrowserSettings()
-  const editors = daftarEmailEditor(settings.formEditorEmails)
-  if (!settings.formPublicEdit && editors.length === 0) {
-    return { ok: false, message: 'Isi dulu daftar email editor di kolom "Email editor Google Form", atau centang "Siapa saja dengan link bisa edit form".' }
-  }
-
-  const banks = await db
-    .select({ formId: questionBanks.formId, code: questionBanks.code })
-    .from(questionBanks)
-  const targets = banks.filter((bank) => bank.formId)
-
-  let sukses = 0
-  const gagal: string[] = []
-  for (const bank of targets) {
-    try {
-      if (settings.formPublicEdit) {
-        if (await setFormAnyoneEditor(bank.formId)) sukses += 1
-        else gagal.push(bank.code)
-        continue
-      }
-      const hasil = await shareFormEditor(bank.formId, editors)
-      if (hasil.ok.length === editors.length) sukses += 1
-      else gagal.push(bank.code)
-    } catch {
-      gagal.push(bank.code)
-    }
-  }
-
-  revalidatePath("/dashboard/bank-soal")
-  const cara = settings.formPublicEdit ? "edit via link (siapa saja)" : `email editor: ${editors.join(", ")}`
-  return {
-    ok: true,
-    message: `Akses diterapkan ke ${sukses} dari ${targets.length} form (${cara}).${gagal.length ? ` Gagal: ${gagal.join(", ")}.` : ""}`,
-  }
 }

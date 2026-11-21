@@ -184,6 +184,11 @@ export const examBrowserSettings = pgTable("exam_browser_settings", {
     .default("Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android."),
   downloadUrl: text("downloadUrl").notNull().default(""),
   configCode: text("configCode").notNull().default(""),
+  // Konfigurasi yang dilayani ke app ExamBro lewat access code (samakan dengan form di APK).
+  configExamUrl: text("configExamUrl").notNull().default("https://asas.sman1bantarujeg.sch.id"),
+  configUserAgent: text("configUserAgent").notNull().default("smansaba"),
+  configExitPin: text("configExitPin").notNull().default("1234"),
+  configSchoolName: text("configSchoolName").notNull().default("SMAN 1 Bantarujeg"),
   // Email (pisahkan koma/baris) yang diberi akses edit ke semua Google Form buatan sistem.
   formEditorEmails: text("formEditorEmails").notNull().default(""),
   // true = form dibuat dengan akses "siapa saja dengan link bisa edit".

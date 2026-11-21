@@ -12,6 +12,10 @@ export type ExamBrowserSettings = {
   blockedMessage: string
   downloadUrl: string
   configCode: string
+  configExamUrl: string
+  configUserAgent: string
+  configExitPin: string
+  configSchoolName: string
   formEditorEmails: string
   formPublicEdit: boolean
 }
@@ -23,6 +27,10 @@ export const defaultExamBrowserSettings: ExamBrowserSettings = {
   blockedMessage: "Akses assesmen hanya bisa dibuka melalui aplikasi ExamBro Android.",
   downloadUrl: "",
   configCode: "",
+  configExamUrl: "https://asas.sman1bantarujeg.sch.id",
+  configUserAgent: "smansaba",
+  configExitPin: "1234",
+  configSchoolName: "SMAN 1 Bantarujeg",
   formEditorEmails: "",
   formPublicEdit: false,
 }
@@ -41,6 +49,12 @@ export async function ensureExamBrowserSettingsTable() {
       "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
     )
   `)
+  // Kolom tambahan (idempotent) untuk tabel yang sudah ada.
+  await db.execute(sql`ALTER TABLE "exam_browser_settings" ADD COLUMN IF NOT EXISTS "configCode" text DEFAULT '' NOT NULL`)
+  await db.execute(sql`ALTER TABLE "exam_browser_settings" ADD COLUMN IF NOT EXISTS "configExamUrl" text DEFAULT 'https://asas.sman1bantarujeg.sch.id' NOT NULL`)
+  await db.execute(sql`ALTER TABLE "exam_browser_settings" ADD COLUMN IF NOT EXISTS "configUserAgent" text DEFAULT 'smansaba' NOT NULL`)
+  await db.execute(sql`ALTER TABLE "exam_browser_settings" ADD COLUMN IF NOT EXISTS "configExitPin" text DEFAULT '1234' NOT NULL`)
+  await db.execute(sql`ALTER TABLE "exam_browser_settings" ADD COLUMN IF NOT EXISTS "configSchoolName" text DEFAULT 'SMAN 1 Bantarujeg' NOT NULL`)
 }
 
 export async function getExamBrowserSettings() {
