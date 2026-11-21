@@ -549,14 +549,16 @@ function DaftarSoal({
                 const idx = kunci.length === 1 ? HURUF.indexOf(kunci) : -1
                 return (
                   <AccordionItem key={s.qid || String(s.no)} value={String(s.no)}>
-                    <AccordionTrigger className="items-center gap-2 px-3 py-2.5 text-xs hover:no-underline">
-                      <span className="flex min-w-0 flex-1 items-center gap-2">
-                        <span className="w-5 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+                    <AccordionTrigger className="items-start gap-2 px-3 py-2.5 text-xs hover:no-underline">
+                      <span className="flex min-w-0 flex-1 items-start gap-2">
+                        <span className="w-5 shrink-0 pt-0.5 text-right font-mono text-[11px] text-muted-foreground">
                           {s.no}.
                         </span>
-                        <span className="min-w-0 flex-1 truncate font-normal">{s.pertanyaan}</span>
-                        <span className="shrink-0 text-[11px] font-normal text-muted-foreground tabular-nums">
-                          {s.poin} poin · {labelJenis(s.jenis)}
+                        <span className="min-w-0 flex-1 space-y-0.5">
+                          <span className="block font-medium leading-snug">{s.pertanyaan}</span>
+                          <span className="block text-[11px] font-normal text-muted-foreground">
+                            {s.poin} poin · {labelJenis(s.jenis)}
+                          </span>
                         </span>
                       </span>
                     </AccordionTrigger>
@@ -581,21 +583,16 @@ function DaftarSoal({
                                 </span>
                                 <span className="min-w-0 flex-1">{o}</span>
                                 {benar ? (
-                                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400">
-                                    <Check className="size-3.5" />
-                                    kunci
-                                  </span>
+                                  <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                                 ) : null}
                               </li>
                             )
                           })}
                         </ul>
                       ) : (
-                        <p className="rounded-sm bg-muted/60 px-2 py-1 text-xs">
-                          <span className="text-muted-foreground">Jenis: </span>
-                          {labelJenis(s.jenis)}
-                          <span className="text-muted-foreground"> · Kunci: </span>
-                          {s.kunci || "—"}
+                        <p className="rounded-sm border border-emerald-300/60 bg-emerald-50 px-2 py-1 text-xs dark:border-emerald-500/30 dark:bg-emerald-950/40">
+                          <span className="text-muted-foreground">Kunci: </span>
+                          <span className="font-medium text-emerald-800 dark:text-emerald-300">{s.kunci || "—"}</span>
                         </p>
                       )}
                       <div className="mt-2 flex justify-end gap-1 border-t pt-2">
