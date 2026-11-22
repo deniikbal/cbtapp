@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
 import { BookOpen, CalendarDays, FileQuestion, FileUp, FileText, LogOut } from "lucide-react"
 
-import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
+import { logoutProktor, proktorAktif } from "@/app/proktor/actions"
 import { AksiIkon } from "@/components/aksi-ikon"
 import { ProktorBottomNav, ProktorNav } from "@/components/proktor-nav"
 import { KelasTooltip } from "@/components/kelas-tooltip"
@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic"
 
 export default async function ProktorDashboardPage() {
   const proktor = await proktorAktif()
-  if (!proktor) redirect("/proktor/login")
+  if (!proktor) redirect("/proktor")
 
   const banks = await db
     .select({

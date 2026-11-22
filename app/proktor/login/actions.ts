@@ -8,7 +8,7 @@ import { db } from "@/lib/db"
 import { questionBanks, teachers } from "@/lib/db/schema"
 
 function pesanError(teks: string) {
-  return `/proktor/login?error=${encodeURIComponent(teks)}`
+  return `/proktor?error=${encodeURIComponent(teks)}`
 }
 
 // Login proktor: hanya NIP, tanpa password. Hanya guru yang ditunjuk sebagai
@@ -41,7 +41,7 @@ export async function loginProktor(formData: FormData) {
 export async function logoutProktor() {
   const cookieStore = await cookies()
   cookieStore.set("proctor_id", "", { path: "/", maxAge: 0 })
-  redirect("/proktor/login")
+  redirect("/proktor")
 }
 
 export async function proktorAktif() {

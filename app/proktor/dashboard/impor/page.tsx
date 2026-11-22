@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { eq, sql } from "drizzle-orm"
 import { LogOut } from "lucide-react"
 
-import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
+import { logoutProktor, proktorAktif } from "@/app/proktor/actions"
 import { ImporSoalPage } from "@/components/impor-soal-page"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,7 +28,7 @@ export default async function ImporSoalProktorPage({
   searchParams: Promise<{ bank?: string }>
 }) {
   const proktor = await proktorAktif()
-  if (!proktor) redirect("/proktor/login")
+  if (!proktor) redirect("/proktor")
 
   const { bank: bankId } = await searchParams
   const [bank] = bankId
