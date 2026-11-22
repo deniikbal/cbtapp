@@ -132,6 +132,8 @@ export const questionBanks = pgTable(
     subjectId: text("subjectId")
       .notNull()
       .references(() => subjects.id, { onDelete: "restrict" }),
+    // Jurusan yang ikut ujian (null = semua jurusan/umum). Dipakai menyaring opsi Kelas di Google Form.
+    majorId: text("majorId").references(() => majors.id, { onDelete: "set null" }),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },

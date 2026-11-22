@@ -15,9 +15,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-export type QuestionBankRowActionData = { id: string; code: string; title: string; teacherName: string; teacherId: string | null; teacherIds?: string[]; grade: string; googleFormUrl: string; formId: string; active: boolean; subjectId: string }
+export type QuestionBankRowActionData = { id: string; code: string; title: string; teacherName: string; teacherId: string | null; teacherIds?: string[]; grade: string; majorId?: string | null; googleFormUrl: string; formId: string; active: boolean; subjectId: string }
 
-export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: QuestionBankRowActionData; subjects: SubjectOption[]; teachers: TeacherOption[] }) {
+export function QuestionBankRowActions({ bank, subjects, teachers, majors = [] }: { bank: QuestionBankRowActionData; subjects: SubjectOption[]; teachers: TeacherOption[]; majors?: { id: string; name: string }[] }) {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,6 +103,7 @@ export function QuestionBankRowActions({ bank, subjects, teachers }: { bank: Que
             </div>
             <div className="space-y-2"><Label>Judul Otomatis</Label><Input value={bank.title} disabled /></div>
             <div className="space-y-2"><Label htmlFor={`grade-${bank.id}`}>Kelas</Label><Select name="grade" defaultValue={bank.grade} required><SelectTrigger id={`grade-${bank.id}`} className="w-full"><SelectValue>{bank.grade}</SelectValue></SelectTrigger><SelectContent><SelectItem value="X">X</SelectItem><SelectItem value="XI">XI</SelectItem><SelectItem value="XII">XII</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2"><Label htmlFor={`majorId-${bank.id}`}>Jurusan</Label><Select name="majorId" defaultValue={bank.majorId ?? "ALL"}><SelectTrigger id={`majorId-${bank.id}`} className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ALL">Semua jurusan</SelectItem>{majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label htmlFor={`teacher-${bank.id}`}>Guru Pengampu</Label><TeacherCombobox teachers={teachers} multiple defaultValues={bank.teacherIds?.length ? bank.teacherIds : bank.teacherId ? [bank.teacherId] : []} id={`teacher-${bank.id}`} /></div>
             <div className="space-y-2"><Label htmlFor={`url-${bank.id}`}>Link Google Form untuk siswa (opsional)</Label><Input id={`url-${bank.id}`} name="googleFormUrl" defaultValue={bank.googleFormUrl} placeholder="https://docs.google.com/forms/d/…/viewform" /><p className="text-xs text-muted-foreground">Link yang dibagikan ke siswa. Link edit otomatis diubah ke viewform.</p></div>
             <div className="space-y-2"><Label htmlFor={`formid-${bank.id}`}>Form ID (sync hasil)</Label><Input id={`formid-${bank.id}`} name="formId" defaultValue={bank.formId} placeholder="tempel link /d/…/edit atau ID-nya" /><p className="text-xs text-muted-foreground">Ambil dari URL saat form dibuka lewat tombol Edit. Link viewform/forms.gle tidak bisa dipakai.</p></div>

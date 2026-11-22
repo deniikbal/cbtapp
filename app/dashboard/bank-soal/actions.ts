@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto"
 
-import { eq, inArray , ne } from "drizzle-orm"
+import { and, eq, inArray , ne } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
@@ -86,6 +86,8 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
   const teacherIds = guruList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
+  const majorIdMentah = String(formData.get("majorId") ?? "").trim()
+  const majorId = majorIdMentah === "ALL" ? "" : majorIdMentah
   const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
   const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
   const { formId, error: formIdError } = bacaFormId(formData)
@@ -113,6 +115,7 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
       teacherIds,
       grade,
       subjectId,
+      majorId: majorId || null,
       googleFormUrl: googleFormUrl ?? "",
       formId,
       active,
@@ -133,6 +136,8 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
   const teacherIds = guruList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
+  const majorIdMentah = String(formData.get("majorId") ?? "").trim()
+  const majorId = majorIdMentah === "ALL" ? null : majorIdMentah || null
   const urlMentah = normalizeUrl(String(formData.get("googleFormUrl") ?? ""))
   const googleFormUrl = urlMentah ? keLinkSiswa(urlMentah) : null
   const { formId, error: formIdError } = bacaFormId(formData)
@@ -150,7 +155,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   try {
     await db
       .update(questionBanks)
-      .set({ subjectId, teacherName, teacherId: teacher.id, teacherIds, grade, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
+      .set({ subjectId, teacherName, teacherId: teacher.id, teacherIds, grade, majorId, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
   } catch (error) {
     return { ok: false, message: getDatabaseErrorMessage(error, "Gagal mengubah bank soal.") }
@@ -176,6 +181,7 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
         code: questionBanks.code,
         title: questionBanks.title,
         grade: questionBanks.grade,
+        majorId: questionBanks.majorId,
         formId: questionBanks.formId,
         subjectName: subjects.name,
       })
@@ -189,8 +195,12 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       return { ok: false, message: "Bank soal ini sudah punya Form ID. Kosongkan dulu kolom Form ID kalau mau membuat form baru." }
     }
 
+    // Opsi Kelas di form mengikuti jurusan bank soal; tanpa jurusan = semua kelas seangkatan.
+    const saringKelas = bank.majorId
+      ? and(eq(classrooms.grade, bank.grade), eq(classrooms.majorId, bank.majorId))
+      : eq(classrooms.grade, bank.grade)
     const kelasAngkatan = (
-      await db.select({ name: classrooms.name }).from(classrooms).where(eq(classrooms.grade, bank.grade))
+      await db.select({ name: classrooms.name }).from(classrooms).where(saringKelas)
     )
       .map((k) => k.name)
       .sort((a, b) => a.localeCompare(b, "id", { numeric: true }))

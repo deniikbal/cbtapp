@@ -17,9 +17,11 @@ export type SubjectOption = { id: string; name: string; code: string }
 export function QuestionBankCreateDialog({
   subjects,
   teachers = [],
+  majors = [],
 }: {
   subjects: SubjectOption[]
   teachers?: TeacherOption[]
+  majors?: { id: string; name: string }[]
 }) {
   const [open, setOpen] = useState(false)
   const [selectedSubjectId, setSelectedSubjectId] = useState("")
@@ -63,7 +65,7 @@ export function QuestionBankCreateDialog({
           <DialogDescription>Kode dan judul dibuat otomatis dari mapel.</DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="subjectId">Mapel</Label>
               <Select
@@ -88,6 +90,17 @@ export function QuestionBankCreateDialog({
                   <SelectItem value="XII">XII</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="majorId">Jurusan</Label>
+              <Select name="majorId" defaultValue="ALL">
+                <SelectTrigger id="majorId" className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua jurusan</SelectItem>
+                  {majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Menentukan daftar kelas di Google Form (mis. IPA saja).</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
