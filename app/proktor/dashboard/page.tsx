@@ -1,15 +1,16 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
-import { Activity, BookOpen, CalendarDays, FileQuestion, FileUp, FileText, LogOut } from "lucide-react"
+import { BookOpen, CalendarDays, FileQuestion, FileUp, FileText, LogOut } from "lucide-react"
 
 import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
 import { AksiIkon } from "@/components/aksi-ikon"
+import { ProktorBottomNav, ProktorNav } from "@/components/proktor-nav"
 import { KelasTooltip } from "@/components/kelas-tooltip"
 import { StatCard } from "@/components/stat-card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants, Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -78,10 +79,7 @@ export default async function ProktorDashboardPage() {
             <p className="text-[11px]">NIP {proktor.nip}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/proktor/dashboard/pengerjaan" className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 rounded-sm border-brand-foreground/60 bg-transparent text-xs text-brand-foreground hover:bg-brand-foreground/15 hover:text-brand-foreground sm:h-7" })}>
-              <Activity className="size-4" aria-hidden="true" />
-              Progress Pengerjaan
-            </Link>
+            <ProktorNav />
           <form action={logoutProktor}>
             <Button
               type="submit"
@@ -97,7 +95,7 @@ export default async function ProktorDashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 pb-24 md:px-6 md:pb-6 lg:px-8">
         <section className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Dashboard Proktor</h1>
           <p className="text-sm text-muted-foreground">
@@ -258,6 +256,7 @@ export default async function ProktorDashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <ProktorBottomNav />
     </main>
   )
 }

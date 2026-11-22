@@ -1,15 +1,15 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { asc, eq, inArray, sql } from "drizzle-orm"
-import { CheckCircle2, Clock3, LayoutDashboard, LogOut, Timer, Users } from "lucide-react"
+import { CheckCircle2, Clock3, LogOut, Timer, Users } from "lucide-react"
 
 import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
 import { AutoRefresh } from "@/components/auto-refresh"
+import { ProktorBottomNav, ProktorNav } from "@/components/proktor-nav"
 import { ProgressTableCard } from "@/components/progress-table-card"
 import type { ProgressStudent } from "@/components/progress-detail-dialog"
 import { StatCard } from "@/components/stat-card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { buttonVariants, Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { db } from "@/lib/db"
 import { classrooms, examAttempts, examResults, examSchedules, majors, questionBanks, students, subjects } from "@/lib/db/schema"
 import { relWaktu } from "@/lib/utils"
@@ -150,10 +150,7 @@ export default async function ProktorPengerjaanPage() {
             <p className="text-[11px]">NIP {proktor.nip}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/proktor/dashboard" className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 rounded-sm border-brand-foreground/60 bg-transparent text-xs text-brand-foreground hover:bg-brand-foreground/15 hover:text-brand-foreground sm:h-7" })}>
-              <LayoutDashboard className="size-4" aria-hidden="true" />
-              Dashboard
-            </Link>
+            <ProktorNav />
             <form action={logoutProktor}>
               <Button
                 type="submit"
@@ -169,7 +166,7 @@ export default async function ProktorPengerjaanPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 pb-24 md:px-6 md:pb-6 lg:px-8">
         <section className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Progress Pengerjaan</h1>
@@ -197,6 +194,7 @@ export default async function ProktorPengerjaanPage() {
 
         <ProgressTableCard rows={rows} />
       </div>
+      <ProktorBottomNav />
     </main>
   )
 }
