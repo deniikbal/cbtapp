@@ -106,9 +106,9 @@ export async function buatFormKosong(
     },
   ]
 
-  for (const item of existing.items ?? []) {
-    if (item.itemId) requests.push({ deleteItem: { itemId: item.itemId } })
-  }
+  // Forms API hanya menerima location.index; hapus dari indeks terakhir agar indeks lain tidak bergeser.
+  const butirLama = existing.items ?? []
+  for (let i = butirLama.length - 1; i >= 0; i--) requests.push({ deleteItem: { location: { index: i } } })
 
   if (kuis) {
     requests.push({ updateSettings: { settings: { quizSettings: { isQuiz: true } }, updateMask: "quizSettings.isQuiz" } })
