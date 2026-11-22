@@ -57,6 +57,7 @@ export async function updateStudent(formData: FormData) {
       nis,
       classroomId,
       active,
+      ...(active ? {} : { roomId: null }),
       session: Math.max(1, Number(formData.get("session") ?? 1) || 1),
       ...(password ? { passwordHash: hashPassword(password) } : {}),
       updatedAt: new Date(),
@@ -64,6 +65,7 @@ export async function updateStudent(formData: FormData) {
     .where(eq(students.id, id))
 
   revalidatePath("/dashboard/peserta")
+  revalidatePath("/dashboard/ruangan")
 }
 
 export async function deleteStudent(id: string) {
@@ -257,8 +259,13 @@ export async function importStudentNisUpdatesExcel(formData: FormData) {
 }
 
 export async function setStudentStatus(id: string, active: boolean) {
-  await db.update(students).set({ active, updatedAt: new Date() }).where(eq(students.id, id))
+  // Nonaktif = keluar dari ruangan, supaya tidak ikut terhitung di ruangan & kartu ujian.
+  await db
+    .update(students)
+    .set({ active, ...(active ? {} : { roomId: null }), updatedAt: new Date() })
+    .where(eq(students.id, id))
   revalidatePath("/dashboard/peserta")
+  revalidatePath("/dashboard/ruangan")
 }
 
 type CsvStudentRow = {
