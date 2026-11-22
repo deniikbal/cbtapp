@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { Filter, RotateCcw, Search, Trash2, Users, X, UsersRound } from "lucide-react"
+import { DoorOpen, Filter, RotateCcw, Search, Trash2, Users, X, UsersRound } from "lucide-react"
 import { toast } from "sonner"
 
 import { deleteStudents, findStudentsWithAttempts, setStudentsSession } from "@/app/dashboard/peserta/actions"
@@ -73,6 +73,7 @@ export function StudentManagementCard({
   const [search, setSearch] = useState("")
   const [classroomId, setClassroomId] = useState("ALL")
   const [status, setStatus] = useState("ALL")
+  const [roomName, setRoomName] = useState("ALL")
   const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -82,7 +83,12 @@ export function StudentManagementCard({
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const selectedClassroom = classrooms.find((classroom) => classroom.id === classroomId)
-  const hasActiveFilter = search.trim() !== "" || classroomId !== "ALL" || status !== "ALL"
+  // Pilihan ruangan diambil dari data peserta yang ada (termasuk yang belum punya ruangan).
+  const roomOptions = useMemo(
+    () => [...new Set(students.map((student) => student.roomName).filter((name): name is string => Boolean(name)))].sort((a, b) => a.localeCompare(b, "id-ID", { numeric: true })),
+    [students],
+  )
+  const hasActiveFilter = search.trim() !== "" || classroomId !== "ALL" || status !== "ALL" || roomName !== "ALL"
 
   const filteredStudents = useMemo(() => {
     const keyword = search.toLowerCase().trim()
@@ -91,6 +97,8 @@ export function StudentManagementCard({
       if (classroomId !== "ALL" && student.classroomId !== classroomId) return false
       if (status === "ACTIVE" && !student.active) return false
       if (status === "INACTIVE" && student.active) return false
+      if (roomName === "NONE" && student.roomName) return false
+      if (roomName !== "ALL" && roomName !== "NONE" && student.roomName !== roomName) return false
       if (!keyword) return true
 
       return [student.name, student.nis, student.className, student.majorName, student.roomName ?? ""]
@@ -98,7 +106,7 @@ export function StudentManagementCard({
         .toLowerCase()
         .includes(keyword)
     })
-  }, [students, search, classroomId, status])
+  }, [students, search, classroomId, status, roomName])
 
   const semuaBaris = pageSize === 0
   const totalPages = semuaBaris ? 1 : Math.max(1, Math.ceil(filteredStudents.length / pageSize))
@@ -187,6 +195,11 @@ export function StudentManagementCard({
     setCurrentPage(1)
   }
 
+  function handleRoomChange(value: string | null) {
+    setRoomName(value ?? "ALL")
+    setCurrentPage(1)
+  }
+
   function handlePageSizeChange(value: string | null) {
     if (!value) return
     setPageSize(Number(value))
@@ -197,6 +210,7 @@ export function StudentManagementCard({
     setSearch("")
     setClassroomId("ALL")
     setStatus("ALL")
+    setRoomName("ALL")
     setCurrentPage(1)
   }
 
@@ -219,13 +233,13 @@ export function StudentManagementCard({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-12">
-          <div className="relative md:col-span-5">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <div className="relative lg:col-span-2">
             <Label htmlFor="search-student" className="sr-only">Cari peserta</Label>
             <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-student" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari nama atau NIS..." className="pl-8" />
           </div>
-          <div className="md:col-span-3">
+          <div className="lg:col-span-1">
             <Label htmlFor="filter-class" className="sr-only">Filter kelas</Label>
             <Select value={classroomId} onValueChange={handleClassroomChange}>
               <SelectTrigger id="filter-class" className="w-full">
@@ -242,7 +256,25 @@ export function StudentManagementCard({
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2">
+          <div className="lg:col-span-1">
+            <Label htmlFor="filter-room" className="sr-only">Filter ruangan</Label>
+            <Select value={roomName} onValueChange={handleRoomChange}>
+              <SelectTrigger id="filter-room" className="w-full">
+                <div className="flex items-center gap-2 truncate">
+                  <DoorOpen className="size-4 text-muted-foreground" aria-hidden="true" />
+                  <SelectValue>{roomName === "ALL" ? "Semua ruangan" : roomName === "NONE" ? "Belum ada ruangan" : roomName}</SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="ALL">Semua ruangan</SelectItem>
+                <SelectItem value="NONE">Belum ada ruangan</SelectItem>
+                {roomOptions.map((name) => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="lg:col-span-1">
             <Label htmlFor="filter-status" className="sr-only">Filter status</Label>
             <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger id="filter-status" className="w-full">
@@ -255,7 +287,7 @@ export function StudentManagementCard({
               </SelectContent>
             </Select>
           </div>
-          <div className="md:col-span-2">
+          <div className="lg:col-span-1">
             <Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}>
               <RotateCcw className="size-4" aria-hidden="true" />Reset
             </Button>
