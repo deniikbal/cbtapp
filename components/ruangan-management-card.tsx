@@ -217,7 +217,6 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
             </Card>
           ))}
         </div>
-        </>
 
         <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
           <div className="flex flex-col items-center gap-3 sm:flex-row">
@@ -288,6 +287,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
             </Pagination>
           )}
         </div>
+        </>
       )}
 
       {/* Tambah ruangan */}
