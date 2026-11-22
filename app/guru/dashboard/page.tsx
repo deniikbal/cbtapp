@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { eq, inArray, or, sql } from "drizzle-orm"
+import { and, eq, inArray, or, sql } from "drizzle-orm"
 import { BookOpen, CalendarDays, ChevronDown, ClipboardList, ExternalLink, FileQuestion, FileUp, LogOut } from "lucide-react"
 
 import { getAksesPdfGuru, getIdentitasLaporan } from "@/app/guru/dashboard/actions"
@@ -24,7 +24,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { db } from "@/lib/db"
-import { classrooms, examResults, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
+import { classrooms, examResults, examSchedules, questionBanks, students, subjects, teachers } from "@/lib/db/schema"
+import { BelumResponsDialog } from "@/components/belum-respons-dialog"
 
 export const dynamic = "force-dynamic"
 
@@ -62,6 +63,7 @@ export default async function GuruDashboardPage() {
           id: examSchedules.id,
           bankId: examSchedules.questionBankId,
           kelas: classrooms.name,
+          classroomId: examSchedules.classroomId,
           tanggal: examSchedules.examDate,
         })
         .from(examSchedules)
@@ -84,6 +86,32 @@ export default async function GuruDashboardPage() {
 
   const hasilPerJadwal = new Map(hasil.map((h) => [h.scheduleId, h]))
 
+  // Siapa yang sudah merespons (per jadwal) — untuk menghitung yang belum masuk.
+  const responsDetail = jadwal.length
+    ? await db
+        .select({
+          scheduleId: examResults.scheduleId,
+          studentId: examResults.studentId,
+          nis: examResults.nis,
+          nama: examResults.nama,
+        })
+        .from(examResults)
+        .where(inArray(examResults.scheduleId, jadwal.map((j) => j.id)))
+    : []
+
+  // Peserta aktif di kelas yang dijadwalkan.
+  const kelasIds = [...new Set(jadwal.map((j) => j.classroomId))]
+  const pesertaKelas = kelasIds.length
+    ? await db
+        .select({ id: students.id, nis: students.nis, name: students.name, className: classrooms.name, classroomId: students.classroomId })
+        .from(students)
+        .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
+        .where(and(inArray(students.classroomId, kelasIds), eq(students.active, true)))
+    : []
+
+  const kunciNis = (nilai: string) => (nilai ?? "").replace(/[^0-9]/g, "").replace(/^0+/, "")
+  const kunciNama = (nilai: string) => (nilai ?? "").toUpperCase().replace(/[^A-Z ]/g, " ").split(/\s+/).filter(Boolean).join(" ")
+
   const ringkas = banks.map((bank) => {
     const jadwalBank = jadwal.filter((j) => j.bankId === bank.id)
     let respons = 0
@@ -96,12 +124,33 @@ export default async function GuruDashboardPage() {
       totalNilai += h.rata * h.respons
     }
 
+    // Cocokkan respons ke peserta: lewat id siswa, NIS, atau nama (data sync bisa salah satu saja).
+    const idJadwal = new Set(jadwalBank.map((j) => j.id))
+    const sudahId = new Set<string>()
+    const sudahNis = new Set<string>()
+    const sudahNama = new Set<string>()
+    for (const r of responsDetail) {
+      if (!idJadwal.has(r.scheduleId)) continue
+      if (r.studentId) sudahId.add(r.studentId)
+      if (r.nis) sudahNis.add(kunciNis(r.nis))
+      if (r.nama) sudahNama.add(kunciNama(r.nama))
+    }
+
+    const kelasBank = new Set(jadwalBank.map((j) => j.classroomId))
+    const peserta = pesertaKelas.filter((p) => kelasBank.has(p.classroomId))
+    const belum = peserta
+      .filter((p) => !sudahId.has(p.id) && !sudahNis.has(kunciNis(p.nis)) && !sudahNama.has(kunciNama(p.name)))
+      .map((p) => ({ kelas: p.className, nama: p.name, nis: p.nis }))
+      .sort((a, b) => a.kelas.localeCompare(b.kelas, "id-ID", { numeric: true }) || a.nama.localeCompare(b.nama, "id-ID"))
+
     return {
       ...bank,
       jumlahJadwal: jadwalBank.length,
       kelas: [...new Set(jadwalBank.map((j) => j.kelas))],
       respons,
       rataRata: respons ? totalNilai / respons : 0,
+      peserta: peserta.length,
+      belum,
     }
   })
 
@@ -222,7 +271,12 @@ export default async function GuruDashboardPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col items-end">
-                            <span className="text-sm tabular-nums">{bank.respons} respons</span>
+                            <span className="text-sm tabular-nums">
+                              {bank.respons}/{bank.peserta} respons
+                            </span>
+                            {bank.jumlahJadwal > 0 && (
+                              <BelumResponsDialog judul={bank.title} belum={bank.belum} peserta={bank.peserta} />
+                            )}
                             {bank.respons ? (
                               <span
                                 className={
@@ -318,7 +372,14 @@ export default async function GuruDashboardPage() {
                     </div>
                     <div>
                       <dt className="text-xs text-muted-foreground">Respons</dt>
-                      <dd className="tabular-nums">{bank.jumlahJadwal === 0 ? "Belum dijadwalkan" : `${bank.respons} respons`}</dd>
+                      <dd className="tabular-nums">
+                        {bank.jumlahJadwal === 0 ? "Belum dijadwalkan" : `${bank.respons}/${bank.peserta} respons`}
+                      </dd>
+                      {bank.jumlahJadwal > 0 && (
+                        <div className="mt-1">
+                          <BelumResponsDialog judul={bank.title} belum={bank.belum} peserta={bank.peserta} />
+                        </div>
+                      )}
                     </div>
                     <div>
                       <dt className="text-xs text-muted-foreground">Rata-rata</dt>
