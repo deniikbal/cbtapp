@@ -25,9 +25,11 @@ export function QuestionBankCreateDialog({
 }) {
   const [open, setOpen] = useState(false)
   const [selectedSubjectId, setSelectedSubjectId] = useState("")
+  const [selectedMajorId, setSelectedMajorId] = useState("ALL")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId)
+  const selectedMajor = majors.find((major) => major.id === selectedMajorId)
 
   function handleSubmit(formData: FormData) {
     setError(null)
@@ -40,6 +42,7 @@ export function QuestionBankCreateDialog({
       }
       toast.success(result.message)
       setSelectedSubjectId("")
+      setSelectedMajorId("ALL")
       setOpen(false)
     })
   }
@@ -51,6 +54,7 @@ export function QuestionBankCreateDialog({
         setOpen(nextOpen)
         if (!nextOpen) {
           setSelectedSubjectId("")
+          setSelectedMajorId("ALL")
           setError(null)
         }
       }}
@@ -93,8 +97,8 @@ export function QuestionBankCreateDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="majorId">Jurusan</Label>
-              <Select name="majorId" defaultValue="ALL">
-                <SelectTrigger id="majorId" className="w-full"><SelectValue /></SelectTrigger>
+              <Select name="majorId" value={selectedMajorId} onValueChange={(value: string | null) => setSelectedMajorId(value ?? "ALL")}>
+                <SelectTrigger id="majorId" className="w-full"><SelectValue>{selectedMajorId === "ALL" ? "Semua jurusan" : selectedMajor?.name ?? "Semua jurusan"}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Semua jurusan</SelectItem>
                   {majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}
