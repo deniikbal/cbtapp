@@ -46,7 +46,7 @@ export function CardSettingsForm({ settings }: { settings: CardSettings }) {
           <Input id="examTitle" name="examTitle" defaultValue={settings.examTitle} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="academicYear">Tahun Pelajaran</Label>
+          <Label htmlFor="academicYear">Tahun Ajaran</Label>
           <Input id="academicYear" name="academicYear" defaultValue={settings.academicYear} />
         </div>
         <div className="space-y-1.5">

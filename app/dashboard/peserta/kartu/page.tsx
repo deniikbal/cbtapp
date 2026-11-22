@@ -126,7 +126,7 @@ export default async function KartuUjianPage({
                   <div className="flex-1">
                     <p className="text-[10px] font-bold uppercase">{cardSettings.schoolName}</p>
                     <p className="text-[12px] font-semibold text-brand">{cardSettings.examTitle}</p>
-                    <p className="text-[9px] text-muted-foreground">Tahun Pelajaran {cardSettings.academicYear}</p>
+                    <p className="text-[9px] text-muted-foreground">Tahun Ajaran {cardSettings.academicYear}</p>
                   </div>
                   {cardSettings.logoUrl && <div className="size-10" />}
                 </header>
