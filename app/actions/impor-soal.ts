@@ -194,22 +194,37 @@ export async function imporSoalTeks(bankId: string, teks: string): Promise<{ ok:
 /** Rapikan teks mentah: coba AI (Gemini) dulu, jatuh ke perapian aturan bila gagal. */
 export async function rapikanSoalTeks(
   teks: string,
-): Promise<{ ok: true; teks: string; cara: "ai" | "aturan"; catatan?: string } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; teks: string; cara: "ai" | "aturan"; catatan?: string; perkiraan: number[] }
+  | { ok: false; message: string }
+> {
   const mentah = (teks ?? "").trim()
   if (mentah.length < 10) return { ok: false, message: "Teks soal masih kosong." }
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return { ok: true, teks: rapikanSoal(mentah), cara: "aturan", catatan: "Kunci AI belum diset — dirapikan dengan aturan otomatis." }
+    return {
+      ok: true,
+      teks: rapikanSoal(mentah),
+      cara: "aturan",
+      catatan: "Kunci AI belum diset — dirapikan dengan aturan otomatis.",
+      perkiraan: [],
+    }
   }
 
   try {
     const rapi = await rapikanSoalAI(mentah, apiKey)
-    return { ok: true, teks: rapi, cara: "ai" }
+    return { ok: true, teks: rapi.teks, cara: "ai", perkiraan: rapi.perkiraan }
   } catch (err) {
     const pesan = err instanceof Error ? err.message : "AI gagal."
     console.error("[rapikanSoalTeks]", pesan)
-    return { ok: true, teks: rapikanSoal(mentah), cara: "aturan", catatan: `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.` }
+    return {
+      ok: true,
+      teks: rapikanSoal(mentah),
+      cara: "aturan",
+      catatan: `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.`,
+      perkiraan: [],
+    }
   }
 }
 

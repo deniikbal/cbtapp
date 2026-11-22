@@ -418,6 +418,7 @@ function PanelTeks({
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const [merapikan, startMerapikan] = useTransition()
+  const [kunciAI, setKunciAI] = useState<number[]>([])
 
   function periksa() {
     setError(null)
@@ -444,7 +445,16 @@ function PanelTeks({
       setSoal(null)
       setPeringatan([])
       setError(null)
-      toast.success(hasil.cara === "ai" ? "Soal dirapikan oleh AI." : hasil.catatan ?? "Soal dirapikan.")
+      setKunciAI(hasil.perkiraan ?? [])
+      if (hasil.cara === "ai") {
+        toast.success(
+          hasil.perkiraan?.length
+            ? `Soal dirapikan AI. Kunci soal ${hasil.perkiraan.join(", ")} diisi AI — mohon diperiksa.`
+            : "Soal dirapikan oleh AI.",
+        )
+      } else {
+        toast.success(hasil.catatan ?? "Soal dirapikan.")
+      }
     })
   }
 
@@ -476,6 +486,7 @@ function PanelTeks({
         </CardTitle>
         <CardDescription className="text-[11px]">
           Satu soal = pertanyaan, lalu baris-baris opsi, lalu baris <span className="font-mono">Kunci: C</span>.
+          Tanpa kunci pun boleh — AI akan mengisi kuncinya dan menandai soal yang perlu diperiksa.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 py-4">
@@ -485,6 +496,7 @@ function PanelTeks({
             setTeks(e.target.value)
             setSoal(null)
             setError(null)
+            setKunciAI([])
           }}
           placeholder={CONTOH}
           className="min-h-[380px] rounded-sm font-mono text-xs lg:min-h-[460px]"
@@ -511,6 +523,17 @@ function PanelTeks({
             Periksa format
           </Button>
         </div>
+
+        {kunciAI.length > 0 ? (
+          <Alert className="rounded-sm border-amber-300/70 bg-amber-50 px-3 py-2 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+            <TriangleAlert aria-hidden="true" />
+            <AlertTitle className="text-xs">Kunci jawaban diisi AI</AlertTitle>
+            <AlertDescription className="text-[11px]">
+              Soal nomor {kunciAI.join(", ")} belum punya kunci di teks asli, jadi AI menentukan sendiri. Periksa
+              kembali sebelum soal dipakai — kunci tetap bisa diubah lewat Ubah pada daftar soal.
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         {error ? (
           <Alert variant="destructive" className="rounded-sm px-3 py-2">

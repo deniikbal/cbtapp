@@ -54,15 +54,19 @@ export function rapikanSoal(teks: string): string {
     .trim()
 }
 
-const PROMPT = `Kamu pengubah format soal pilihan ganda. Ubah teks berikut menjadi format baku, TANPA menambah, mengurangi, atau mengubah isi soal.
+const PROMPT = `Kamu pengubah format soal pilihan ganda. Ubah teks berikut menjadi format baku, tanpa menambah atau mengurangi isi soal.
 
 Aturan keluaran (WAJIB):
 - Satu soal ditulis: baris nomor + pertanyaan, contoh "1. Hasil dari 12 x 2 adalah ..."
 - Setiap opsi pada baris sendiri, tanpa huruf di depan (jangan tulis "a." / "A.").
-- Setiap soal yang punya jawaban WAJIB diakhiri baris "Kunci: X". Kalau jawaban berupa huruf opsi, tulis hurufnya (contoh "Kunci: C"). Kalau jawaban berupa teks/nama/angka, tulis teks itu apa adanya setelah "Kunci: " (contoh "Kunci: Soekarno"). Jangan pernah membiarkan jawaban sebagai baris opsi tambahan.
+- SETIAP soal WAJIB punya baris "Kunci: X". Tulis huruf opsi yang benar (contoh "Kunci: C"). Untuk jawaban berupa teks/nama/angka, tulis teksnya apa adanya (contoh "Kunci: Soekarno"). Jangan pernah membiarkan jawaban sebagai baris opsi tambahan.
+- Sumber kunci, urutkan prioritasnya:
+  1) Tanda jawaban yang sudah ada di teks (mis. "Jawaban: B", opsi bertanda * atau (kunci), daftar kunci di akhir seperti "Kunci Jawaban: 1.B 2.C").
+  2) Bila tidak ada tanda jawaban sama sekali: tentukan sendiri jawaban yang paling benar berdasarkan pengetahuanmu, lalu tulis "Kunci: X".
 - Pisahkan antar soal dengan satu baris kosong.
 - Jangan menulis penjelasan, pembuka, penutup, atau markdown. Keluarkan teks soal saja.
-- Bila opsi tidak berjumlah 5, biarkan apa adanya. Bila ada soal tanpa kunci, tetap keluarkan soalnya tanpa baris Kunci.
+- Bila opsi tidak berjumlah 5, biarkan apa adanya.
+- Baris PALING AKHIR keluaran wajib berupa "PERKIRAAN: <nomor soal yang kuncinya kamu tentukan sendiri, dipisah koma>". Tulis "PERKIRAAN: -" bila semua kunci sudah ada di teks aslinya.
 
 Teks soal:
 ---
@@ -73,7 +77,19 @@ const KANDIDAT_MODEL = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "g
   Boolean,
 ) as string[]
 
-export async function rapikanSoalAI(teks: string, apiKey: string): Promise<string> {
+/** Buang baris "PERKIRAAN: 3, 7" dari keluaran AI; kembalikan nomor soal yang kuncinya hasil tebakan. */
+function pisahkanPerkiraan(teks: string): { teks: string; perkiraan: number[] } {
+  const baris = teks.split("\n")
+  const idx = baris.findIndex((b) => /^\s*perkiraan\s*:/i.test(b))
+  if (idx < 0) return { teks: teks.trim(), perkiraan: [] }
+
+  const isi = baris[idx].replace(/^\s*perkiraan\s*:\s*/i, "").trim()
+  const perkiraan = [...isi.matchAll(/\d{1,3}/g)].map((m) => Number(m[0]))
+  baris.splice(idx, 1)
+  return { teks: baris.join("\n").trim(), perkiraan }
+}
+
+export async function rapikanSoalAI(teks: string, apiKey: string): Promise<{ teks: string; perkiraan: number[] }> {
   let pesanTerakhir = "AI tidak menjawab."
   for (const model of KANDIDAT_MODEL) {
     try {
@@ -96,7 +112,7 @@ export async function rapikanSoalAI(teks: string, apiKey: string): Promise<strin
         .join("")
         .replace(/^```[a-z]*\n?|```$/g, "")
         .trim()
-      if (out) return out
+      if (out) return pisahkanPerkiraan(out)
       pesanTerakhir = "Gemini mengembalikan teks kosong."
     } catch (err) {
       pesanTerakhir = err instanceof Error ? err.message : "Gagal menghubungi Gemini."
