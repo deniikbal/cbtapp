@@ -195,22 +195,11 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
       .map((k) => k.name)
       .sort((a, b) => a.localeCompare(b, "id", { numeric: true }))
 
-    const deskripsi = [
-      "Assesmen Sumatif Akhir Semester (ASAS) 2026-2027",
-      "SMAN 1 Bantarujeg",
-      "",
-      "Petunjuk:",
-      "1. Pastikan Anda menekan tombol KIRIM hingga muncul tulisan \"Respon Anda telah dicatat\". Jika tidak yakin, ulangi ujian selama waktu masih ada.",
-      "2. Kerjakan pada aplikasi Evaluate Browser. Jangan dikerjakan melalui browser HP — meskipun jawaban bisa terkirim, nilai tidak akan masuk ke server, dan risiko ditanggung sendiri.",
-      "3. Dianjurkan login menggunakan akun Google masing-masing agar jawaban tersimpan dan tidak perlu mengulang dari awal jika terjadi kendala dalam pelaksanaan ujian.",
-    ].join("\n")
-
     // Judul form: ASAS [MAPEL] KELAS [TINGKAT] (REGULER), contoh: ASAS KIMIA KELAS X (REGULER)
     const judulForm = `ASAS ${bank.subjectName.toUpperCase()} KELAS ${bank.grade.toUpperCase()} (REGULER)`
 
     const { formId, editUrl, responderUri } = await buatFormKosong(judulForm, {
       kelas: kelasAngkatan,
-      deskripsi,
     })
     const shareUrl = responderUri || `https://docs.google.com/forms/d/${formId}/viewform`
 

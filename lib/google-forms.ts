@@ -69,7 +69,7 @@ const BUTIR_IDENTITAS = ["NIS", "Nama Lengkap", "Kelas"]
 
 export async function buatFormKosong(
   judul: string,
-  opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[]; deskripsi?: string } = {}
+  opsi: { kuis?: boolean; identitas?: boolean; kelas?: string[] } = {}
 ) {
   const templateId = process.env.GOOGLE_FORM_TEMPLATE_ID
   if (!templateId) {
@@ -94,14 +94,15 @@ export async function buatFormKosong(
   const formId = String(salinan.id)
 
   // Template membawa setelan Quizzes dan Respondent settings yang diatur manual sekali di UI.
-  // Kita hanya mengganti judul, deskripsi, dan butir sesuai bank soal.
+  // Kita hanya mengganti judul dan butir; deskripsi template dibiarkan apa adanya.
   const existing = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
-  const { kuis = true, identitas = true, kelas = [], deskripsi = "" } = opsi
+  const { kuis = true, identitas = true, kelas = [] } = opsi
+  // Deskripsi tidak disentuh: salinan mewarisi deskripsi/header dari template.
   const requests: Record<string, unknown>[] = [
     {
       updateFormInfo: {
-        info: { title: judul, description: deskripsi },
-        updateMask: "title,description",
+        info: { title: judul },
+        updateMask: "title",
       },
     },
   ]
