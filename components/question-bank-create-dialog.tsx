@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 
 import { createQuestionBank } from "@/app/dashboard/bank-soal/actions"
+import { LabelHint } from "@/components/label-hint"
 import { TeacherCombobox, type TeacherOption } from "@/components/teacher-combobox"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -96,7 +97,10 @@ export function QuestionBankCreateDialog({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="majorId">Jurusan</Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="majorId">Jurusan</Label>
+                <LabelHint text="Menentukan daftar kelas di Google Form (mis. IPA saja)." />
+              </div>
               <Select name="majorId" value={selectedMajorId} onValueChange={(value: string | null) => setSelectedMajorId(value ?? "ALL")}>
                 <SelectTrigger id="majorId" className="w-full"><SelectValue>{selectedMajorId === "ALL" ? "Semua jurusan" : selectedMajor?.name ?? "Semua jurusan"}</SelectValue></SelectTrigger>
                 <SelectContent>
@@ -104,7 +108,6 @@ export function QuestionBankCreateDialog({
                   {majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Menentukan daftar kelas di Google Form (mis. IPA saja).</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -113,9 +116,11 @@ export function QuestionBankCreateDialog({
               <TeacherCombobox teachers={teachers} multiple id="teacherIds" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="proctorIds">Proktor</Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="proctorIds">Proktor</Label>
+                <LabelHint text="Proktor bisa mengimpor soal dari Word lewat login NIP." />
+              </div>
               <TeacherCombobox teachers={teachers} multiple id="proctorIds" name="proctorIds" />
-              <p className="text-xs text-muted-foreground">Proktor bisa mengimpor soal dari Word lewat login NIP.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="active">Status</Label>
