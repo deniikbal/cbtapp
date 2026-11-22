@@ -59,7 +59,8 @@ export type StudentManagementClassroom = {
   majorName: string
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
+// 0 = tampilkan semua baris (tanpa pagination).
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 0] as const
 
 export function StudentManagementCard({
   students,
@@ -98,13 +99,14 @@ export function StudentManagementCard({
     })
   }, [students, search, classroomId, status])
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize))
+  const semuaBaris = pageSize === 0
+  const totalPages = semuaBaris ? 1 : Math.max(1, Math.ceil(filteredStudents.length / pageSize))
   const activePage = Math.min(currentPage, totalPages)
   const pageRange = buildPageRange(activePage, totalPages)
-  const startIndex = (activePage - 1) * pageSize
-  const paginatedStudents = filteredStudents.slice(startIndex, startIndex + pageSize)
+  const startIndex = semuaBaris ? 0 : (activePage - 1) * pageSize
+  const paginatedStudents = semuaBaris ? filteredStudents : filteredStudents.slice(startIndex, startIndex + pageSize)
   const from = filteredStudents.length === 0 ? 0 : startIndex + 1
-  const to = Math.min(startIndex + pageSize, filteredStudents.length)
+  const to = semuaBaris ? filteredStudents.length : Math.min(startIndex + pageSize, filteredStudents.length)
 
   const pageIds = paginatedStudents.map((student) => student.id)
   const selectedOnPage = pageIds.filter((id) => selectedIds.includes(id)).length
@@ -426,10 +428,10 @@ export function StudentManagementCard({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Per halaman</span>
               <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{pageSize}</span></SelectTrigger>
+                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{semuaBaris ? "Semua" : pageSize}</span></SelectTrigger>
                 <SelectContent align="end">
                   {PAGE_SIZE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                    <SelectItem key={option} value={String(option)}>{option === 0 ? "Semua" : option}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
