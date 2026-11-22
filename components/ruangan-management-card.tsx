@@ -28,12 +28,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 const kolatorKelas = new Intl.Collator("id-ID", { numeric: true, sensitivity: "base" })
+// 0 = tampilkan semua ruangan sekaligus.
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 0] as const
 
 export type RuanganRow = { id: string; name: string; memberIds: string[]; perClass: { className: string; jumlah: number }[] }
 export type SiswaRow = { id: string; name: string; nis: string; className: string; roomId: string | null }
@@ -49,6 +60,23 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
   const [namaEdit, setNamaEdit] = useState("")
   const [hapusTarget, setHapusTarget] = useState<RuanganRow | null>(null)
   const [kelolaTarget, setKelolaTarget] = useState<RuanganRow | null>(null)
+
+  const [pageSize, setPageSize] = useState<number>(10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const semuaBaris = pageSize === 0
+  const totalPages = semuaBaris ? 1 : Math.max(1, Math.ceil(rooms.length / pageSize))
+  const activePage = Math.min(currentPage, totalPages)
+  const pageRange = buildPageRange(activePage, totalPages)
+  const startIndex = semuaBaris ? 0 : (activePage - 1) * pageSize
+  const pagedRooms = semuaBaris ? rooms : rooms.slice(startIndex, startIndex + pageSize)
+  const dari = rooms.length === 0 ? 0 : startIndex + 1
+  const sampai = semuaBaris ? rooms.length : Math.min(startIndex + pageSize, rooms.length)
+
+  function gantiPageSize(value: string | null) {
+    if (!value) return
+    setPageSize(Number(value))
+    setCurrentPage(1)
+  }
 
   const belumDitempatkan = students.filter((s) => !s.roomId).length
 
@@ -103,7 +131,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rooms.map((room) => (
+              {pagedRooms.map((room) => (
                 <TableRow key={room.id} className="hover:bg-muted/40">
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -147,7 +175,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
         </div>
 
         <div className="grid gap-3 md:hidden">
-          {rooms.map((room) => (
+          {pagedRooms.map((room) => (
             <Card key={room.id}>
               <CardContent className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
@@ -190,6 +218,76 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
           ))}
         </div>
         </>
+
+        <div className="mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              Menampilkan <span className="font-medium text-foreground">{dari}</span>
+              –<span className="font-medium text-foreground">{sampai}</span> dari{" "}
+              <span className="font-medium text-foreground">{rooms.length}</span> ruangan
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Per halaman</span>
+              <Select value={String(pageSize)} onValueChange={gantiPageSize}>
+                <SelectTrigger className="h-11 w-[80px] sm:h-8"><span>{semuaBaris ? "Semua" : pageSize}</span></SelectTrigger>
+                <SelectContent align="end">
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={String(option)}>{option === 0 ? "Semua" : option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination className="mx-0 w-auto">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    text="Sebelumnya"
+                    className={activePage === 1 ? "pointer-events-none opacity-50" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }}
+                  />
+                </PaginationItem>
+                {pageRange.map((page, index) =>
+                  page === "..." ? (
+                    <PaginationItem key={`ellipsis-${index}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === activePage}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          setCurrentPage(page)
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                )}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    text="Berikutnya"
+                    className={activePage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       )}
 
       {/* Tambah ruangan */}
@@ -265,6 +363,18 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
       )}
     </div>
   )
+}
+
+function buildPageRange(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
+  const range: (number | "...")[] = [1]
+  const left = Math.max(2, current - 1)
+  const right = Math.min(total - 1, current + 1)
+  if (left > 2) range.push("...")
+  for (let page = left; page <= right; page++) range.push(page)
+  if (right < total - 1) range.push("...")
+  range.push(total)
+  return range
 }
 
 function KelolaRuanganDialog({
