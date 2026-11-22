@@ -51,6 +51,7 @@ export type StudentManagementRow = {
   majorName: string
   kartuPassword: string | null
   session: number
+  roomName: string | null
 }
 
 export type StudentManagementClassroom = {
@@ -92,7 +93,7 @@ export function StudentManagementCard({
       if (status === "INACTIVE" && student.active) return false
       if (!keyword) return true
 
-      return [student.name, student.nis, student.className, student.majorName]
+      return [student.name, student.nis, student.className, student.majorName, student.roomName ?? ""]
         .join(" ")
         .toLowerCase()
         .includes(keyword)
@@ -208,7 +209,7 @@ export function StudentManagementCard({
               <CardTitle>Daftar Peserta</CardTitle>
               <Badge variant="secondary" className="font-normal">{filteredStudents.length} hasil</Badge>
             </div>
-            <CardDescription>Data login peserta berisi nama, NIS, password, kelas, jurusan, dan status.</CardDescription>
+            <CardDescription>Data login peserta berisi nama, NIS, password, kelas, ruangan, jurusan, dan status.</CardDescription>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row md:shrink-0">
             {classrooms.length === 0 && <SeedMasterDataButton />}
@@ -319,6 +320,7 @@ export function StudentManagementCard({
                 <TableHead>Username</TableHead>
                 <TableHead>Password</TableHead>
                 <TableHead>Kelas</TableHead>
+                <TableHead>Ruangan</TableHead>
                 <TableHead>Sesi</TableHead>
                 <TableHead>Jurusan</TableHead>
                 <TableHead>Status</TableHead>
@@ -354,6 +356,7 @@ export function StudentManagementCard({
                   <TableCell className="font-mono text-xs text-muted-foreground">{student.nis}</TableCell>
                   <TableCell className="font-mono text-xs">{student.kartuPassword || "-"}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal">{student.className}</Badge></TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{student.roomName ?? "-"}</TableCell>
                   <TableCell className="text-center text-sm text-muted-foreground tabular-nums">{student.session ?? 1}</TableCell>
                   <TableCell className="text-muted-foreground">{student.majorName}</TableCell>
                   <TableCell><Badge variant="secondary" className={cn("font-normal", student.active ? "bg-lime-500/10 text-lime-700 dark:text-lime-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{student.active ? "Aktif" : "Tidak aktif"}</Badge></TableCell>
@@ -399,6 +402,10 @@ export function StudentManagementCard({
                   <div>
                     <dt className="text-xs text-muted-foreground">Sesi</dt>
                     <dd className="tabular-nums">{student.session ?? 1}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Ruangan</dt>
+                    <dd>{student.roomName ?? "-"}</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">Kelas</dt>

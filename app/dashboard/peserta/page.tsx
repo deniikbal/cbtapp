@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/sidebar"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { classrooms, majors, students } from "@/lib/db/schema"
+import { classrooms, examRooms, majors, students } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 import { StatCard } from "@/components/stat-card"
 
@@ -51,6 +51,7 @@ type StudentRow = {
   majorName: string
   kartuPassword: string | null
   session: number
+  roomName: string | null
 }
 
 type ClassroomOption = {
@@ -84,10 +85,12 @@ export default async function PesertaPage() {
         majorName: majors.name,
         kartuPassword: students.kartuPassword,
         session: students.session,
+        roomName: examRooms.name,
       })
       .from(students)
       .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
       .innerJoin(majors, eq(classrooms.majorId, majors.id))
+      .leftJoin(examRooms, eq(students.roomId, examRooms.id))
       .orderBy(asc(students.name))
 
     classroomOptions = await db
