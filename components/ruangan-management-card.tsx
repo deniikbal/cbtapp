@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
@@ -91,7 +91,62 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <>
+        <div className="hidden overflow-x-auto rounded-lg border md:block">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead>Ruangan</TableHead>
+                <TableHead className="text-center">Siswa</TableHead>
+                <TableHead>Sebaran Kelas</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rooms.map((room) => (
+                <TableRow key={room.id} className="hover:bg-muted/40">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary/10 text-primary">
+                        <DoorOpen className="size-4" aria-hidden="true" />
+                      </span>
+                      <span className="font-medium">{room.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center tabular-nums">{room.memberIds.length}</TableCell>
+                  <TableCell>
+                    {room.perClass.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">Belum ada siswa</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {room.perClass.map((k) => (
+                          <Badge key={k.className} variant="outline" className="font-normal">
+                            {k.className}: {k.jumlah}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="outline" size="sm" className="h-8" onClick={() => setKelolaTarget(room)}>
+                        <Users className="size-4" aria-hidden="true" /> Kelola Siswa
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" aria-label={`Ubah ${room.name}`} onClick={() => { setEditTarget(room); setNamaEdit(room.name) }}>
+                        <Pencil className="size-4" aria-hidden="true" />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" className="text-destructive" aria-label={`Hapus ${room.name}`} onClick={() => setHapusTarget(room)}>
+                        <Trash2 className="size-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="grid gap-3 md:hidden">
           {rooms.map((room) => (
             <Card key={room.id}>
               <CardContent className="space-y-3">
@@ -134,6 +189,7 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
             </Card>
           ))}
         </div>
+        </>
       )}
 
       {/* Tambah ruangan */}
@@ -255,7 +311,7 @@ function KelolaRuanganDialog({
 
   return (
     <Dialog open onOpenChange={(terbuka) => !terbuka && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Kelola Siswa: {room.name}</DialogTitle>
           <DialogDescription>
@@ -277,18 +333,37 @@ function KelolaRuanganDialog({
                 Keluarkan ({dipilihKeluarkan.size})
               </Button>
             </div>
-            <ScrollArea className="h-72 rounded-md border">
-              <div className="p-2">
-                {anggota.length === 0 && <p className="p-3 text-sm text-muted-foreground">Ruangan kosong.</p>}
-                {anggota.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
-                    <Checkbox checked={dipilihKeluarkan.has(s.id)} onCheckedChange={() => toggle(dipilihKeluarkan, setDipilihKeluarkan, s.id)} />
-                    <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                    <span className="text-xs text-muted-foreground">{s.className}</span>
-                  </label>
-                ))}
-              </div>
-            </ScrollArea>
+            <div className="max-h-72 overflow-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableHead className="w-10" />
+                    <TableHead>Nama</TableHead>
+                    <TableHead className="w-20">NIS</TableHead>
+                    <TableHead className="w-24">Kelas</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {anggota.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-20 text-center text-sm text-muted-foreground">
+                        Ruangan masih kosong.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {anggota.map((s) => (
+                    <TableRow key={s.id} className="hover:bg-muted/40" onClick={() => toggle(dipilihKeluarkan, setDipilihKeluarkan, s.id)}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={dipilihKeluarkan.has(s.id)} aria-label={`Pilih ${s.name}`} onCheckedChange={() => toggle(dipilihKeluarkan, setDipilihKeluarkan, s.id)} />
+                      </TableCell>
+                      <TableCell className="max-w-[14rem] truncate font-medium">{s.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground tabular-nums">{s.nis}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{s.className}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Tambah dari kelas */}
@@ -309,29 +384,54 @@ function KelolaRuanganDialog({
                 {kelasList.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
               </SelectContent>
             </Select>
-            <ScrollArea className="h-60 rounded-md border">
-              <div className="p-2">
-                {kandidat.length === 0 && <p className="p-3 text-sm text-muted-foreground">Kelas ini tidak punya siswa.</p>}
-                {kandidat.map((s) => {
-                  const sudahDiRuanganLain = s.roomId !== null && s.roomId !== room.id
-                  return (
-                    <label key={s.id} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
-                      <Checkbox
-                        checked={dipilihTambah.has(s.id) || s.roomId === room.id}
-                        disabled={s.roomId === room.id}
-                        onCheckedChange={() => toggle(dipilihTambah, setDipilihTambah, s.id)}
-                      />
-                      <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                      {s.roomId === room.id ? (
-                        <span className="text-xs text-lime-700">di ruang ini</span>
-                      ) : sudahDiRuanganLain ? (
-                        <span className="text-xs text-muted-foreground">pindah</span>
-                      ) : null}
-                    </label>
-                  )
-                })}
-              </div>
-            </ScrollArea>
+            <div className="max-h-72 overflow-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableHead className="w-10" />
+                    <TableHead>Nama</TableHead>
+                    <TableHead className="w-20">NIS</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {kandidat.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-20 text-center text-sm text-muted-foreground">
+                        Kelas ini tidak punya siswa.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {kandidat.map((s) => {
+                    const sudahDiRuanganLain = s.roomId !== null && s.roomId !== room.id
+                    const diRuangIni = s.roomId === room.id
+                    return (
+                      <TableRow key={s.id} className="hover:bg-muted/40" onClick={() => !diRuangIni && toggle(dipilihTambah, setDipilihTambah, s.id)}>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={dipilihTambah.has(s.id) || diRuangIni}
+                            disabled={diRuangIni}
+                            aria-label={`Pilih ${s.name}`}
+                            onCheckedChange={() => toggle(dipilihTambah, setDipilihTambah, s.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="max-w-[14rem] truncate font-medium">{s.name}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground tabular-nums">{s.nis}</TableCell>
+                        <TableCell className="text-xs">
+                          {diRuangIni ? (
+                            <span className="text-lime-700">di ruang ini</span>
+                          ) : sudahDiRuanganLain ? (
+                            <span className="text-muted-foreground">pindah</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
             <p className="text-xs text-muted-foreground">Siswa yang sudah punya ruangan lain akan dipindah.</p>
           </div>
         </div>
