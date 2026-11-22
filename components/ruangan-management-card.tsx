@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { DoorOpen, Pencil, Plus, Trash2, Users } from "lucide-react"
+import { DoorOpen, FileDown, Pencil, Plus, Trash2, Users } from "lucide-react"
 
 import { buatRuangan, hapusRuangan, keluarkanSiswaDariRuangan, tambahSiswaKeRuangan, ubahRuangan } from "@/app/dashboard/ruangan/actions"
 import { Badge } from "@/components/ui/badge"
@@ -105,6 +105,14 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
           {rooms.length} ruangan • {belumDitempatkan} dari {students.length} siswa belum ditempatkan
         </p>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            nativeButton={false}
+            render={<a href="/dashboard/ruangan/rekap-pdf" target="_blank" rel="noopener" />}
+          >
+            <FileDown className="size-4" aria-hidden="true" /> Export PDF
+          </Button>
           <RuanganImportDialog />
           <Button onClick={() => { setNamaBaru(""); setTambahTerbuka(true) }} disabled={pending}>
             <Plus className="size-4" aria-hidden="true" /> Tambah Ruangan
