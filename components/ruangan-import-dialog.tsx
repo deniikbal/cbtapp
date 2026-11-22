@@ -68,7 +68,8 @@ export function RuanganImportDialog() {
           <DialogTitle>Import Ruangan dari Excel</DialogTitle>
           <DialogDescription>
             File berisi dua kolom: <strong>NIS</strong> dan <strong>Ruangan</strong>. Peserta dipetakan sesuai isi
-            file; nama ruangan yang belum ada akan dibuat otomatis.
+            file; nama ruangan yang belum ada akan dibuat otomatis. Hanya peserta berstatus <strong>aktif</strong>
+            yang diproses.
           </DialogDescription>
         </DialogHeader>
 

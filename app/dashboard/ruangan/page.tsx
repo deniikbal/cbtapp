@@ -25,6 +25,7 @@ export default async function RuanganPage() {
       .select({ id: students.id, name: students.name, nis: students.nis, roomId: students.roomId, className: classrooms.name })
       .from(students)
       .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
+      .where(eq(students.active, true))
 
     const membersByRoom = new Map<string, SiswaRow[]>()
     for (const s of siswaRows) {

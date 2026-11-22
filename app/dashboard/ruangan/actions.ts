@@ -168,7 +168,11 @@ export async function importRuanganExcel(formData: FormData): Promise<{
   }
 
   // Peserta: cocokkan lewat NIS.
-  const siswaRows = await db.select({ id: students.id, nis: students.nis, roomId: students.roomId }).from(students)
+  // Hanya peserta aktif yang boleh masuk ruangan.
+  const siswaRows = await db
+    .select({ id: students.id, nis: students.nis, roomId: students.roomId })
+    .from(students)
+    .where(eq(students.active, true))
   const siswaByNis = new Map<string, (typeof siswaRows)[number]>()
   for (const siswa of siswaRows) {
     const kunci = kunciNis(siswa.nis)

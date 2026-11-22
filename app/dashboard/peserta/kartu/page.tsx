@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { redirect } from "next/navigation"
@@ -52,7 +52,7 @@ export default async function KartuUjianPage({
         })
         .from(students)
         .leftJoin(examRooms, eq(students.roomId, examRooms.id))
-        .where(eq(students.classroomId, kelas))
+        .where(and(eq(students.classroomId, kelas), eq(students.active, true)))
         .orderBy(asc(students.name))
     }
   } catch (error) {
