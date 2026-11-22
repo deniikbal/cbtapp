@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { asc, eq, inArray, sql } from "drizzle-orm"
 import { CheckCircle2, Clock3, LogOut, Timer, Users } from "lucide-react"
 
-import { logoutProktor, proktorAktif } from "@/app/proktor/actions"
+import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
 import { AutoRefresh } from "@/components/auto-refresh"
 import { ProktorBottomNav, ProktorNav } from "@/components/proktor-nav"
 import { ProgressTableCard } from "@/components/progress-table-card"

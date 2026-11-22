@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { eq, inArray, sql } from "drizzle-orm"
 import { BookOpen, CalendarDays, FileQuestion, FileUp, FileText, LogOut } from "lucide-react"
 
-import { logoutProktor, proktorAktif } from "@/app/proktor/actions"
+import { logoutProktor, proktorAktif } from "@/app/proktor/login/actions"
 import { AksiIkon } from "@/components/aksi-ikon"
 import { ProktorBottomNav, ProktorNav } from "@/components/proktor-nav"
 import { KelasTooltip } from "@/components/kelas-tooltip"
