@@ -37,6 +37,7 @@ export type QuestionBankManagementRow = {
   teacherId: string | null
   grade: string
   majorId?: string | null
+  proctorIds?: string[]
   googleFormUrl: string
   formId: string
   syncedAt: Date | null

@@ -93,23 +93,33 @@ export async function pratinjauSoalTeks(teks: string): Promise<Pratinjau> {
 }
 
 /** Guru pemilik bank lewat cookie; admin lewat sesi. */
-async function guruPemilik(bankTeacherId: string | null, bankTeacherIds: string[]): Promise<boolean> {
+// Pemilik bank soal ATAU proktor yang ditunjuk boleh mengubah soal (impor Word/teks).
+async function guruPemilik(
+  bankTeacherId: string | null,
+  bankTeacherIds: string[],
+  bankProctorIds: string[] = [],
+): Promise<boolean> {
   const sesi = await auth.api.getSession({ headers: await headers() })
   if (sesi) return true
-  const cookie = (await cookies()).get("teacher_id")?.value
-  if (!cookie) return false
-  const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, cookie) })
-  return Boolean(guru?.active && (bankTeacherId === guru.id || bankTeacherIds.includes(guru.id)))
+  const cookieStore = await cookies()
+  const proctorId = cookieStore.get("proctor_id")?.value
+  const teacherId = cookieStore.get("teacher_id")?.value
+  const id = teacherId ?? proctorId
+  if (!id) return false
+  const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, id) })
+  if (!guru?.active) return false
+  if (!teacherId && proctorId) return bankProctorIds.includes(guru.id)
+  return bankTeacherId === guru.id || bankTeacherIds.includes(guru.id)
 }
 
 async function cekAkses(bankId: string): Promise<{ ok: boolean; message: string }> {
   const [bank] = await db
-    .select({ teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds })
+    .select({ teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds, proctorIds: questionBanks.proctorIds })
     .from(questionBanks)
     .where(eq(questionBanks.id, bankId))
     .limit(1)
   if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
-  if (!(await guruPemilik(bank.teacherId, bank.teacherIds))) {
+  if (!(await guruPemilik(bank.teacherId, bank.teacherIds, bank.proctorIds))) {
     return { ok: false, message: "Sesi habis atau bank soal ini bukan milik Anda. Silakan login ulang." }
   }
   return { ok: true, message: "" }

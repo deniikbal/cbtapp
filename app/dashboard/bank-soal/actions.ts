@@ -66,8 +66,8 @@ async function generateQuestionBankIdentity(subjectId: string, grade: string) {
 }
 
 // Baca daftar guru terpilih (multi-select); kembalikan null bila tidak ada yang valid.
-async function bacaGuru(formData: FormData) {
-  const ids = [...new Set(formData.getAll("teacherIds").map((v) => String(v).trim()).filter(Boolean))]
+async function bacaGuru(formData: FormData, field = "teacherIds") {
+  const ids = [...new Set(formData.getAll(field).map((v) => String(v).trim()).filter(Boolean))]
   if (ids.length === 0) return null
 
   const rows = await db
@@ -85,6 +85,8 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacher = guruList?.[0] ?? null
   const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
   const teacherIds = guruList?.map((t) => t.id) ?? []
+  const proktorList = await bacaGuru(formData, "proctorIds")
+  const proctorIds = proktorList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const majorIdMentah = String(formData.get("majorId") ?? "").trim()
   const majorId = majorIdMentah === "ALL" ? "" : majorIdMentah
@@ -116,6 +118,7 @@ export async function createQuestionBank(formData: FormData): Promise<{ ok: bool
       grade,
       subjectId,
       majorId: majorId || null,
+      proctorIds,
       googleFormUrl: googleFormUrl ?? "",
       formId,
       active,
@@ -135,6 +138,8 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   const teacher = guruList?.[0] ?? null
   const teacherName = guruList?.map((t) => t.name).join(", ") ?? ""
   const teacherIds = guruList?.map((t) => t.id) ?? []
+  const proktorList = await bacaGuru(formData, "proctorIds")
+  const proctorIds = proktorList?.map((t) => t.id) ?? []
   const grade = String(formData.get("grade") ?? "").trim().toUpperCase()
   const majorIdMentah = String(formData.get("majorId") ?? "").trim()
   const majorId = majorIdMentah === "ALL" ? null : majorIdMentah || null
@@ -155,7 +160,7 @@ export async function updateQuestionBank(formData: FormData): Promise<{ ok: bool
   try {
     await db
       .update(questionBanks)
-      .set({ subjectId, teacherName, teacherId: teacher.id, teacherIds, grade, majorId, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
+      .set({ subjectId, teacherName, teacherId: teacher.id, teacherIds, proctorIds, grade, majorId, googleFormUrl: googleFormUrl ?? "", formId, active, updatedAt: new Date() })
       .where(eq(questionBanks.id, id))
   } catch (error) {
     return { ok: false, message: getDatabaseErrorMessage(error, "Gagal mengubah bank soal.") }

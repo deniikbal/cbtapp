@@ -24,12 +24,15 @@ export function TeacherCombobox({
   defaultValues = [],
   multiple = false,
   id,
+  name,
 }: {
   teachers: TeacherOption[]
   defaultValue?: string
   defaultValues?: string[]
   multiple?: boolean
   id?: string
+  /** Nama input tersembunyi; default teacherIds (multi) / teacherId (single). */
+  name?: string
 }) {
   const items = teachers.map((teacher) => ({ value: teacher.id, label: teacher.name }))
 
@@ -53,7 +56,7 @@ export function TeacherCombobox({
     return (
       <div className="relative">
         {selectedMany.map((teacher) => (
-          <input key={teacher.id} type="hidden" name="teacherIds" value={teacher.id} />
+          <input key={teacher.id} type="hidden" name={name ?? "teacherIds"} value={teacher.id} />
         ))}
         <Button
           type="button"
@@ -135,7 +138,7 @@ export function TeacherCombobox({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
-      <input type="hidden" name="teacherId" value={selected?.value ?? ""} />
+      <input type="hidden" name={name ?? "teacherId"} value={selected?.value ?? ""} />
     </>
   )
 }

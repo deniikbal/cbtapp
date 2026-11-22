@@ -113,6 +113,11 @@ export function QuestionBankCreateDialog({
               <TeacherCombobox teachers={teachers} multiple id="teacherIds" />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="proctorIds">Proktor</Label>
+              <TeacherCombobox teachers={teachers} multiple id="proctorIds" name="proctorIds" />
+              <p className="text-xs text-muted-foreground">Proktor bisa mengimpor soal dari Word lewat login NIP.</p>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="active">Status</Label>
               <Select name="active" defaultValue="true">
                 <SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger>

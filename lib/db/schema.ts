@@ -134,6 +134,8 @@ export const questionBanks = pgTable(
       .references(() => subjects.id, { onDelete: "restrict" }),
     // Jurusan yang ikut ujian (null = semua jurusan/umum). Dipakai menyaring opsi Kelas di Google Form.
     majorId: text("majorId").references(() => majors.id, { onDelete: "set null" }),
+    // Guru yang bertugas sebagai proktor bank soal ini (boleh mengimpor soal dari Word).
+    proctorIds: jsonb("proctorIds").$type<string[]>().notNull().default([]),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
