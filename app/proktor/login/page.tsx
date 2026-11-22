@@ -52,7 +52,7 @@ export default async function ProktorLoginPage({
               Masuk
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Login guru: <Link href="/guru/login" className="underline underline-offset-4">/guru/login</Link>
+              Login guru: <Link href="/guru" className="underline underline-offset-4">/guru</Link>
             </p>
           </form>
         </CardContent>

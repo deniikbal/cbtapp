@@ -30,10 +30,10 @@ export default async function ImporSoalGuruPage({
 }) {
   const cookieStore = await cookies()
   const teacherId = cookieStore.get("teacher_id")?.value
-  if (!teacherId) redirect("/guru/login")
+  if (!teacherId) redirect("/guru")
 
   const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, teacherId) })
-  if (!guru || !guru.active) redirect("/guru/login")
+  if (!guru || !guru.active) redirect("/guru")
 
   const { bank: bankId } = await searchParams
   const [bank] = bankId

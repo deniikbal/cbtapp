@@ -45,7 +45,7 @@ export async function loginGuru(_state: GuruLoginState, formData: FormData): Pro
 export async function logoutGuru() {
   const cookieStore = await cookies()
   cookieStore.set("teacher_id", "", { path: "/", maxAge: 0 })
-  redirect("/guru/login")
+  redirect("/guru")
 }
 
 export async function guruAktif() {

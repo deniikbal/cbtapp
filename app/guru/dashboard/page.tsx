@@ -31,10 +31,10 @@ export const dynamic = "force-dynamic"
 export default async function GuruDashboardPage() {
   const cookieStore = await cookies()
   const teacherId = cookieStore.get("teacher_id")?.value
-  if (!teacherId) redirect("/guru/login")
+  if (!teacherId) redirect("/guru")
 
   const guru = await db.query.teachers.findFirst({ where: eq(teachers.id, teacherId) })
-  if (!guru || !guru.active) redirect("/guru/login")
+  if (!guru || !guru.active) redirect("/guru")
 
   const banks = await db
     .select({
