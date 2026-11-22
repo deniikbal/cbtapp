@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto"
 
 import { eq, inArray } from "drizzle-orm"
+import * as XLSX from "xlsx"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
@@ -12,6 +13,16 @@ type Result = { ok: boolean; message: string }
 
 function bersihkanNama(nama: unknown) {
   return String(nama ?? "").trim()
+}
+
+// NIS dari Excel bisa berupa angka ("1234", 1234, 1234.0) — samakan jadi digit tanpa nol depan.
+function kunciNis(nilai: unknown) {
+  const digit = String(nilai ?? "").replace(/[^0-9]/g, "")
+  return digit.replace(/^0+/, "") || digit
+}
+
+function kunciNama(nama: string) {
+  return nama.trim().toLowerCase().replace(/\s+/g, " ")
 }
 
 export async function buatRuangan(nama: string): Promise<Result> {
@@ -97,4 +108,111 @@ export async function keluarkanSiswaDariRuangan(studentIds: string[]): Promise<R
 
   revalidatePath("/dashboard/ruangan")
   return { ok: true, message: `${hasil.length} siswa dikeluarkan dari ruangan.` }
+}
+
+
+export async function importRuanganExcel(formData: FormData): Promise<{
+  dipetakan: number
+  ruanganBaru: string[]
+  tanpaRuangan: number
+  errors: string[]
+}> {
+  const file = formData.get("file")
+
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Pilih file Excel terlebih dahulu.")
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Ukuran file maksimal 5 MB.")
+  }
+
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" })
+  const sheetName = workbook.SheetNames[0]
+  if (!sheetName) throw new Error("File Excel tidak punya sheet.")
+
+  const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], { defval: "" })
+  if (records.length === 0) throw new Error("File Excel kosong. Kolom yang dibutuhkan: NIS dan Ruangan.")
+
+  // Baris → { kunci NIS, nama ruangan }
+  const baris: { kunci: string; nisAsli: string; ruangan: string }[] = []
+  const errors: string[] = []
+
+  records.forEach((record, index) => {
+    const data = new Map(Object.entries(record).map(([key, value]) => [kunciNama(key), String(value).trim()]))
+    const nisAsli = data.get("nis") ?? data.get("nisn") ?? ""
+    const ruangan = data.get("ruangan") ?? data.get("room") ?? ""
+    if (!nisAsli && !ruangan) return
+    if (!nisAsli || !ruangan) {
+      errors.push(`Baris ${index + 2}: NIS dan Ruangan harus diisi.`)
+      return
+    }
+    baris.push({ kunci: kunciNis(nisAsli), nisAsli, ruangan })
+  })
+
+  if (baris.length === 0) {
+    throw new Error("Tidak ada baris valid. Pastikan kolom pertama berjudul NIS dan kolom kedua Ruangan.")
+  }
+
+  // Ruangan: pakai yang sudah ada (tanpa beda huruf besar/kecil), buat kalau belum ada.
+  const ruanganRows = await db.select({ id: examRooms.id, name: examRooms.name }).from(examRooms)
+  const ruanganByNama = new Map(ruanganRows.map((room) => [kunciNama(room.name), room]))
+  const ruanganBaru: string[] = []
+
+  for (const nama of [...new Set(baris.map((row) => row.ruangan))]) {
+    const kunci = kunciNama(nama)
+    if (ruanganByNama.has(kunci)) continue
+    const id = randomUUID()
+    await db.insert(examRooms).values({ id, name: nama })
+    ruanganByNama.set(kunci, { id, name: nama })
+    ruanganBaru.push(nama)
+  }
+
+  // Peserta: cocokkan lewat NIS.
+  const siswaRows = await db.select({ id: students.id, nis: students.nis, roomId: students.roomId }).from(students)
+  const siswaByNis = new Map<string, (typeof siswaRows)[number]>()
+  for (const siswa of siswaRows) {
+    const kunci = kunciNis(siswa.nis)
+    if (kunci) siswaByNis.set(kunci, siswa)
+  }
+
+  const perRuangan = new Map<string, { id: string; siswaIds: string[] }>()
+  let tanpaRuangan = 0
+  const tidakDitemukan: string[] = []
+
+  for (const row of baris) {
+    const siswa = siswaByNis.get(row.kunci)
+    if (!siswa) {
+      tidakDitemukan.push(row.nisAsli)
+      continue
+    }
+    const room = ruanganByNama.get(kunciNama(row.ruangan))
+    if (!room) continue
+    const grup = perRuangan.get(room.id) ?? { id: room.id, siswaIds: [] }
+    grup.siswaIds.push(siswa.id)
+    perRuangan.set(room.id, grup)
+    if (!siswa.roomId) tanpaRuangan += 1
+  }
+
+  let dipetakan = 0
+  for (const { id, siswaIds } of perRuangan.values()) {
+    if (siswaIds.length === 0) continue
+    const hasil = await db
+      .update(students)
+      .set({ roomId: id, updatedAt: new Date() })
+      .where(inArray(students.id, siswaIds))
+      .returning({ id: students.id })
+    dipetakan += hasil.length
+  }
+
+  if (tidakDitemukan.length > 0) {
+    const cuplikan = tidakDitemukan.slice(0, 10).join(", ")
+    errors.push(
+      `${tidakDitemukan.length} NIS tidak ditemukan di data peserta: ${cuplikan}${tidakDitemukan.length > 10 ? ", …" : ""}`,
+    )
+  }
+
+  revalidatePath("/dashboard/ruangan")
+  revalidatePath("/dashboard/peserta")
+
+  return { dipetakan, ruanganBaru, tanpaRuangan, errors }
 }

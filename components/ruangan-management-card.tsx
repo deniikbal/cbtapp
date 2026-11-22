@@ -6,6 +6,7 @@ import { DoorOpen, Pencil, Plus, Trash2, Users } from "lucide-react"
 
 import { buatRuangan, hapusRuangan, keluarkanSiswaDariRuangan, tambahSiswaKeRuangan, ubahRuangan } from "@/app/dashboard/ruangan/actions"
 import { Badge } from "@/components/ui/badge"
+import { RuanganImportDialog } from "@/components/ruangan-import-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -103,9 +104,12 @@ export function RuanganManagementCard({ rooms, students }: { rooms: RuanganRow[]
         <p className="text-sm text-muted-foreground">
           {rooms.length} ruangan • {belumDitempatkan} dari {students.length} siswa belum ditempatkan
         </p>
-        <Button onClick={() => { setNamaBaru(""); setTambahTerbuka(true) }} disabled={pending}>
-          <Plus className="size-4" aria-hidden="true" /> Tambah Ruangan
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <RuanganImportDialog />
+          <Button onClick={() => { setNamaBaru(""); setTambahTerbuka(true) }} disabled={pending}>
+            <Plus className="size-4" aria-hidden="true" /> Tambah Ruangan
+          </Button>
+        </div>
       </div>
 
       {rooms.length === 0 ? (
