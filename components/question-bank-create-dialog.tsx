@@ -70,74 +70,15 @@ export function QuestionBankCreateDialog({
           <DialogDescription>Kode dan judul dibuat otomatis dari mapel.</DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="subjectId">Mapel</Label>
-              <Select
-                name="subjectId"
-                value={selectedSubjectId}
-                onValueChange={(value: string | null) => setSelectedSubjectId(value ?? "")}
-                required
-              >
-                <SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel">{selectedSubject ? `${selectedSubject.code} - ${selectedSubject.name}` : "Pilih mapel"}</SelectValue></SelectTrigger>
-                <SelectContent>
-                  {subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} - {subject.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="grade">Kelas</Label>
-              <Select name="grade" required>
-                <SelectTrigger id="grade" className="w-full"><SelectValue placeholder="Pilih kelas" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="X">X</SelectItem>
-                  <SelectItem value="XI">XI</SelectItem>
-                  <SelectItem value="XII">XII</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="majorId">Jurusan</Label>
-                <LabelHint text="Menentukan daftar kelas di Google Form (mis. IPA saja)." />
-              </div>
-              <Select name="majorId" value={selectedMajorId} onValueChange={(value: string | null) => setSelectedMajorId(value ?? "ALL")}>
-                <SelectTrigger id="majorId" className="w-full"><SelectValue>{selectedMajorId === "ALL" ? "Semua jurusan" : selectedMajor?.name ?? "Semua jurusan"}</SelectValue></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua jurusan</SelectItem>
-                  {majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="teacherIds">Guru Pengampu</Label>
-              <TeacherCombobox teachers={teachers} multiple id="teacherIds" />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <Label htmlFor="proctorIds">Proktor</Label>
-                <LabelHint text="Proktor bisa mengimpor soal dari Word lewat login NIP." />
-              </div>
-              <TeacherCombobox teachers={teachers} multiple id="proctorIds" name="proctorIds" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="active">Status</Label>
-              <Select name="active" defaultValue="true">
-                <SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="googleFormUrl">Link Google Form untuk siswa (opsional)</Label>
-            <Input id="googleFormUrl" name="googleFormUrl" placeholder="https://docs.google.com/forms/d/…/viewform" />
-            <p className="text-xs text-muted-foreground">Link edit otomatis diubah ke viewform. Boleh dikosongkan - buat lewat tombol <span className="font-medium">Buat form kosong</span> di tabel.</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="formId">Form ID (opsional, untuk sync hasil)</Label>
-            <Input id="formId" name="formId" placeholder="tempel link /d/…/edit atau ID-nya" />
+            <div className="space-y-1.5"><Label htmlFor="subjectId">Mapel</Label><Select name="subjectId" value={selectedSubjectId} onValueChange={(value: string | null) => setSelectedSubjectId(value ?? "")} required><SelectTrigger id="subjectId" className="w-full"><SelectValue placeholder="Pilih mapel">{selectedSubject ? `${selectedSubject.code} - ${selectedSubject.name}` : "Pilih mapel"}</SelectValue></SelectTrigger><SelectContent>{subjects.map((subject) => <SelectItem key={subject.id} value={subject.id}>{subject.code} - {subject.name}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-1.5"><Label htmlFor="grade">Kelas</Label><Select name="grade" required><SelectTrigger id="grade" className="w-full"><SelectValue placeholder="Pilih kelas" /></SelectTrigger><SelectContent><SelectItem value="X">X</SelectItem><SelectItem value="XI">XI</SelectItem><SelectItem value="XII">XII</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1.5"><span className="flex items-center gap-1.5"><Label htmlFor="majorId">Jurusan</Label><LabelHint text="Menentukan daftar kelas di Google Form (mis. IPA saja)." /></span><Select name="majorId" value={selectedMajorId} onValueChange={(value: string | null) => setSelectedMajorId(value ?? "ALL")}><SelectTrigger id="majorId" className="w-full"><SelectValue>{selectedMajorId === "ALL" ? "Semua jurusan" : selectedMajor?.name ?? "Semua jurusan"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="ALL">Semua jurusan</SelectItem>{majors.map((major) => <SelectItem key={major.id} value={major.id}>{major.name}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-1.5"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue>Aktif</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+            <div className="space-y-1.5"><Label htmlFor="teacherIds">Guru Pengampu</Label><TeacherCombobox teachers={teachers} multiple id="teacherIds" /></div>
+            <div className="space-y-1.5"><span className="flex items-center gap-1.5"><Label htmlFor="proctorIds">Proktor</Label><LabelHint text="Proktor bisa mengimpor soal dari Word lewat login NIP." /></span><TeacherCombobox teachers={teachers} multiple id="proctorIds" name="proctorIds" /></div>
+            <div className="space-y-1.5"><Label htmlFor="googleFormUrl">Link Google Form (opsional)</Label><Input id="googleFormUrl" name="googleFormUrl" placeholder="https://docs.google.com/forms/d/…/viewform" /><p className="text-xs text-muted-foreground">Link edit otomatis jadi viewform; boleh kosong, buat lewat tombol Buat form kosong.</p></div>
+            <div className="space-y-1.5"><Label htmlFor="formId">Form ID (opsional)</Label><Input id="formId" name="formId" placeholder="link /d/…/edit atau ID-nya" /><p className="text-xs text-muted-foreground">Untuk sync hasil; link viewform/forms.gle tidak bisa dipakai.</p></div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>

@@ -205,7 +205,7 @@ export function ExamScheduleCreateDialog({ banks, classrooms }: { banks: Schedul
             <div className="space-y-2"><Label htmlFor="session">Sesi</Label><Select name="session" defaultValue="1"><SelectTrigger id="session" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div>
             <div className="space-y-2"><Label htmlFor="active">Status</Label><Select name="active" defaultValue="true"><SelectTrigger id="active" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
             <div className="flex items-center gap-3 rounded-lg border px-3 py-2 sm:col-span-2">
-              <Checkbox id="showScore" name="showScore" value="true" defaultChecked className="after:-inset-x-3.5 after:-inset-y-3.5" />
+              <Checkbox id="showScore" name="showScore" value="true" className="after:-inset-x-3.5 after:-inset-y-3.5" />
               <Label htmlFor="showScore" className="text-sm font-normal">Tampilkan nilai ke siswa</Label>
             </div>
           </div>
