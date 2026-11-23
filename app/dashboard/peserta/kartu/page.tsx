@@ -21,15 +21,16 @@ import { getCardSettings } from "./card-settings-actions"
 export default async function KartuUjianPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kelas?: string }>
+  searchParams: Promise<{ kelas?: string; ruangan?: string }>
 }) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect("/login")
 
-  const { kelas } = await searchParams
+  const { kelas, ruangan } = await searchParams
   let galat: string | null = null
   let opsiKelas: { id: string; name: string; majorName: string }[] = []
-  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null; roomName: string | null; session: number }[] = []
+  let opsiRuangan: { id: string; name: string }[] = []
+  let peserta: { id: string; name: string; nis: string; kartuPassword: string | null; roomName: string | null; className: string | null; session: number }[] = []
   let namaKelas = ""
 
   try {
@@ -39,8 +40,17 @@ export default async function KartuUjianPage({
       .innerJoin(majors, eq(classrooms.majorId, majors.id))
       .orderBy(asc(classrooms.name))
 
-    if (kelas) {
+    opsiRuangan = await db
+      .select({ id: examRooms.id, name: examRooms.name })
+      .from(examRooms)
+      .orderBy(asc(examRooms.name))
+
+    if (kelas || ruangan) {
       namaKelas = opsiKelas.find((item) => item.id === kelas)?.name ?? ""
+      const saringan = ruangan
+        ? and(eq(students.roomId, ruangan), eq(students.active, true))
+        : and(eq(students.classroomId, kelas as string), eq(students.active, true))
+
       peserta = await db
         .select({
           id: students.id,
@@ -48,11 +58,13 @@ export default async function KartuUjianPage({
           nis: students.nis,
           kartuPassword: students.kartuPassword,
           roomName: examRooms.name,
+          className: classrooms.name,
           session: students.session,
         })
         .from(students)
         .leftJoin(examRooms, eq(students.roomId, examRooms.id))
-        .where(and(eq(students.classroomId, kelas), eq(students.active, true)))
+        .leftJoin(classrooms, eq(students.classroomId, classrooms.id))
+        .where(saringan)
         .orderBy(asc(students.name))
     }
   } catch (error) {
@@ -72,7 +84,7 @@ export default async function KartuUjianPage({
               <SidebarTrigger />
               <div>
                 <p className="text-sm font-medium">Kartu Ujian</p>
-                <p className="text-xs text-muted-foreground">Cetak kartu peserta per kelas</p>
+                <p className="text-xs text-muted-foreground">Cetak kartu peserta per kelas atau per ruangan</p>
               </div>
             </div>
             <UserNav name={session.user.name} email={session.user.email} />
@@ -105,11 +117,13 @@ export default async function KartuUjianPage({
       <KartuUjianControls
         classrooms={opsiKelas}
         classroomId={kelas ?? ""}
+        rooms={opsiRuangan}
+        roomId={ruangan ?? ""}
         jumlahSiswa={peserta.length}
         jumlahTanpaPassword={tanpaPassword}
       />
 
-      {kelas && peserta.length > 0 && (
+      {(kelas || ruangan) && peserta.length > 0 && (
         <>
           <p className="text-xs text-muted-foreground print:hidden">
             {peserta.length} peserta ·{" "}
@@ -140,7 +154,7 @@ export default async function KartuUjianPage({
                   <div className="flex gap-2">
                     <dt className="w-24 shrink-0 text-left text-muted-foreground">Kelas</dt>
                     <span className="shrink-0 text-muted-foreground">:</span>
-                    <dd className="font-medium">{namaKelas}</dd>
+                    <dd className="font-medium">{siswa.className ?? namaKelas}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 shrink-0 text-left text-muted-foreground">Ruang Ujian</dt>
@@ -183,15 +197,15 @@ export default async function KartuUjianPage({
         </>
       )}
 
-      {kelas && peserta.length === 0 && (
+      {(kelas || ruangan) && peserta.length === 0 && (
         <p className="rounded-sm border bg-muted/40 p-4 text-sm text-muted-foreground print:hidden">
-          Belum ada peserta di kelas ini.
+          Belum ada peserta aktif di pilihan ini.
         </p>
       )}
 
-      {!kelas && opsiKelas.length > 0 && (
+      {!kelas && !ruangan && opsiKelas.length > 0 && (
         <p className="rounded-sm border bg-muted/40 p-4 text-sm text-muted-foreground print:hidden">
-          Pilih kelas terlebih dahulu untuk melihat kartu ujian.
+          Pilih kelas atau ruangan terlebih dahulu untuk melihat kartu ujian.
         </p>
       )}
 

@@ -29,11 +29,15 @@ export type KartuClassroom = {
 export function KartuUjianControls({
   classrooms,
   classroomId,
+  rooms = [],
+  roomId = "",
   jumlahSiswa,
   jumlahTanpaPassword,
 }: {
   classrooms: KartuClassroom[]
   classroomId: string
+  rooms?: { id: string; name: string }[]
+  roomId?: string
   jumlahSiswa: number
   jumlahTanpaPassword: number
 }) {
@@ -41,8 +45,15 @@ export function KartuUjianControls({
   const [isPending, startTransition] = useTransition()
   const [konfirmasi, setKonfirmasi] = useState<"generate" | "hapus" | null>(null)
   const terpilih = classrooms.find((classroom) => classroom.id === classroomId)
+  const ruanganTerpilih = rooms.find((room) => room.id === roomId)
+  const adaPilihan = Boolean(classroomId || roomId)
+  const filter = roomId ? { roomId } : { classroomId }
+  const label = ruanganTerpilih?.name ?? terpilih?.name ?? "pilihan ini"
   // Urutan natural: X1, X2, ... X12 sebelum XI IPA 1, bukan X1, X10, X11, X2.
   const urutNatural = [...classrooms].sort((a, b) =>
+    a.name.localeCompare(b.name, "id", { numeric: true, sensitivity: "base" })
+  )
+  const urutRuangan = [...rooms].sort((a, b) =>
     a.name.localeCompare(b.name, "id", { numeric: true, sensitivity: "base" })
   )
 
@@ -51,14 +62,19 @@ export function KartuUjianControls({
     router.push(`/dashboard/peserta/kartu?kelas=${value}`)
   }
 
+  function pilihRuangan(value: string | null) {
+    if (!value) return
+    router.push(`/dashboard/peserta/kartu?ruangan=${value}`)
+  }
+
   function jalankan(aksi: "generate" | "hapus") {
     startTransition(async () => {
       try {
         if (aksi === "generate") {
-          const hasil = await generateKartuPassword(classroomId)
+          const hasil = await generateKartuPassword(filter)
           toast.success(`Password baru dibuat untuk ${hasil.jumlah} peserta.`)
         } else {
-          const hasil = await hapusKartuPassword(classroomId)
+          const hasil = await hapusKartuPassword(filter)
           toast.success(`Password kartu dikosongkan untuk ${hasil.jumlah} peserta.`)
         }
         setKonfirmasi(null)
@@ -71,7 +87,7 @@ export function KartuUjianControls({
 
   return (
     <div className="flex flex-wrap items-end gap-2 print:hidden">
-      <div className="w-full sm:w-64">
+      <div className="w-full sm:w-56">
         <Label htmlFor="kelas-kartu" className="text-xs text-muted-foreground">
           Kelas
         </Label>
@@ -89,9 +105,27 @@ export function KartuUjianControls({
         </Select>
       </div>
 
+      <div className="w-full sm:w-56">
+        <Label htmlFor="ruangan-kartu" className="text-xs text-muted-foreground">
+          Atau per ruangan
+        </Label>
+        <Select value={roomId || undefined} onValueChange={pilihRuangan}>
+          <SelectTrigger id="ruangan-kartu" className="mt-1 w-full">
+            <SelectValue>{ruanganTerpilih ? ruanganTerpilih.name : "Pilih ruangan"}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {urutRuangan.map((room) => (
+              <SelectItem key={room.id} value={room.id}>
+                {room.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         className="h-11 gap-1.5 sm:h-9"
-        disabled={!classroomId || isPending}
+        disabled={!adaPilihan || isPending}
         onClick={() => setKonfirmasi("generate")}
       >
         {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}
@@ -101,7 +135,7 @@ export function KartuUjianControls({
       <Button
         variant="outline"
         className="h-11 gap-1.5 sm:h-9"
-        disabled={!classroomId || isPending || jumlahSiswa - jumlahTanpaPassword === 0}
+        disabled={!adaPilihan || isPending || jumlahSiswa - jumlahTanpaPassword === 0}
         onClick={() => setKonfirmasi("hapus")}
       >
         <Trash2 className="size-4" aria-hidden="true" />
@@ -126,7 +160,7 @@ export function KartuUjianControls({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {konfirmasi === "generate"
-                ? `Password lama ${jumlahSiswa} peserta di ${terpilih?.name ?? "kelas ini"} tidak bisa dipulihkan. Password baru 8 karakter (huruf kecil + angka) langsung tampil di kartu.`
+                ? `Password lama ${jumlahSiswa} peserta di ${label} tidak bisa dipulihkan. Password baru 8 karakter (huruf kecil + angka) langsung tampil di kartu.`
                 : "Password kartu yang tersimpan akan dihapus, kartu tidak bisa dicetak ulang sampai password dibuat lagi. Password login siswa tidak berubah."}
             </AlertDialogDescription>
           </AlertDialogHeader>

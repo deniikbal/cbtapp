@@ -34,17 +34,22 @@ async function pastikanSesi() {
   if (!session) throw new Error("Sesi berakhir. Silakan login ulang.")
 }
 
-export async function generateKartuPassword(classroomId: string) {
-  await pastikanSesi()
+// Filter peserta: per kelas, atau per ruangan ujian.
+function saringPeserta({ classroomId, roomId }: { classroomId?: string; roomId?: string }) {
+  if (roomId) return eq(students.roomId, roomId)
+  if (classroomId) return eq(students.classroomId, classroomId)
+  throw new Error("Kelas atau ruangan belum dipilih.")
+}
 
-  if (!classroomId) throw new Error("Kelas belum dipilih.")
+export async function generateKartuPassword(filter: { classroomId?: string; roomId?: string }) {
+  await pastikanSesi()
 
   const daftar = await db
     .select({ id: students.id })
     .from(students)
-    .where(eq(students.classroomId, classroomId))
+    .where(saringPeserta(filter))
 
-  if (daftar.length === 0) throw new Error("Tidak ada peserta di kelas ini.")
+  if (daftar.length === 0) throw new Error("Tidak ada peserta di pilihan ini.")
 
   for (const siswa of daftar) {
     const password = buatPassword()
@@ -60,15 +65,13 @@ export async function generateKartuPassword(classroomId: string) {
   return { jumlah: daftar.length }
 }
 
-export async function hapusKartuPassword(classroomId: string) {
+export async function hapusKartuPassword(filter: { classroomId?: string; roomId?: string }) {
   await pastikanSesi()
-
-  if (!classroomId) throw new Error("Kelas belum dipilih.")
 
   const terhapus = await db
     .update(students)
     .set({ kartuPassword: null })
-    .where(and(eq(students.classroomId, classroomId)))
+    .where(saringPeserta(filter))
     .returning({ id: students.id })
 
   revalidatePath("/dashboard/peserta/kartu")
