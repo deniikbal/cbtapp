@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { UjianHeartbeat } from "@/components/ujian-heartbeat"
 import { db } from "@/lib/db"
 import { examSchedules, questionBanks, students } from "@/lib/db/schema"
 
@@ -70,6 +71,7 @@ export default async function UjianPage({ params }: { params: Promise<{ schedule
 
   return (
     <div className="m3-siswa flex h-svh flex-col">
+      <UjianHeartbeat scheduleId={scheduleId} />
       <header className="m3-bar">
         <div className="m3-bar-inner">
           <div className="m3-bar-text">

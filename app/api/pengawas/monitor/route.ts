@@ -3,8 +3,9 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { classrooms, examAnswers, examAttempts, examEvents, examRooms, examSchedules, questionBanks, students } from "@/lib/db/schema"
-import { daftarSoalDariItems } from "@/lib/google-forms"
+import { daftarSoalDariItems, normNis } from "@/lib/google-forms"
 import { aktorPengawas, jendelaJadwal, tanggalWib } from "@/lib/pengawas-auth"
+import { responsPerNis, type RingkasRespons } from "@/lib/respons-form-cache"
 
 export const dynamic = "force-dynamic"
 
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
             durationMinutes: examSchedules.durationMinutes,
             examDate: examSchedules.examDate,
             title: questionBanks.title,
+            formId: questionBanks.formId,
             formItems: questionBanks.formItems,
           })
           .from(examSchedules)
@@ -85,6 +87,11 @@ export async function GET(request: NextRequest) {
 
   const attemptPerSiswa = new Map(attempt.map((a) => [`${a.scheduleId}|${a.studentId}`, a]))
 
+  // Google Form hanya memberi data setelah siswa submit — dipakai untuk status SELESAI + progres.
+  const responsPerJadwal = new Map<string, Map<string, RingkasRespons>>(
+    jadwal.filter((j) => j.formId).map((j) => [j.id, responsPerNis(j.formId)])
+  )
+
   const kejadian =
     jadwalIds.length === 0
       ? []
@@ -115,22 +122,34 @@ export async function GET(request: NextRequest) {
     }
   })
 
+  const formKejadian: { id: number; jenis: string; pesan: string; waktu: string; studentId: string }[] = []
+
   const daftarSiswa = peserta.map((s) => {
     const jadwalSiswa = jadwalPerKelasSesi.get(`${s.classroomId}|${s.session}`)
     const a = jadwalSiswa ? attemptPerSiswa.get(`${jadwalSiswa.id}|${s.id}`) : undefined
     const total = jadwalSiswa ? jumlahSoal.get(jadwalSiswa.id) ?? 0 : 0
     const sudah = a ? petaTerjawab.get(a.id) ?? 0 : 0
-    const status = a?.submittedAt ? "SELESAI" : a ? "MENGERJAKAN" : "BELUM"
+    const form = jadwalSiswa ? responsPerJadwal.get(jadwalSiswa.id)?.get(normNis(s.nis)) : undefined
+    const status = a?.submittedAt || form ? "SELESAI" : a ? "MENGERJAKAN" : "BELUM"
+    if (form?.waktu) {
+      formKejadian.push({
+        id: 0,
+        jenis: "SELESAI",
+        pesan: `${s.name} submit · ${form.terjawab}/${total || form.total} terjawab`,
+        waktu: form.waktu,
+        studentId: s.id,
+      })
+    }
     return {
       id: s.id,
       nama: s.name,
       nis: s.nis,
       kelas: s.className,
       totalSoal: total,
-      terjawab: sudah,
+      terjawab: Math.max(sudah, form?.terjawab ?? 0),
       status,
       mulai: a?.startedAt ?? null,
-      terakhir: a?.lastSeenAt ?? null,
+      terakhir: form?.waktu || a?.lastSeenAt || null,
       jadwalId: jadwalSiswa?.id ?? null,
     }
   })
@@ -146,7 +165,9 @@ export async function GET(request: NextRequest) {
       selesai: daftarSiswa.filter((s) => s.status === "SELESAI").length,
     },
     siswa: daftarSiswa,
-    kejadian: kejadian.map((k) => ({ id: k.id, jenis: k.jenis, pesan: k.pesan, waktu: k.createdAt, studentId: k.studentId })),
+    kejadian: [...formKejadian, ...kejadian.map((k) => ({ id: k.id, jenis: k.jenis, pesan: k.pesan, waktu: k.createdAt.toISOString(), studentId: k.studentId }))]
+      .sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime())
+      .slice(0, 30),
     diperbarui: new Date().toISOString(),
   })
 }
