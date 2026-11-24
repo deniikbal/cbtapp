@@ -149,10 +149,14 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
       pertanyaanTerbuka &&
       !/^[a-z]\s*[.)]\s+/i.test(baris) &&
       !/^\d{1,3}\s*[.)]\s+/.test(baris) &&
-      kalimatTanya.test(baris) &&
-      baris.split(/\s+/).length >= 3
+      (kalimatTanya.test(baris) || baris.split(/\s+/).length >= 12)
     ) {
       aktif.pertanyaan = `${aktif.pertanyaan} ${baris.trim()}`
+      continue
+    }
+    // Penanda gambar dari Word ikut pertanyaan, bukan jadi opsi.
+    if (aktif && pertanyaanTerbuka && baris.includes("[GAMBAR]")) {
+      aktif.pertanyaan = `${aktif.pertanyaan} ${baris.trim()}`.replace(/\s+/g, " ")
       continue
     }
 
@@ -223,10 +227,40 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
   return { soal, peringatan }
 }
 
-/** Baca .docx lalu parse butir soal. */
+/** HTML hasil konversi Word → teks, dengan gambar ditandai [GAMBAR] di posisinya. */
+function htmlKeTeks(html: string) {
+  return html
+    .replace(/\r?\n/g, " ")
+    .replace(/<img[^>]*>/gi, " [GAMBAR] ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|li|tr|h[1-6]|table)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .split("\n")
+    .map((l) => l.trim())
+    .join("\n")
+}
+
+/** Baca .docx lalu parse butir soal. Gambar diganti penanda [GAMBAR]. */
 export async function parseSoalDocx(buffer: Buffer) {
   const mammoth = await import("mammoth")
-  const { value } = await mammoth.extractRawText({ buffer })
-  const hasil = parseSoalTeks(value)
-  return { ...hasil, teks: value }
+  // ponytail: HTML ditempuh hanya kalau dokumen memuat gambar, supaya dokumen
+  // teks murni tetap dibaca extractRawText seperti sebelumnya.
+  const { value: html } = await mammoth.convertToHtml(
+    { buffer },
+    { convertImage: mammoth.images.imgElement(async () => ({ src: "[GAMBAR]" })) },
+  )
+  const teks = /<img/i.test(html) ? htmlKeTeks(html) : (await mammoth.extractRawText({ buffer })).value
+  const hasil = parseSoalTeks(teks)
+  for (const s of hasil.soal) {
+    if (s.pertanyaan.includes("[GAMBAR]")) {
+      hasil.peringatan.push(`Soal ${s.no}: ada gambar — tambahkan gambarnya manual di Google Form.`)
+    }
+  }
+  return { ...hasil, teks }
 }
