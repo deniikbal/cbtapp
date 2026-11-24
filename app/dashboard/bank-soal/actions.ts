@@ -249,6 +249,14 @@ export async function buatFormDariBank(bankId: string): Promise<BuatFormResult> 
   }
 }
 
+/** Soal yang dihitung = butir pertanyaan yang sudah diberi poin. */
+function jumlahSoalBerpoin(items: unknown[]) {
+  return items.filter((item) => {
+    const q = (item as { questionItem?: { question?: { grading?: { pointValue?: number } } } }).questionItem?.question
+    return (q?.grading?.pointValue ?? 0) > 0
+  }).length
+}
+
 /** Tarik ulang butir form dari Google: hitung jumlah soal + simpan snapshot formItems. */
 export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; message: string; jumlah?: number }> {
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
@@ -257,7 +265,7 @@ export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; m
 
   try {
     const { items } = await ambilForm(bank.formId)
-    const jumlah = items.filter((item) => (item as { questionItem?: unknown }).questionItem).length
+    const jumlah = jumlahSoalBerpoin(items)
     await db.update(questionBanks).set({ formItems: items, syncedAt: new Date(), updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
     revalidatePath("/dashboard/bank-soal")
     revalidatePath("/guru/dashboard")
@@ -282,7 +290,7 @@ export async function sinkronSemuaFormItems(): Promise<{ ok: boolean; message: s
         try {
           const { items } = await ambilForm(row.formId)
           await db.update(questionBanks).set({ formItems: items, syncedAt: sekarang, updatedAt: sekarang }).where(eq(questionBanks.id, row.id))
-          return items.filter((item) => (item as { questionItem?: unknown }).questionItem).length
+          return jumlahSoalBerpoin(items)
         } catch (error) {
           console.error(`Gagal sinkron ${row.formId}:`, error)
           return null
