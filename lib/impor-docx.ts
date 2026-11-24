@@ -55,11 +55,16 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
   const soal: SoalImpor[] = []
   const kunciMassal = new Map<number, string>()
   let aktif: SoalImpor | null = null
+  // Nomor pernyataan terakhir (1), 2), ...) yang sudah digabung ke pertanyaan aktif.
+  let pernyataanTerakhir = 0
+  let modePernyataan = false
 
   const tutup = () => {
     if (!aktif) return
     soal.push(aktif)
     aktif = null
+    pernyataanTerakhir = 0
+    modePernyataan = false
   }
 
   for (const barisMentah of teks.split(/\r?\n/)) {
@@ -96,9 +101,55 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
       continue
     }
 
+    // Pernyataan pendukung ("1) ...", "(1) ...", "• ...") digabung ke pertanyaan,
+    // bukan dianggap soal baru atau opsi.
+    const kalimatTanya = /(\?|…|\.{3,})[\s.]*$/
+    const pertanyaanTerbuka = !!aktif && aktif.opsi.length === 0 && !kalimatTanya.test(aktif.pertanyaan)
+    const berParen = baris.match(/^\((\d{1,3})\)\s*(.+)$/)
+    const berBullet = baris.match(/^[•·▪◦\-–—]\s*(.+)$/)
+    const berAngka = baris.match(/^(\d{1,3})\s*[.)]\s*(.+)$/)
+
+    if (aktif && pertanyaanTerbuka && berParen) {
+      aktif.pertanyaan = `${aktif.pertanyaan} (${berParen[1]}) ${berParen[2].trim()}`
+      pernyataanTerakhir = Number(berParen[1])
+      modePernyataan = true
+      continue
+    }
+    if (aktif && pertanyaanTerbuka && berBullet && (pernyataanTerakhir > 0 || modePernyataan || /!\s*$/.test(aktif.pertanyaan))) {
+      aktif.pertanyaan = `${aktif.pertanyaan} ${baris}`
+      modePernyataan = true
+      continue
+    }
+    if (
+      aktif &&
+      pertanyaanTerbuka &&
+      berAngka &&
+      Number(berAngka[1]) === pernyataanTerakhir + 1 &&
+      !kalimatTanya.test(berAngka[2])
+    ) {
+      aktif.pertanyaan = `${aktif.pertanyaan} ${berAngka[1]}) ${berAngka[2].trim()}`
+      pernyataanTerakhir = Number(berAngka[1])
+      modePernyataan = true
+      continue
+    }
+    // Kalimat penutup pertanyaan setelah daftar pernyataan ("... ditunjukkan oleh nomor ….").
+    if (
+      aktif &&
+      pertanyaanTerbuka &&
+      !/^[a-z]\s*[.)]\s+/i.test(baris) &&
+      !/^\d{1,3}\s*[.)]\s+/.test(baris) &&
+      kalimatTanya.test(baris) &&
+      baris.split(/\s+/).length >= 3
+    ) {
+      aktif.pertanyaan = `${aktif.pertanyaan} ${baris.trim()}`
+      continue
+    }
+
     const mSoal = baris.match(/^(\d{1,3})\s*[.)]\s*(.+)$/)
     if (mSoal) {
       tutup()
+      pernyataanTerakhir = 0
+      modePernyataan = false
       aktif = { no: Number(mSoal[1]), pertanyaan: mSoal[2].trim(), opsi: [], kunci: "" }
       const inline = aktif.pertanyaan.match(/[\s(]*(?:kunci|jawaban)\s*[:\-]\s*([a-z1-9])\s*\)?$/i)
       if (inline) {

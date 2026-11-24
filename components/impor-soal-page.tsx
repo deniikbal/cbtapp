@@ -487,6 +487,8 @@ function PanelTeks({
         <CardDescription className="text-[11px]">
           Satu soal = pertanyaan, lalu baris-baris opsi, lalu baris <span className="font-mono">Kunci: C</span>.
           Tanpa kunci pun boleh — AI akan mengisi kuncinya dan menandai soal yang perlu diperiksa.
+          Pernyataan pendukung di bawah pertanyaan (bernomor <span className="font-mono">1)</span>,{" "}
+          <span className="font-mono">(1)</span>, atau berbullet) otomatis digabung ke pertanyaan.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 py-4">
