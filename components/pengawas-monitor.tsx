@@ -120,7 +120,7 @@ export function PengawasMonitor({ ruangan }: { ruangan: { id: string; name: stri
             <span className="text-sm font-medium">Ruangan</span>
             <Select value={roomId} onValueChange={pilihRuangan}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih ruangan" />
+                <SelectValue>{ruangan.find((r) => r.id === roomId)?.name ?? "Pilih ruangan"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {ruangan.map((r) => (
