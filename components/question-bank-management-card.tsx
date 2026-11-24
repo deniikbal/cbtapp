@@ -1,10 +1,11 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { BookOpen, Download, ExternalLink, FileText, LinkIcon, Loader2, RotateCcw, Search, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { BookOpen, Download, ExternalLink, FileText, LinkIcon, Loader2, RefreshCw, RotateCcw, Search, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-import { deleteQuestionBanks } from "@/app/dashboard/bank-soal/actions"
+import { deleteQuestionBanks, sinkronSemuaFormItems } from "@/app/dashboard/bank-soal/actions"
 import { QuestionBankCreateDialog } from "@/components/question-bank-create-dialog"
 import type { TeacherOption } from "@/components/teacher-combobox"
 import { QuestionBankRowActions } from "@/components/question-bank-row-actions"
@@ -96,6 +97,8 @@ export function QuestionBankManagementCard({
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deletePending, startDelete] = useTransition()
+  const [syncPending, startSync] = useTransition()
+  const router = useRouter()
   const selectedSubject = subjects.find((subject) => subject.id === subjectId)
   const hasActiveFilter = search.trim() !== "" || subjectId !== "ALL" || status !== "ALL"
 
@@ -187,6 +190,22 @@ export function QuestionBankManagementCard({
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={syncPending}
+              onClick={() =>
+                startSync(async () => {
+                  const hasil = await sinkronSemuaFormItems()
+                  if (hasil.ok) toast.success(hasil.message)
+                  else toast.warning(hasil.message)
+                  router.refresh()
+                })
+              }
+            >
+              {syncPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}
+              Sinkron semua
+            </Button>
             <Button variant="outline" className="gap-2"><Download className="size-4" aria-hidden="true" />Export</Button>
             {subjects.length === 0 ? <SubjectCreateDialog /> : <QuestionBankCreateDialog subjects={subjects} teachers={teachers} majors={majors} />}
           </div>
@@ -302,11 +321,7 @@ export function QuestionBankManagementCard({
 
 function hitungSoal(formItems: unknown): number {
   if (!Array.isArray(formItems)) return 0
-  return formItems.filter((item) => {
-    if (typeof item !== "object" || item === null) return false
-    const q = (item as { questionItem?: { question?: { grading?: { pointValue?: number } } } }).questionItem?.question
-    return (q?.grading?.pointValue ?? 0) > 0
-  }).length
+  return formItems.filter((item) => typeof item === "object" && item !== null && "questionItem" in item).length
 }
 
 function buildPageRange(current: number, total: number): (number | "...")[] {

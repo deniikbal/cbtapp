@@ -268,20 +268,38 @@ export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; m
   }
 }
 
-/** Sinkron semua bank soal yang punya form. */
+/** Sinkron semua bank soal yang punya form (6 form sekaligus agar tidak kena batas waktu). */
 export async function sinkronSemuaFormItems(): Promise<{ ok: boolean; message: string }> {
-  const rows = await db.select({ id: questionBanks.id }).from(questionBanks).where(ne(questionBanks.formId, ""))
+  const rows = await db.select({ id: questionBanks.id, formId: questionBanks.formId }).from(questionBanks).where(ne(questionBanks.formId, ""))
+  if (rows.length === 0) return { ok: false, message: "Belum ada bank soal dengan form." }
+
   let jumlah = 0
   let gagal = 0
-  for (const row of rows) {
-    const hasil = await sinkronFormItems(row.id)
-    if (hasil.ok) jumlah += hasil.jumlah ?? 0
-    else gagal += 1
+  const sekarang = new Date()
+  for (let i = 0; i < rows.length; i += 6) {
+    const hasil = await Promise.all(
+      rows.slice(i, i + 6).map(async (row) => {
+        try {
+          const { items } = await ambilForm(row.formId)
+          await db.update(questionBanks).set({ formItems: items, syncedAt: sekarang, updatedAt: sekarang }).where(eq(questionBanks.id, row.id))
+          return items.filter((item) => (item as { questionItem?: unknown }).questionItem).length
+        } catch (error) {
+          console.error(`Gagal sinkron ${row.formId}:`, error)
+          return null
+        }
+      }),
+    )
+    for (const n of hasil) {
+      if (n === null) gagal += 1
+      else jumlah += n
+    }
   }
-  if (rows.length === 0) return { ok: false, message: "Belum ada bank soal dengan form." }
+
+  revalidatePath("/dashboard/bank-soal")
+  revalidatePath("/guru/dashboard")
   return {
     ok: gagal === 0,
-    message: gagal ? `${jumlah} soal tersinkron, ${gagal} form gagal.` : `${rows.length} form tersinkron, total ${jumlah} soal.`,
+    message: gagal ? `${rows.length - gagal} form tersinkron (${jumlah} soal), ${gagal} gagal.` : `${rows.length} form tersinkron, total ${jumlah} soal.`,
   }
 }
 
