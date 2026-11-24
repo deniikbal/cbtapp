@@ -56,16 +56,31 @@ export type QuestionBankManagementSubject = {
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 
+const LABEL_STATUS: Record<string, string> = {
+  ALL: "Semua",
+  TERISI: "Sudah terisi",
+  KOSONG: "Belum terisi",
+  ACTIVE: "Aktif",
+  INACTIVE: "Tidak aktif",
+}
+
+export type BankSoalFilterValue = "ALL" | "TERISI" | "KOSONG" | "ACTIVE" | "INACTIVE"
+
 export function QuestionBankManagementCard({
   rows,
   subjects,
   teachers,
   majors = [],
+  filter,
+  onFilterChange,
 }: {
   rows: QuestionBankManagementRow[]
   subjects: QuestionBankManagementSubject[]
   teachers: TeacherOption[]
   majors?: { id: string; name: string }[]
+  /** Filter status dari kartu statistik (opsional, bisa juga diatur dari select di kartu). */
+  filter?: BankSoalFilterValue
+  onFilterChange?: (value: BankSoalFilterValue) => void
 }) {
   const namaGuru = new Map(teachers.map((t) => [t.id, t.name]))
   const namaProktor = (row: QuestionBankManagementRow) =>
@@ -73,7 +88,9 @@ export function QuestionBankManagementCard({
 
   const [search, setSearch] = useState("")
   const [subjectId, setSubjectId] = useState("ALL")
-  const [status, setStatus] = useState("ALL")
+  const [statusLokal, setStatusLokal] = useState<BankSoalFilterValue>("ALL")
+  const status = filter ?? statusLokal
+  const setStatus = onFilterChange ?? setStatusLokal
   const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -89,6 +106,8 @@ export function QuestionBankManagementCard({
       if (subjectId !== "ALL" && row.subjectId !== subjectId) return false
       if (status === "ACTIVE" && !row.active) return false
       if (status === "INACTIVE" && row.active) return false
+      if (status === "TERISI" && hitungSoal(row.formItems) === 0) return false
+      if (status === "KOSONG" && hitungSoal(row.formItems) > 0) return false
       if (!keyword) return true
 
       return [row.code, row.title, row.teacherName, row.grade, row.subjectName, row.subjectCode, ...namaProktor(row)]
@@ -187,8 +206,8 @@ export function QuestionBankManagementCard({
           </div>
           <div className="md:col-span-2">
             <Select value={status} onValueChange={(value) => { setStatus(value ?? "ALL"); setCurrentPage(1) }}>
-              <SelectTrigger className="w-full"><SelectValue>{status === "ACTIVE" ? "Aktif" : status === "INACTIVE" ? "Tidak aktif" : "Semua"}</SelectValue></SelectTrigger>
-              <SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent>
+              <SelectTrigger className="w-full"><SelectValue>{LABEL_STATUS[status]}</SelectValue></SelectTrigger>
+              <SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="TERISI">Sudah terisi</SelectItem><SelectItem value="KOSONG">Belum terisi</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent>
             </Select>
           </div>
           <div className="md:col-span-2"><Button variant="outline" className="w-full gap-2" disabled={!hasActiveFilter} onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset</Button></div>
