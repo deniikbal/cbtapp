@@ -58,24 +58,41 @@ export default async function UjianPage({ params }: { params: Promise<{ schedule
 
   if (blocked) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-sm rounded-sm border bg-background p-6 text-center">
-          <p className="text-lg font-semibold">Tidak bisa membuka ujian</p>
-          <p className="mt-2 text-sm text-muted-foreground">{blocked}</p>
-          <a href="/siswa/dashboard" className="mt-4 inline-block text-sm text-brand underline">Kembali ke dashboard</a>
+      <main className="m3-siswa flex min-h-svh items-center justify-center p-6">
+        <div className="m3-card w-full max-w-sm text-center">
+          <p className="m3-judul">Tidak bisa membuka ujian</p>
+          <p className="m3-sub">{blocked}</p>
+          <a href="/siswa/dashboard" className="m3-btn m3-btn--tonal">Kembali ke dashboard</a>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="flex h-svh flex-col bg-background">
+    <div className="m3-siswa flex h-svh flex-col">
+      <header className="m3-bar">
+        <div className="m3-bar-inner">
+          <div className="m3-bar-text">
+            <p className="m3-bar-title truncate">{s!.title}</p>
+            <p className="m3-bar-sub truncate">Sesi {s!.session} · form dibuka di dalam aplikasi</p>
+          </div>
+          <a
+            href={s!.googleFormUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="m3-btn m3-btn--garis"
+            style={{ minHeight: 40, paddingInline: 16 }}
+          >
+            Buka tab baru
+          </a>
+        </div>
+      </header>
       <iframe
         src={s!.googleFormUrl}
         title={s!.title}
-        className="h-full w-full flex-1 border-0"
+        className="min-h-0 w-full flex-1 border-0"
         allow="camera; microphone"
       />
-    </main>
+    </div>
   )
 }

@@ -19,10 +19,6 @@ import { redirect } from "next/navigation"
 import { startExam, submitExam } from "@/app/siswa/dashboard/actions"
 import { StudentDashboardNav } from "@/components/student-dashboard-nav"
 import { StudentLogoutButton } from "@/components/student-logout-button"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { db } from "@/lib/db"
 import {
   classrooms,
@@ -196,44 +192,41 @@ export default async function SiswaDashboardPage({
     )
 
     return (
-      <div className="min-h-svh bg-background">
-        <HeaderSiswa name={student[0].name} kelas={student[0].className} />
+      <div className="m3-siswa">
+        <HeaderSiswa name={student[0].name} kelas={student[0].className} nis={student[0].nis} sesi={student[0].session} />
         <StudentDashboardNav active="hasil" />
-        <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-24 sm:gap-5 sm:px-6 md:pb-6 md:pt-6">
+        <main className="m3-main">
           <section className="space-y-1">
-            <h1 className="text-lg font-semibold tracking-tight sm:text-xl">Hasil ujian</h1>
-            <p className="text-xs text-muted-foreground sm:text-sm">
+            <h1 className="m3-judul">Hasil ujian</h1>
+            <p className="m3-sub">
               Ujian yang sudah Anda selesaikan. Nilai muncul setelah panitia menjalankan sync hasil.
             </p>
           </section>
 
           <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-            <MetricCard label="Ujian selesai" value={String(completedExamRows.length)} icon={ClipboardCheck} warna="bg-brand" />
-            <MetricCard label="Sudah dinilai" value={String(dinilaiCount)} icon={CheckCircle2} warna="bg-card text-foreground border" />
-            <MetricCard label="Menunggu sync" value={String(menungguCount)} icon={RefreshCw} warna="bg-token-respons" />
+            <MetricCard label="Ujian selesai" value={String(completedExamRows.length)} icon={ClipboardCheck} variant="utama" />
+            <MetricCard label="Sudah dinilai" value={String(dinilaiCount)} icon={CheckCircle2} />
+            <MetricCard label="Menunggu sync" value={String(menungguCount)} icon={RefreshCw} variant="tonal" />
             <MetricCard
               label="Rata-rata nilai"
               value={rataRataTampil === null ? "-" : rataRataTampil.toFixed(2)}
               icon={Trophy}
-              warna="bg-card text-foreground border"
             />
           </section>
 
           {completedExamRows.length === 0 ? (
-            <Card className="rounded-lg">
-              <CardContent className="flex items-start gap-3 px-3 py-4">
-                <ClipboardCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div className="space-y-2">
-                  <p className="text-sm">Belum ada ujian yang selesai dikerjakan.</p>
-                  <p className="text-xs text-muted-foreground">
-                    Ujian yang sedang berlangsung bisa dikerjakan dari menu Beranda.
-                  </p>
-                  <Button nativeButton={false} variant="outline" className="h-11 sm:h-9" render={<Link href="/siswa/dashboard" />}>
-                    Lihat jadwal ujian
-                  </Button>
+            <div className="m3-card">
+              <div className="flex items-start gap-3">
+                <ClipboardCheck className="mt-0.5 size-5 shrink-0 opacity-60" aria-hidden="true" />
+                <div className="space-y-1">
+                  <p className="m3-seksi">Belum ada ujian yang selesai dikerjakan.</p>
+                  <p className="m3-sub">Ujian yang sedang berlangsung bisa dikerjakan dari menu Beranda.</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <Link href="/siswa/dashboard" className="m3-btn m3-btn--tonal">
+                Lihat jadwal ujian
+              </Link>
+            </div>
           ) : (
             <div className="space-y-2">
               {completedExamRows.map((schedule) => {
@@ -242,71 +235,49 @@ export default async function SiswaDashboardPage({
                   completedBySchedule.get(schedule.id)?.submittedAt ?? hasil?.submittedAt ?? null
 
                 return (
-                  <Card key={schedule.id} className="rounded-lg">
-                    <CardContent className="px-3 py-3 sm:px-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge variant="secondary" className="font-mono text-[10px]">{schedule.code}</Badge>
-                            <span className="text-[11px] text-muted-foreground sm:text-xs">
-                              {schedule.subjectName} ({schedule.subjectCode})
-                            </span>
-                          </div>
-                          <h2 className="text-sm font-medium leading-snug">{schedule.title}</h2>
-                          <p className="text-[11px] text-muted-foreground sm:text-xs">
-                            Selesai dikerjakan {submittedAt ? formatTanggalJam(submittedAt) : "-"}
-                          </p>
+                  <div key={schedule.id} className="m3-card">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                          <span className="m3-chip m3-chip--mono">{schedule.code}</span>
+                          <span className="m3-chip">{schedule.subjectCode}</span>
                         </div>
-                        <div className="shrink-0 text-right">
-                          {hasil && schedule.showScore ? (
-                            <>
-                              <p className="text-2xl font-semibold tabular-nums leading-none text-primary">
-                                {Number(hasil.score).toFixed(2)}
-                              </p>
-                              <p className="mt-1 text-[11px] text-muted-foreground">Nilai</p>
-                            </>
-                          ) : hasil ? (
-                            <Badge variant="outline" className="text-[11px] font-normal">Nilai disembunyikan</Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-token-respons text-[11px] font-normal text-amber-700">
-                              Menunggu sync
-                            </Badge>
-                          )}
-                        </div>
+                        <h2 className="m3-seksi leading-snug">{schedule.title}</h2>
+                        <p className="m3-sub">
+                          {schedule.subjectName} · selesai {submittedAt ? formatTanggalJam(submittedAt) : "-"}
+                        </p>
                       </div>
+                      <div className="shrink-0 text-right">
+                        {hasil && schedule.showScore ? (
+                          <>
+                            <p className="m3-metric-value" style={{ fontSize: 24, lineHeight: "28px", color: "var(--m3-on-primary-container)" }}>
+                              {Number(hasil.score).toFixed(2)}
+                            </p>
+                            <p className="m3-info-label">Nilai</p>
+                          </>
+                        ) : hasil ? (
+                          <span className="m3-chip">Nilai disembunyikan</span>
+                        ) : (
+                          <span className="m3-chip m3-chip--tonal">Menunggu sync</span>
+                        )}
+                      </div>
+                    </div>
 
-                      {hasil && schedule.showScore ? (
-                        <>
-                          <Separator className="my-3" />
-                          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                            <div>
-                              <p className="text-[11px] text-muted-foreground">Benar</p>
-                              <p className="font-semibold tabular-nums text-lime-700">{hasil.correct}</p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-muted-foreground">Salah</p>
-                              <p className="font-semibold tabular-nums text-amber-700">{hasil.wrong}</p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-muted-foreground">Jumlah soal</p>
-                              <p className="font-semibold tabular-nums">{hasil.total}</p>
-                            </div>
-                          </div>
-                          <p className="mt-3 text-[11px] text-muted-foreground">
-                            Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}
-                          </p>
-                        </>
-                      ) : hasil ? (
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          Panitia menyembunyikan nilai untuk ujian ini.
-                        </p>
-                      ) : (
-                        <p className="mt-3 text-xs text-muted-foreground">
-                          Nilai belum tersedia. Panitia belum menjalankan sync untuk ujian ini.
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
+                    {hasil && schedule.showScore ? (
+                      <>
+                        <div className="m3-info" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                          <InfoItem label="Benar" value={String(hasil.correct)} />
+                          <InfoItem label="Salah" value={String(hasil.wrong)} />
+                          <InfoItem label="Jumlah soal" value={String(hasil.total)} />
+                        </div>
+                        <p className="m3-info-label">Sinkron terakhir {formatTanggalJam(hasil.syncedAt)}</p>
+                      </>
+                    ) : hasil ? (
+                      <p className="m3-sub">Panitia menyembunyikan nilai untuk ujian ini.</p>
+                    ) : (
+                      <p className="m3-sub">Nilai belum tersedia. Panitia belum menjalankan sync untuk ujian ini.</p>
+                    )}
+                  </div>
                 )
               })}
             </div>
@@ -322,117 +293,99 @@ export default async function SiswaDashboardPage({
     : false
 
   return (
-    <div className="min-h-svh bg-background">
-      <HeaderSiswa name={student[0].name} kelas={student[0].className} />
+    <div className="m3-siswa">
+      <HeaderSiswa name={student[0].name} kelas={student[0].className} nis={student[0].nis} sesi={student[0].session} />
       <StudentDashboardNav active={tabAktif} />
 
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-24 sm:gap-5 sm:px-6 md:pb-6 md:pt-6">
+      <main className="m3-main">
         {/* Ringkasan siswa + progres */}
         <section className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-                Halo, {student[0].name}
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                NIS {student[0].nis} · {student[0].className} · {student[0].majorCode}
-              </p>
+              <h1 className="m3-judul truncate">Halo, {student[0].name.split(" ")[0]}</h1>
+              <p className="m3-sub">NIS {student[0].nis} · {student[0].className} · {student[0].majorCode}</p>
             </div>
-            <p className="flex min-w-0 max-w-[45%] shrink items-center gap-1.5 text-[11px] text-muted-foreground sm:max-w-none">
+            <span className="m3-chip">
               <RefreshCw className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">
-                Sync terakhir: {syncTerakhir ? formatTanggalJam(syncTerakhir) : "belum pernah"}
-              </span>
-            </p>
+              {syncTerakhir ? formatTanggalJam(syncTerakhir) : "Belum sync"}
+            </span>
           </div>
 
-          <div className="rounded-lg border bg-card px-3 py-2">
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">Progres ujian</span>
-              <span className="font-medium tabular-nums text-muted-foreground">
-                {completedSchedules}/{schedules.length} · {progressPercent}%
-              </span>
+          <div className="m3-card" style={{ gap: 8 }}>
+            <div className="flex items-center justify-between">
+              <span className="m3-seksi">Progres ujian</span>
+              <span className="m3-sub tabular-nums">{completedSchedules}/{schedules.length} · {progressPercent}%</span>
             </div>
             <div
-              className="h-1.5 overflow-hidden rounded-lg bg-muted"
+              className="m3-progress"
               role="progressbar"
               aria-valuenow={progressPercent}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-label="Progres ujian selesai"
             >
-              <div className="h-full rounded-lg bg-brand" style={{ width: `${progressPercent}%` }} />
+              <span style={{ width: `${progressPercent}%` }} />
             </div>
           </div>
         </section>
 
         {/* Metrik */}
         <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-          <MetricCard label="Total ujian" value={String(schedules.length)} icon={CalendarDays} warna="bg-brand" />
-          <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} warna="bg-token-jadwal" />
-          <MetricCard label="Berlangsung" value={String(activeNowSchedules)} icon={Flame} warna="bg-token-respons" />
+          <MetricCard label="Total ujian" value={String(schedules.length)} icon={CalendarDays} variant="utama" />
+          <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} />
+          <MetricCard label="Berlangsung" value={String(activeNowSchedules)} icon={Flame} variant="tonal" />
           <MetricCard
             label="Rata-rata nilai"
             value={rataRata === null ? "-" : rataRata.toFixed(2)}
             icon={Trophy}
-            warna="bg-card text-foreground border"
           />
         </section>
 
         {/* Ringkasan hasil terbaru, detail ada di menu Hasil ujian. */}
         <section>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">Hasil terbaru</h2>
-            <Link
-              href="/siswa/dashboard?tab=hasil"
-              className="flex h-11 items-center text-xs font-medium text-primary hover:underline sm:h-9"
-            >
+            <h2 className="m3-seksi">Hasil terbaru</h2>
+            <Link href="/siswa/dashboard?tab=hasil" className="m3-chip m3-chip--aktif no-underline">
               Lihat semua hasil
             </Link>
           </div>
           {hasilRows.length === 0 ? (
-            <Card className="rounded-lg">
-              <CardContent className="px-3 py-3 text-xs text-muted-foreground">
-                Belum ada nilai yang tersinkron. Nilai muncul setelah panitia menjalankan sync hasil.
-              </CardContent>
-            </Card>
+            <div className="m3-card">
+              <p className="m3-sub">Belum ada nilai yang tersinkron. Nilai muncul setelah panitia menjalankan sync hasil.</p>
+            </div>
           ) : (
-            <Card className="rounded-lg">
-              <CardContent className="flex items-center justify-between gap-3 px-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{hasilRows[0].title}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {hasilRows[0].subjectName} · {formatTanggalJam(hasilRows[0].syncedAt)}
-                  </p>
-                </div>
-                {nilaiTerbaruTerlihat ? (
-                  <p className="shrink-0 text-xl font-semibold tabular-nums text-primary">
-                    {Number(hasilTerbaru.score).toFixed(2)}
-                  </p>
-                ) : (
-                  <Badge variant="outline" className="shrink-0 text-[11px] font-normal">Nilai disembunyikan</Badge>
-                )}
-              </CardContent>
-            </Card>
+            <div className="m3-card" style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <div className="min-w-0 flex-1">
+                <p className="m3-seksi truncate">{hasilRows[0].title}</p>
+                <p className="m3-sub">{hasilRows[0].subjectName} · {formatTanggalJam(hasilRows[0].syncedAt)}</p>
+              </div>
+              {nilaiTerbaruTerlihat ? (
+                <p className="m3-metric-value shrink-0" style={{ fontSize: 22 }}>
+                  {Number(hasilTerbaru.score).toFixed(2)}
+                </p>
+              ) : (
+                <span className="m3-chip shrink-0">Nilai disembunyikan</span>
+              )}
+            </div>
           )}
         </section>
 
         {/* Jadwal ujian */}
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Jadwal ujian</h2>
-            <span className="text-xs text-muted-foreground">{visibleSchedules.length} bisa dikerjakan</span>
+            <h2 className="m3-seksi">Jadwal ujian</h2>
+            <span className="m3-chip">{visibleSchedules.length} bisa dikerjakan</span>
           </div>
 
           {visibleSchedules.length === 0 ? (
-            <Card className="rounded-lg">
-              <CardContent className="flex items-center gap-3 px-3 py-3">
-                <BookOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <p className="text-xs text-muted-foreground">
+            <div className="m3-card">
+              <div className="flex items-center gap-3">
+                <BookOpen className="size-5 shrink-0 opacity-60" aria-hidden="true" />
+                <p className="m3-sub">
                   Belum ada jadwal yang bisa dikerjakan sekarang. Jadwal muncul sesuai tanggal dan jam dari panitia.
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2">
               {visibleSchedules.map((schedule) => {
@@ -451,81 +404,58 @@ export default async function SiswaDashboardPage({
                     : "NOT_STARTED"
 
                 return (
-                  <Card
-                    key={schedule.id}
-                    className={cn(
-                      "rounded-lg border-l-[3px]",
-                      examStatus === "ACTIVE" ? "border-l-brand" : "border-l-muted-foreground/30"
-                    )}
-                  >
-                    <CardContent className="px-3 py-2.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <Badge variant="secondary" className="font-mono text-[10px]">
-                              {schedule.code}
-                            </Badge>
-                            {isToday && (
-                              <Badge variant="outline" className="border-token-respons text-[10px] text-amber-700">
-                                Hari ini
-                              </Badge>
-                            )}
-                            <ExamStatusBadge status={examStatus} />
-                          </div>
-                          <h3 className="text-sm font-medium leading-snug text-foreground">{schedule.title}</h3>
-                          <p className="text-[11px] text-muted-foreground">
-                            {schedule.subjectName} ({schedule.subjectCode})
-                          </p>
+                  <div key={schedule.id} className="m3-card">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                          <span className="m3-chip m3-chip--mono">{schedule.code}</span>
+                          {isToday && <span className="m3-chip m3-chip--tonal">Hari ini</span>}
+
                         </div>
-                        <GraduationCap className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                        <h3 className="m3-seksi leading-snug">{schedule.title}</h3>
+                        <p className="m3-sub">{schedule.subjectName} ({schedule.subjectCode})</p>
                       </div>
+                      <GraduationCap className="size-6 shrink-0 opacity-60" aria-hidden="true" />
+                    </div>
 
-                      <Separator className="my-2" />
+                    <div className="m3-info">
+                      <InfoItem label="Tanggal" value={formatDate(schedule.examDate)} />
+                      <InfoItem label="Mulai" value={`${schedule.startTime.slice(0, 5)} WIB`} />
+                      <InfoItem label="Durasi" value={`${schedule.durationMinutes} menit`} />
+                      <InfoItem
+                        label="Selesai"
+                        value={calculateEndTime(schedule.startTime, schedule.durationMinutes)}
+                      />
+                    </div>
 
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:gap-4 md:grid-cols-4">
-                        <InfoItem label="Tanggal" value={formatDate(schedule.examDate)} />
-                        <InfoItem label="Mulai" value={schedule.startTime.slice(0, 5)} />
-                        <InfoItem label="Durasi" value={`${schedule.durationMinutes} menit`} />
-                        <InfoItem
-                          label="Selesai"
-                          value={calculateEndTime(schedule.startTime, schedule.durationMinutes)}
-                        />
+                    {attemptStatus === "SUBMITTED" ? (
+                      <div className="m3-btn m3-btn--mati">
+                        <CheckCircle2 className="size-4" aria-hidden="true" />
+                        Selesai dikerjakan
                       </div>
-
-                      <div className="mt-2.5">
-                        {attemptStatus === "SUBMITTED" ? (
-                          <Button variant="secondary" className="h-11 w-full gap-2 sm:h-9" disabled>
-                            <CheckCircle2 className="size-4 text-brand" aria-hidden="true" />
-                            Selesai dikerjakan
-                          </Button>
-                        ) : examStatus === "ACTIVE" ? (
-                          <div className="grid gap-2">
-                            <form action={startExam.bind(null, schedule.id)}>
-                              <Button type="submit" className="h-11 w-full gap-2 bg-brand text-brand-foreground hover:bg-brand/90 sm:h-9">
-                                {attemptStatus === "STARTED" ? "Buka lagi" : "Kerjakan ujian"}
-                                <ExternalLink className="size-4" aria-hidden="true" />
-                              </Button>
-                            </form>
-                            {attemptStatus === "STARTED" && (
-                              <form action={submitExam.bind(null, schedule.id)}>
-                                <Button
-                                  type="submit"
-                                  className="h-11 w-full gap-2 bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40 sm:h-9"
-                                >
-                                  Saya sudah selesai
-                                </Button>
-                              </form>
-                            )}
-                          </div>
-                        ) : (
-                          <Button variant="outline" className="h-11 w-full gap-2 sm:h-9" disabled>
-                            <Clock3 className="size-4" aria-hidden="true" />
-                            Waktu ujian selesai
-                          </Button>
+                    ) : examStatus === "ACTIVE" ? (
+                      <div className="grid gap-2">
+                        <form action={startExam.bind(null, schedule.id)}>
+                          <button type="submit" className="m3-btn m3-btn--utama">
+                            {attemptStatus === "STARTED" ? "Buka lagi" : "Kerjakan ujian"}
+                            <ExternalLink className="size-4" aria-hidden="true" />
+                          </button>
+                        </form>
+                        {attemptStatus === "STARTED" && (
+                          <form action={submitExam.bind(null, schedule.id)}>
+                            <button type="submit" className="m3-btn m3-btn--bahaya">
+                              Saya sudah selesai
+                            </button>
+                          </form>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    ) : (
+                      <div className="m3-btn m3-btn--mati">
+                        <Clock3 className="size-4" aria-hidden="true" />
+                        {examStatus === "UPCOMING" ? "Belum dimulai" : "Waktu ujian selesai"}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
@@ -536,17 +466,21 @@ export default async function SiswaDashboardPage({
   )
 }
 
-function HeaderSiswa({ name, kelas }: { name: string; kelas: string }) {
+function HeaderSiswa({ name, kelas, nis, sesi }: { name: string; kelas: string; nis: string | number; sesi: string | number }) {
+  const inisial = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((kata) => kata[0]?.toUpperCase() ?? "")
+    .join("")
+
   return (
-    <header className="sticky top-0 z-10 bg-brand text-brand-foreground">
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold tracking-tight">
-            SMANSABA<span className="text-brand-foreground/70">.</span>CBT
-          </p>
-          <p className="truncate text-[11px] sm:text-xs text-brand-foreground">
-            {name} · {kelas}
-          </p>
+    <header className="m3-bar">
+      <div className="m3-bar-inner">
+        <div className="m3-avatar" aria-hidden="true">{inisial}</div>
+        <div className="m3-bar-text">
+          <p className="m3-bar-title truncate">{name}</p>
+          <p className="m3-bar-sub truncate">{kelas} · NIS {nis} · Sesi {sesi}</p>
         </div>
         <StudentLogoutButton />
       </div>
@@ -563,19 +497,9 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ExamStatusBadge({ status }: { status: "UPCOMING" | "ACTIVE" | "FINISHED" }) {
-  if (status === "ACTIVE") {
-    return (
-      <Badge className="bg-brand text-[10px] text-brand-foreground hover:bg-brand/90">Berlangsung</Badge>
-    )
-  }
-  if (status === "FINISHED") {
-    return (
-      <Badge variant="secondary" className="text-[10px]">
-        Selesai
-      </Badge>
-    )
-  }
+function ExamStatusChip({ status }: { status: "UPCOMING" | "ACTIVE" | "FINISHED" }) {
+  if (status === "ACTIVE") return <span className="m3-chip m3-chip--aktif">Berlangsung</span>
+  if (status === "FINISHED") return <span className="m3-chip m3-chip--tutup">Waktu habis</span>
   return null
 }
 
@@ -583,21 +507,20 @@ function MetricCard({
   label,
   value,
   icon: Icon,
-  warna,
+  variant = "netral",
 }: {
   label: string
-  value: string
+  value: string | number
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
-  warna: string
+  variant?: "netral" | "utama" | "tonal"
 }) {
-  const solid = warna.startsWith("bg-card") ? "" : "text-white"
   return (
-    <div className={cn("flex items-center justify-between gap-2 rounded-lg px-2.5 py-2", warna, solid)}>
-      <div className="min-w-0 leading-tight">
-        <p className="truncate text-[11px] sm:text-xs">{label}</p>
-        <p className="text-lg font-semibold leading-none tabular-nums">{value}</p>
+    <div className={cn("m3-metric", variant === "utama" && "m3-metric--utama", variant === "tonal" && "m3-metric--tonal")}>
+      <div className="min-w-0">
+        <p className="m3-metric-label truncate">{label}</p>
+        <p className="m3-metric-value">{value}</p>
       </div>
-      <Icon className="size-5 shrink-0 opacity-90" aria-hidden="true" />
+      <Icon className="size-5 shrink-0 opacity-80" aria-hidden="true" />
     </div>
   )
 }
