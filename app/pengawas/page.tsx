@@ -15,19 +15,17 @@ export default async function PengawasPage() {
   const ruangan = await db.select({ id: examRooms.id, name: examRooms.name }).from(examRooms).orderBy(asc(examRooms.name))
 
   return (
-    <main className="min-h-svh bg-muted/30">
-      <header className="border-b bg-background px-4 py-3">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">Pengawas Ujian</p>
-            <p className="text-xs text-muted-foreground">{aktor.nama}</p>
+    <div className="m3-pengawas min-h-svh" style={{ background: "var(--m3-surface)" }}>
+      <header className="m3-bar">
+        <div className="m3-bar-inner" style={{ maxWidth: 768 }}>
+          <div className="m3-bar-text">
+            <p className="m3-bar-title">Pengawas ujian</p>
+            <p className="m3-bar-sub truncate">{aktor.nama}</p>
           </div>
-          <span className="rounded-sm border px-2 py-1 text-xs text-muted-foreground">
-            {aktor.jenis === "proktor" ? "Proktor" : "Admin"}
-          </span>
+          <span className="m3-chip m3-chip--aktif">{aktor.jenis === "proktor" ? "Proktor" : "Admin"}</span>
         </div>
       </header>
       <PengawasMonitor ruangan={ruangan} />
-    </main>
+    </div>
   )
 }

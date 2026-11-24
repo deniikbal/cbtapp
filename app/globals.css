@@ -303,7 +303,9 @@
    Token diturunkan dari seed = primary app (oklch(0.768 0.233 130.85)).
    Sengaja di-scope ke .m3-siswa agar dashboard guru/bank soal tidak berubah.
    ========================================================================== */
-.m3-siswa {
+/* Token M3 dipakai dua area: layar siswa dan halaman pengawas. */
+.m3-siswa,
+.m3-pengawas {
   --m3-primary: oklch(0.63 0.19 131);
   --m3-on-primary: oklch(0.99 0.02 131);
   --m3-primary-container: oklch(0.92 0.09 131);
@@ -435,6 +437,7 @@
 }
 .m3-chip--aktif { background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
 .m3-chip--tutup { background: var(--m3-error-container); color: var(--m3-on-error-container); }
+.m3-chip--aksen { background: var(--m3-tertiary-container); color: var(--m3-on-tertiary-container); }
 .m3-chip--mono { font-family: var(--font-mono, ui-monospace, monospace); }
 
 .m3-btn {
@@ -517,6 +520,9 @@
 }
 .m3-navbawah a[aria-current="page"] { background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
 @media (min-width: 768px) { .m3-navbawah { display: none; } }
+
+.m3-baris { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--m3-outline-variant); }
+.m3-baris:first-child { border-top: 0; padding-top: 0; }
 
 .m3-catatan {
   background: var(--m3-surface-container-low);
