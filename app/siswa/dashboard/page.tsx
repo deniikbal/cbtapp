@@ -205,7 +205,7 @@ export default async function SiswaDashboardPage({
 
           <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
             <MetricCard label="Ujian selesai" value={String(completedExamRows.length)} icon={ClipboardCheck} variant="utama" />
-            <MetricCard label="Sudah dinilai" value={String(dinilaiCount)} icon={CheckCircle2} />
+            <MetricCard label="Sudah dinilai" value={String(dinilaiCount)} icon={CheckCircle2} variant="aksen" />
             <MetricCard label="Menunggu sync" value={String(menungguCount)} icon={RefreshCw} variant="tonal" />
             <MetricCard
               label="Rata-rata nilai"
@@ -235,7 +235,7 @@ export default async function SiswaDashboardPage({
                   completedBySchedule.get(schedule.id)?.submittedAt ?? hasil?.submittedAt ?? null
 
                 return (
-                  <div key={schedule.id} className="m3-card m3-card--matang">
+                  <div key={schedule.id} className="m3-card">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
@@ -332,7 +332,7 @@ export default async function SiswaDashboardPage({
         {/* Metrik */}
         <section className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           <MetricCard label="Total ujian" value={String(schedules.length)} icon={CalendarDays} variant="utama" />
-          <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} />
+          <MetricCard label="Hari ini" value={String(todaySchedules)} icon={Clock3} variant="aksen" />
           <MetricCard label="Berlangsung" value={String(activeNowSchedules)} icon={Flame} variant="tonal" />
           <MetricCard
             label="Rata-rata nilai"
@@ -404,7 +404,7 @@ export default async function SiswaDashboardPage({
                     : "NOT_STARTED"
 
                 return (
-                  <div key={schedule.id} className="m3-card m3-card--utama">
+                  <div key={schedule.id} className="m3-card">
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
@@ -512,10 +512,10 @@ function MetricCard({
   label: string
   value: string | number
   icon: ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
-  variant?: "netral" | "utama" | "tonal"
+  variant?: "netral" | "utama" | "tonal" | "aksen"
 }) {
   return (
-    <div className={cn("m3-metric", variant === "utama" && "m3-metric--utama", variant === "tonal" && "m3-metric--tonal")}>
+    <div className={variant === "netral" ? "m3-metric" : `m3-metric m3-metric--${variant}`}>
       <div className="min-w-0">
         <p className="m3-metric-label truncate">{label}</p>
         <p className="m3-metric-value">{value}</p>

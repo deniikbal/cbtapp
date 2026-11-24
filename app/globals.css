@@ -309,6 +309,10 @@
   --m3-primary-container: oklch(0.92 0.09 131);
   --m3-on-primary-container: oklch(0.27 0.07 131);
   --m3-secondary-container: oklch(0.94 0.05 131);
+  --m3-tertiary: oklch(0.55 0.13 215);
+  --m3-on-tertiary: oklch(0.99 0.01 215);
+  --m3-tertiary-container: oklch(0.92 0.06 215);
+  --m3-on-tertiary-container: oklch(0.28 0.07 215);
   --m3-on-secondary-container: oklch(0.3 0.06 131);
   --m3-surface: oklch(0.985 0.004 131);
   --m3-on-surface: oklch(0.19 0.01 131);
@@ -415,26 +419,6 @@
   gap: 12px;
 }
 
-/* Kartu berwarna sesuai status (palet M3 tonal) */
-.m3-card--utama {
-  background: var(--m3-primary-container);
-  color: var(--m3-on-primary-container);
-  border-color: color-mix(in oklch, var(--m3-on-primary-container) 14%, transparent);
-  --m3-on-surface-variant: var(--m3-on-primary-container);
-}
-.m3-card--matang {
-  background: var(--m3-surface-container-high);
-  border-color: transparent;
-}
-.m3-card--utama .m3-chip {
-  background: color-mix(in oklch, currentColor 14%, transparent);
-  color: inherit;
-}
-.m3-card--utama .m3-chip--aktif {
-  background: var(--m3-primary);
-  color: var(--m3-on-primary);
-}
-
 .m3-chip {
   display: inline-flex;
   align-items: center;
@@ -495,6 +479,7 @@
 }
 .m3-metric--utama { background: var(--m3-primary-container); border-color: transparent; color: var(--m3-on-primary-container); }
 .m3-metric--tonal { background: var(--m3-secondary-container); border-color: transparent; color: var(--m3-on-secondary-container); }
+.m3-metric--aksen { background: var(--m3-tertiary-container); border-color: transparent; color: var(--m3-on-tertiary-container); }
 .m3-metric-label { font-size: 12px; line-height: 16px; }
 .m3-metric-value { font-size: 18px; line-height: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
