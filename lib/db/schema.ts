@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, jsonb, numeric, pgTable, text, time, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { bigserial, boolean, date, index, integer, jsonb, numeric, pgTable, text, time, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
@@ -296,6 +296,9 @@ export const examAttempts = pgTable(
       .references(() => students.id, { onDelete: "cascade" }),
     startedAt: timestamp("startedAt", { withTimezone: true }),
     submittedAt: timestamp("submittedAt", { withTimezone: true }),
+    // Denormalisasi untuk monitor pengawas: jumlah soal bank & detak terakhir.
+    totalSoal: integer("totalSoal").notNull().default(0),
+    lastSeenAt: timestamp("lastSeenAt", { withTimezone: true }),
     createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -304,6 +307,43 @@ export const examAttempts = pgTable(
     index("exam_attempts_studentId_idx").on(table.studentId),
     uniqueIndex("exam_attempts_schedule_student_idx").on(table.scheduleId, table.studentId),
   ],
+)
+
+// Jawaban per soal saat siswa mengerjakan di aplikasi (bukan Google Form).
+export const examAnswers = pgTable(
+  "exam_answers",
+  {
+    id: text("id").primaryKey(),
+    attemptId: text("attemptId")
+      .notNull()
+      .references(() => examAttempts.id, { onDelete: "cascade" }),
+    qid: text("qid").notNull(),
+    noSoal: integer("noSoal").notNull().default(0),
+    jawaban: jsonb("jawaban").$type<string[]>().notNull().default([]),
+    durasiDetik: integer("durasiDetik").notNull().default(0),
+    answeredAt: timestamp("answeredAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("exam_answers_attemptId_qid_key").on(table.attemptId, table.qid),
+    index("exam_answers_attempt_idx").on(table.attemptId),
+  ],
+)
+
+// Log kejadian untuk monitor pengawas (mulai, jawab soal, selesai).
+export const examEvents = pgTable(
+  "exam_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    scheduleId: text("scheduleId").notNull(),
+    studentId: text("studentId"),
+    roomId: text("roomId"),
+    jenis: text("jenis").notNull(),
+    pesan: text("pesan").notNull(),
+    noSoal: integer("noSoal"),
+    durasiDetik: integer("durasiDetik"),
+    createdAt: timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("exam_events_sched_idx").on(table.scheduleId, table.createdAt)],
 )
 
 export const examResults = pgTable(
