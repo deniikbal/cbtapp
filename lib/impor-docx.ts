@@ -74,6 +74,17 @@ export function parseSoalTeks(teks: string): { soal: SoalImpor[]; peringatan: st
     // Kunci massal di akhir dokumen: "1.C 2.A"
     const km = baris.match(RE_KUNCI)
     if (km) {
+      // Kunci boleh ditulis sebagai teks opsi apa adanya
+      // ("Kunci: 4 CO2, 6 NADH, 2 FADH2 dan 2 ATP") — cocokkan dulu ke opsi.
+      const rapat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+      if (aktif) {
+        const idxPersis = aktif.opsi.findIndex((o) => rapat(o) === rapat(km[1]))
+        if (idxPersis >= 0) {
+          aktif.kunci = HURUF[idxPersis]
+          continue
+        }
+      }
+
       const pasangan = [...km[1].matchAll(/(\d{1,3})\s*[.):\-]?\s*([a-z])/gi)]
       if (pasangan.length > 1 || /kunci\s+jawaban/i.test(km[0])) {
         for (const [, no, huruf] of pasangan) kunciMassal.set(Number(no), huruf.toLowerCase())
