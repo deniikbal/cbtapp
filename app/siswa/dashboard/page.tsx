@@ -235,7 +235,7 @@ export default async function SiswaDashboardPage({
                   completedBySchedule.get(schedule.id)?.submittedAt ?? hasil?.submittedAt ?? null
 
                 return (
-                  <div key={schedule.id} className="m3-card">
+                  <div key={schedule.id} className="m3-card m3-card--matang">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
@@ -250,7 +250,7 @@ export default async function SiswaDashboardPage({
                       <div className="shrink-0 text-right">
                         {hasil && schedule.showScore ? (
                           <>
-                            <p className="m3-metric-value" style={{ fontSize: 24, lineHeight: "28px", color: "var(--m3-on-primary-container)" }}>
+                            <p className="m3-metric-value" style={{ fontSize: 24, lineHeight: "28px" }}>
                               {Number(hasil.score).toFixed(2)}
                             </p>
                             <p className="m3-info-label">Nilai</p>
@@ -404,7 +404,7 @@ export default async function SiswaDashboardPage({
                     : "NOT_STARTED"
 
                 return (
-                  <div key={schedule.id} className="m3-card">
+                  <div key={schedule.id} className="m3-card m3-card--utama">
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="mb-1 flex flex-wrap items-center gap-1.5">
@@ -491,8 +491,8 @@ function HeaderSiswa({ name, kelas, nis, sesi }: { name: string; kelas: string; 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-muted-foreground sm:text-xs">{label}</p>
-      <p className="font-medium tabular-nums text-foreground">{value}</p>
+      <p className="m3-info-label">{label}</p>
+      <p className="m3-info-value">{value}</p>
     </div>
   )
 }
