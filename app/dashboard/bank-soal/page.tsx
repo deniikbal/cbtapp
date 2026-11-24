@@ -1,5 +1,5 @@
 import { asc, eq } from "drizzle-orm"
-import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, FileText, Filter, GraduationCap, Home, LayoutDashboard, Settings, UserCog, UserRound, Users } from "lucide-react"
+import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, FileCheck2, FileText, FileX2, Filter, GraduationCap, Home, LayoutDashboard, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -47,6 +47,9 @@ export default async function BankSoalPage() {
   const activeBanks = rows.filter((row) => row.active).length
   const inactiveBanks = rows.length - activeBanks
   const subjectUsed = new Set(rows.map((row) => row.subjectId)).size
+  // "Terisi" = Google Form bank ini sudah punya soal. Belum pernah sync dihitung belum terisi.
+  const bankTerisi = rows.filter((row) => jumlahSoalForm(row.formItems) > 0).length
+  const bankKosong = rows.length - bankTerisi
 
   return (
     <SidebarProvider>
@@ -55,8 +58,9 @@ export default async function BankSoalPage() {
         <DashboardNavbar title="Bank Soal" description="Kelola link Google Form" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1"><h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Bank Soal</h1><p className="text-sm text-muted-foreground">Kelola bank soal dan link Google Form ujian.</p></section>
-          <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-            <StatCard label="Total Soal" value={rows.length} description="Link Google Form" icon={FileText} />
+          <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
+            <StatCard label="Sudah Terisi" value={bankTerisi} description={`${rows.length} bank soal`} icon={FileCheck2} />
+            <StatCard label="Belum Terisi" value={bankKosong} description="Form tanpa soal" icon={FileX2} />
             <StatCard label="Aktif" value={activeBanks} description="Bisa dijadwalkan" icon={BookOpenCheck} />
             <StatCard label="Tidak Aktif" value={inactiveBanks} description="Tidak dipakai" icon={Filter} />
             <StatCard label="Mapel" value={subjectUsed} description="Mapel terpakai" icon={BookOpen} />
@@ -69,6 +73,16 @@ export default async function BankSoalPage() {
       </SidebarInset>
     </SidebarProvider>
   )
+}
+
+/** Jumlah soal pada form yang sudah di-sync (butir bergradien poin > 0). */
+function jumlahSoalForm(formItems: unknown): number {
+  if (!Array.isArray(formItems)) return 0
+  return formItems.filter((item) => {
+    if (typeof item !== "object" || item === null) return false
+    const q = (item as { questionItem?: { question?: { grading?: { pointValue?: number } } } }).questionItem?.question
+    return (q?.grading?.pointValue ?? 0) > 0
+  }).length
 }
 
 function DashboardNavbar({ title, description, userName, userEmail }: { title: string; description: string; userName: string; userEmail: string }) { return <header className="sticky top-0 z-10 border-b bg-background px-4 py-3 md:px-6 lg:px-8"><div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4"><div className="flex items-center gap-3"><SidebarTrigger /><div><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{description}</p></div></div><UserNav name={userName} email={userEmail} /></div></header> }
