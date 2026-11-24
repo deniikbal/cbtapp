@@ -14,6 +14,7 @@ type Siswa = {
   id: string
   nama: string
   nis: string
+  kelas: string
   totalSoal: number
   terjawab: number
   status: "BELUM" | "MENGERJAKAN" | "SELESAI"
@@ -177,7 +178,9 @@ export function PengawasMonitor({ ruangan }: { ruangan: { id: string; name: stri
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{s.nama}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{s.nis}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.kelas} · <span className="font-mono">{s.nis}</span>
+                      </p>
                     </div>
                     <Badge
                       variant="secondary"

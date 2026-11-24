@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { examAnswers, examAttempts, examEvents, examRooms, examSchedules, questionBanks, students } from "@/lib/db/schema"
+import { classrooms, examAnswers, examAttempts, examEvents, examRooms, examSchedules, questionBanks, students } from "@/lib/db/schema"
 import { daftarSoalDariItems } from "@/lib/google-forms"
 import { aktorPengawas, jendelaJadwal, tanggalWib } from "@/lib/pengawas-auth"
 
@@ -19,8 +19,16 @@ export async function GET(request: NextRequest) {
   if (!room[0]) return NextResponse.json({ error: "Ruangan tidak ditemukan" }, { status: 404 })
 
   const peserta = await db
-    .select({ id: students.id, name: students.name, nis: students.nis, classroomId: students.classroomId, session: students.session })
+    .select({
+      id: students.id,
+      name: students.name,
+      nis: students.nis,
+      classroomId: students.classroomId,
+      session: students.session,
+      className: classrooms.name,
+    })
     .from(students)
+    .innerJoin(classrooms, eq(students.classroomId, classrooms.id))
     .where(and(eq(students.roomId, roomId), eq(students.active, true)))
     .orderBy(asc(students.name))
 
@@ -117,6 +125,7 @@ export async function GET(request: NextRequest) {
       id: s.id,
       nama: s.name,
       nis: s.nis,
+      kelas: s.className,
       totalSoal: total,
       terjawab: sudah,
       status,
