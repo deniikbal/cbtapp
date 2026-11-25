@@ -18,7 +18,7 @@ export default async function Page() {
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-muted/30 p-4">
-      <StudentLoginForm />
+      <StudentLoginForm simulasi={process.env.SIMULASI_PASSWORD_NIS === "1"} />
     </main>
   )
 }

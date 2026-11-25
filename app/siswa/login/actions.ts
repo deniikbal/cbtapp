@@ -32,7 +32,16 @@ export async function loginStudent(
     where: eq(students.nis, nis),
   })
 
-  if (!student || student.passwordHash !== hashPassword(password)) {
+  if (!student) {
+    return { error: "NIS atau password salah." }
+  }
+
+  // Mode simulasi (SIMULASI_PASSWORD_NIS=1): password boleh sama dengan username/NIS.
+  // Password asli hasil cetak kartu tetap berlaku, jadi simulasi tidak mematikan akun lama.
+  const cocokNormal = student.passwordHash === hashPassword(password)
+  const cocokSimulasi = process.env.SIMULASI_PASSWORD_NIS === "1" && password === student.nis.trim()
+
+  if (!cocokNormal && !cocokSimulasi) {
     return { error: "NIS atau password salah." }
   }
 
