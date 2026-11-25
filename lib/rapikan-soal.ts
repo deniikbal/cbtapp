@@ -173,64 +173,137 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
   })
 }
 
-export async function rapikanSoalAI(
-  teks: string,
-  apiKey: string
-): Promise<{ teks: string; perkiraan: number[] }> {
-  let pesanTerakhir = "AI tidak menjawab."
+/** Satu panggilan ke 9router (OpenAI-compatible). `stream:false` wajib: tanpa itu balasannya terpotong. */
+async function panggilRouter(teks: string): Promise<string> {
+  const base = String(process.env.RAPIKAN_AI_BASE_URL).replace(/\/+$/, "")
+  const res = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.RAPIKAN_AI_KEY ?? ""}`,
+    },
+    body: JSON.stringify({
+      model: process.env.RAPIKAN_AI_MODEL,
+      stream: false,
+      temperature: 0,
+      max_tokens: 8192,
+      messages: [{ role: "user", content: PROMPT + teks + "\n---" }],
+    }),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    throw new Error(`9router ${res.status}: ${(await res.text()).slice(0, 120)}`)
+  }
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+  return (json.choices?.[0]?.message?.content ?? "")
+    .replace(/^```[a-z]*\n?|```$/g, "")
+    .trim()
+}
+
+/** Satu panggilan Gemini; model dicoba berurutan sampai ada yang menjawab. */
+async function panggilGemini(teks: string, apiKey: string): Promise<string> {
+  let pesan = "Gemini tidak menjawab."
+
   for (const model of KANDIDAT_MODEL) {
-    for (let percobaan = 1; percobaan <= COBA_PER_MODEL; percobaan += 1) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-goog-api-key": apiKey,
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
-              generationConfig: { temperature: 0, maxOutputTokens: 8192 },
-            }),
-            signal: AbortSignal.timeout(30_000),
-          }
-        )
-        if (!res.ok) {
-          pesanTerakhir = `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}`
-          const sibuk = res.status === 503 || res.status === 429
-          if (sibuk && percobaan < COBA_PER_MODEL) {
-            await new Promise((lanjut) => setTimeout(lanjut, JEDA_COBA_MS))
-            continue
-          }
-          break
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 8192 },
+          }),
+          signal: AbortSignal.timeout(30_000),
         }
-        const json = (await res.json()) as {
-          candidates?: { content?: { parts?: { text?: string }[] } }[]
-        }
-        const out = (json.candidates?.[0]?.content?.parts ?? [])
-          .map((p) => p.text ?? "")
-          .join("")
-          .replace(/^```[a-z]*\n?|```$/g, "")
-          .trim()
-        if (out) {
-          const rapi = pisahkanPerkiraan(out)
-          // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
-          if (isiSoalSama(teks, rapi.teks)) return rapi
-          pesanTerakhir = "AI mengubah isi soal (ditolak)."
-          continue
-        }
-        pesanTerakhir = "Gemini mengembalikan teks kosong."
-      } catch (err) {
-        pesanTerakhir =
-          err instanceof Error ? err.message : "Gagal menghubungi Gemini."
-        // timeout/jaringan: coba sekali lagi sebelum pindah model
-        if (percobaan < COBA_PER_MODEL) {
-          await new Promise((lanjut) => setTimeout(lanjut, JEDA_COBA_MS))
-          continue
-        }
+      )
+      if (!res.ok) {
+        pesan = `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}`
+        continue
       }
+      const json = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[]
+      }
+      const out = (json.candidates?.[0]?.content?.parts ?? [])
+        .map((p) => p.text ?? "")
+        .join("")
+        .replace(/^```[a-z]*\n?|```$/g, "")
+        .trim()
+      if (out) return out
+      pesan = "Gemini mengembalikan teks kosong."
+    } catch (err) {
+      pesan = err instanceof Error ? err.message : "Gagal menghubungi Gemini."
     }
   }
-  throw new Error(pesanTerakhir)
+
+  throw new Error(pesan)
+}
+
+/** Galat sesaat (server sibuk/jaringan) dicoba ulang sekali sebelum menyerah. */
+const SESAAT = /503|429|timeout|ETIMEDOUT|fetch failed|socket hang up|ECONNRESET/i
+
+async function cobaUlang(fn: () => Promise<string>): Promise<string> {
+  let pesan = "AI tidak menjawab."
+
+  for (let percobaan = 1; percobaan <= COBA_PER_MODEL; percobaan += 1) {
+    try {
+      return await fn()
+    } catch (err) {
+      pesan = err instanceof Error ? err.message : "Gagal menghubungi AI."
+      if (!SESAAT.test(pesan) || percobaan === COBA_PER_MODEL) break
+      await new Promise((lanjut) => setTimeout(lanjut, JEDA_COBA_MS))
+    }
+  }
+
+  throw new Error(pesan)
+}
+
+/**
+ * Periksa keluaran AI: buang baris PERKIRAAN, lalu pastikan isi soal tidak berubah.
+ * Mengembalikan pesan penolakan (string) bila tidak lolos.
+ */
+function periksaKeluaran(teks: string, out: string): { teks: string; perkiraan: number[] } | string {
+  if (!out) return "balasan kosong."
+  const rapi = pisahkanPerkiraan(out)
+  // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
+  if (isiSoalSama(teks, rapi.teks)) return rapi
+  return "AI mengubah isi soal (ditolak)."
+}
+
+/**
+ * Rapikan lewat AI: 9router dulu (bila RAPIKAN_AI_BASE_URL diisi), lalu Gemini.
+ * Semua keluaran lewat `periksaKeluaran`; kalau keduanya ditolak, pemanggil
+ * jatuh ke perapian aturan (Lapis 1).
+ */
+export async function rapikanSoalAI(
+  teks: string,
+  apiKey?: string
+): Promise<{ teks: string; perkiraan: number[] }> {
+  const pesan: string[] = []
+
+  if (process.env.RAPIKAN_AI_BASE_URL && process.env.RAPIKAN_AI_MODEL) {
+    try {
+      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilRouter(teks)))
+      if (typeof hasil !== "string") return hasil
+      pesan.push(`9router: ${hasil}`)
+    } catch (err) {
+      pesan.push(`9router: ${err instanceof Error ? err.message : "gagal"}`)
+    }
+  }
+
+  if (apiKey) {
+    try {
+      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilGemini(teks, apiKey)))
+      if (typeof hasil !== "string") return hasil
+      pesan.push(`Gemini: ${hasil}`)
+    } catch (err) {
+      pesan.push(`Gemini: ${err instanceof Error ? err.message : "gagal"}`)
+    }
+  }
+
+  throw new Error(pesan.join(" · ") || "AI tidak tersedia.")
 }

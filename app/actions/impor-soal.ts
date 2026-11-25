@@ -202,7 +202,8 @@ export async function rapikanSoalTeks(
   if (mentah.length < 10) return { ok: false, message: "Teks soal masih kosong." }
 
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
+  const adaRouter = Boolean(process.env.RAPIKAN_AI_BASE_URL && process.env.RAPIKAN_AI_MODEL)
+  if (!apiKey && !adaRouter) {
     return {
       ok: true,
       teks: rapikanSoal(mentah),
