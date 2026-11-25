@@ -35,11 +35,16 @@ export function rapikanSoal(teks: string): string {
 
     // label kunci apa pun -> "Kunci:"
     baris2 = baris2
-      .replace(/^(kunci jawaban|kunci|jawaban benar|jawaban|answer|ans)\s*[:=]\s*/i, "Kunci: ")
+      .replace(
+        /^(kunci jawaban|kunci|jawaban benar|jawaban|answer|ans)\s*[:=]\s*/i,
+        "Kunci: "
+      )
       .replace(/^(answer key|key)\s*[:=]\s*/i, "Kunci: ")
 
     // kunci menempel di baris soal: "1. Ibu kota Jawa Barat? Jawaban: Bandung"
-    const nempel = baris2.match(/^(.*?\?|.*?\.\.\.)\s*(?:jawaban|kunci|answer)\s*[:=]\s*(\S.*)$/i)
+    const nempel = baris2.match(
+      /^(.*?\?|.*?\.\.\.)\s*(?:jawaban|kunci|answer)\s*[:=]\s*(\S.*)$/i
+    )
     if (nempel && !/^kunci:/i.test(baris2)) {
       hasil.push(nempel[1].trim())
       hasil.push(`Kunci: ${nempel[2].trim()}`)
@@ -82,12 +87,26 @@ Teks soal:
 `
 
 // Nama model Gemini sering berubah; coba berurutan sampai ada yang menjawab.
-const KANDIDAT_MODEL = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"].filter(
-  Boolean,
-) as string[]
+// `gemini-flash-latest` (model ramai) sengaja tidak dipakai: sering 503 dan bisa menggantung lama.
+const KANDIDAT_MODEL = [
+  ...new Set(
+    [
+      process.env.GEMINI_MODEL,
+      "gemini-3.5-flash-lite",
+      "gemini-flash-lite-latest",
+    ].filter(Boolean)
+  ),
+] as string[]
+
+// 503/429 dari Gemini biasanya sesaat (model kebanjiran permintaan): tunggu lalu coba lagi.
+const COBA_PER_MODEL = 2
+const JEDA_COBA_MS = 800
 
 /** Buang baris "PERKIRAAN: 3, 7" dari keluaran AI; kembalikan nomor soal yang kuncinya hasil tebakan. */
-function pisahkanPerkiraan(teks: string): { teks: string; perkiraan: number[] } {
+function pisahkanPerkiraan(teks: string): {
+  teks: string
+  perkiraan: number[]
+} {
   const baris = teks.split("\n")
   const idx = baris.findIndex((b) => /^\s*perkiraan\s*:/i.test(b))
   if (idx < 0) return { teks: teks.trim(), perkiraan: [] }
@@ -122,7 +141,11 @@ function sidikKata(teks: string): Map<string, number> {
   return peta
 }
 
-const seragam = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+const seragam = (t: string) =>
+  t
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
 
 /**
  * True bila AI hanya menata letak, tidak mengubah soal:
@@ -150,39 +173,63 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
   })
 }
 
-export async function rapikanSoalAI(teks: string, apiKey: string): Promise<{ teks: string; perkiraan: number[] }> {
+export async function rapikanSoalAI(
+  teks: string,
+  apiKey: string
+): Promise<{ teks: string; perkiraan: number[] }> {
   let pesanTerakhir = "AI tidak menjawab."
   for (const model of KANDIDAT_MODEL) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
-          generationConfig: { temperature: 0, maxOutputTokens: 8192 },
-        }),
-        signal: AbortSignal.timeout(60_000),
-      })
-      if (!res.ok) {
-        pesanTerakhir = `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}`
-        continue
+    for (let percobaan = 1; percobaan <= COBA_PER_MODEL; percobaan += 1) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
+              generationConfig: { temperature: 0, maxOutputTokens: 8192 },
+            }),
+            signal: AbortSignal.timeout(30_000),
+          }
+        )
+        if (!res.ok) {
+          pesanTerakhir = `Gemini ${res.status}: ${(await res.text()).slice(0, 160)}`
+          const sibuk = res.status === 503 || res.status === 429
+          if (sibuk && percobaan < COBA_PER_MODEL) {
+            await new Promise((lanjut) => setTimeout(lanjut, JEDA_COBA_MS))
+            continue
+          }
+          break
+        }
+        const json = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] } }[]
+        }
+        const out = (json.candidates?.[0]?.content?.parts ?? [])
+          .map((p) => p.text ?? "")
+          .join("")
+          .replace(/^```[a-z]*\n?|```$/g, "")
+          .trim()
+        if (out) {
+          const rapi = pisahkanPerkiraan(out)
+          // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
+          if (isiSoalSama(teks, rapi.teks)) return rapi
+          pesanTerakhir = "AI mengubah isi soal (ditolak)."
+          continue
+        }
+        pesanTerakhir = "Gemini mengembalikan teks kosong."
+      } catch (err) {
+        pesanTerakhir =
+          err instanceof Error ? err.message : "Gagal menghubungi Gemini."
+        // timeout/jaringan: coba sekali lagi sebelum pindah model
+        if (percobaan < COBA_PER_MODEL) {
+          await new Promise((lanjut) => setTimeout(lanjut, JEDA_COBA_MS))
+          continue
+        }
       }
-      const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-      const out = (json.candidates?.[0]?.content?.parts ?? [])
-        .map((p) => p.text ?? "")
-        .join("")
-        .replace(/^```[a-z]*\n?|```$/g, "")
-        .trim()
-      if (out) {
-        const rapi = pisahkanPerkiraan(out)
-        // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
-        if (isiSoalSama(teks, rapi.teks)) return rapi
-        pesanTerakhir = "AI mengubah isi soal (ditolak)."
-        continue
-      }
-      pesanTerakhir = "Gemini mengembalikan teks kosong."
-    } catch (err) {
-      pesanTerakhir = err instanceof Error ? err.message : "Gagal menghubungi Gemini."
     }
   }
   throw new Error(pesanTerakhir)
