@@ -213,12 +213,15 @@ export async function rapikanSoalTeks(
     }
   }
 
+  const mulai = Date.now()
+  console.log(`[rapikanSoalTeks] masuk ${mentah.length} char`)
   try {
     const rapi = await rapikanSoalAI(mentah, apiKey)
+    console.log(`[rapikanSoalTeks] selesai ${Date.now() - mulai}ms cara=ai`)
     return { ok: true, teks: rapi.teks, cara: "ai", perkiraan: rapi.perkiraan }
   } catch (err) {
     const pesan = err instanceof Error ? err.message : "AI gagal."
-    console.error("[rapikanSoalTeks]", pesan)
+    console.error(`[rapikanSoalTeks] gagal ${Date.now() - mulai}ms:`, pesan)
     return {
       ok: true,
       teks: rapikanSoal(mentah),

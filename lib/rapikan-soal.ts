@@ -173,8 +173,11 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
   })
 }
 
+/** Anggaran waktu total perapian AI. Di bawah batas 60 detik nginx/VPS. */
+const BATAS_TOTAL_MS = 40_000
+
 /** Satu panggilan ke 9router (OpenAI-compatible). `stream:false` wajib: tanpa itu balasannya terpotong. */
-async function panggilRouter(teks: string): Promise<string> {
+async function panggilRouter(teks: string, batasMs: number): Promise<string> {
   const base = String(process.env.RAPIKAN_AI_BASE_URL).replace(/\/+$/, "")
   const res = await fetch(`${base}/chat/completions`, {
     method: "POST",
@@ -189,7 +192,7 @@ async function panggilRouter(teks: string): Promise<string> {
       max_tokens: 8192,
       messages: [{ role: "user", content: PROMPT + teks + "\n---" }],
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(batasMs),
   })
   if (!res.ok) {
     throw new Error(`9router ${res.status}: ${(await res.text()).slice(0, 120)}`)
@@ -205,7 +208,7 @@ async function panggilRouter(teks: string): Promise<string> {
 }
 
 /** Satu panggilan Gemini; model dicoba berurutan sampai ada yang menjawab. */
-async function panggilGemini(teks: string, apiKey: string): Promise<string> {
+async function panggilGemini(teks: string, apiKey: string, batasMs: number): Promise<string> {
   let pesan = "Gemini tidak menjawab."
 
   for (const model of KANDIDAT_MODEL) {
@@ -222,7 +225,7 @@ async function panggilGemini(teks: string, apiKey: string): Promise<string> {
             contents: [{ parts: [{ text: PROMPT + teks + "\n---" }] }],
             generationConfig: { temperature: 0, maxOutputTokens: 8192 },
           }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(batasMs),
         }
       )
       if (!res.ok) {
@@ -247,8 +250,8 @@ async function panggilGemini(teks: string, apiKey: string): Promise<string> {
   throw new Error(pesan)
 }
 
-/** Galat sesaat (server sibuk/jaringan) dicoba ulang sekali sebelum menyerah. */
-const SESAAT = /503|429|timeout|ETIMEDOUT|fetch failed|socket hang up|ECONNRESET/i
+/** Galat sesaat (server sibuk/jaringan) dicoba ulang selama anggaran waktu masih ada. */
+const SESAAT = /503|429|timeout|ETIMEDOUT|aborted|fetch failed|socket hang up|ECONNRESET/i
 
 async function cobaUlang(fn: () => Promise<string>): Promise<string> {
   let pesan = "AI tidak menjawab."
@@ -279,7 +282,7 @@ function periksaKeluaran(teks: string, out: string): { teks: string; perkiraan: 
 }
 
 /**
- * Rapikan lewat AI: 9router dulu (bila RAPIKAN_AI_BASE_URL diisi), lalu Gemini.
+ * Rapikan lewat AI: Gemini dulu, lalu 9router bila Gemini gagal.
  * Semua keluaran lewat `periksaKeluaran`; kalau keduanya ditolak, pemanggil
  * jatuh ke perapian aturan (Lapis 1).
  */
@@ -287,25 +290,27 @@ export async function rapikanSoalAI(
   teks: string,
   apiKey?: string
 ): Promise<{ teks: string; perkiraan: number[] }> {
+  const mulai = Date.now()
   const pesan: string[] = []
-
-  if (process.env.RAPIKAN_AI_BASE_URL && process.env.RAPIKAN_AI_MODEL) {
-    try {
-      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilRouter(teks)))
-      if (typeof hasil !== "string") return hasil
-      pesan.push(`9router: ${hasil}`)
-    } catch (err) {
-      pesan.push(`9router: ${err instanceof Error ? err.message : "gagal"}`)
-    }
-  }
+  const sisa = () => Math.max(5_000, BATAS_TOTAL_MS - (Date.now() - mulai))
 
   if (apiKey) {
     try {
-      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilGemini(teks, apiKey)))
+      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilGemini(teks, apiKey, sisa())))
       if (typeof hasil !== "string") return hasil
       pesan.push(`Gemini: ${hasil}`)
     } catch (err) {
       pesan.push(`Gemini: ${err instanceof Error ? err.message : "gagal"}`)
+    }
+  }
+
+  if (process.env.RAPIKAN_AI_BASE_URL && process.env.RAPIKAN_AI_MODEL) {
+    try {
+      const hasil = periksaKeluaran(teks, await cobaUlang(() => panggilRouter(teks, sisa())))
+      if (typeof hasil !== "string") return hasil
+      pesan.push(`9router: ${hasil}`)
+    } catch (err) {
+      pesan.push(`9router: ${err instanceof Error ? err.message : "gagal"}`)
     }
   }
 
