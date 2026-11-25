@@ -328,10 +328,11 @@ export async function hapusSoalForm(formId: string, qid: string): Promise<unknow
 export async function acakOpsiForm(
   formId: string,
   aktif = true,
-): Promise<{ pilihanGanda: number; diubah: number }> {
+): Promise<{ pilihanGanda: number; dilewati: number; diubah: number }> {
   const { items } = await ambilForm(formId)
   const requests: unknown[] = []
   let pilihanGanda = 0
+  let dilewati = 0
 
   items.forEach((butir, index) => {
     const item = butir as {
@@ -342,8 +343,11 @@ export async function acakOpsiForm(
     const cq = pertanyaan?.choiceQuestion
     if (!pertanyaan || !cq) return
 
+    if (pertanyaan.grading?.pointValue === undefined || pertanyaan.grading.pointValue <= 0) {
+      dilewati += 1
+      return
+    }
     pilihanGanda += 1
-    if (pertanyaan.grading?.pointValue === undefined || pertanyaan.grading.pointValue <= 0) return
     if (Boolean(cq.shuffle) === aktif) return
 
     requests.push({
@@ -359,7 +363,7 @@ export async function acakOpsiForm(
     await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
   }
 
-  return { pilihanGanda, diubah: requests.length }
+  return { pilihanGanda, dilewati, diubah: requests.length }
 }
 
 export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[] }> {

@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { Edit, FilePlus2, FileUp, Loader2, RefreshCw, Trash2 } from "lucide-react"
+import { Edit, FilePlus2, FileUp, Loader2, RefreshCw, Shuffle, Trash2 } from "lucide-react"
 
-import { buatFormDariBank, deleteQuestionBank, sinkronFormItems, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
+import { acakOpsiBank, buatFormDariBank, deleteQuestionBank, sinkronFormItems, updateQuestionBank } from "@/app/dashboard/bank-soal/actions"
 import Link from "next/link"
 import type { SubjectOption } from "@/components/question-bank-create-dialog"
 import { LabelHint } from "@/components/label-hint"
@@ -47,6 +47,18 @@ export function QuestionBankRowActions({ bank, subjects, teachers, majors = [] }
     event.preventDefault()
     startTransition(async () => {
       const hasil = await sinkronFormItems(bank.id)
+      if (!hasil.ok) {
+        toast.error(hasil.message)
+        return
+      }
+      toast.success(hasil.message)
+    })
+  }
+
+  function handleAcak(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    startTransition(async () => {
+      const hasil = await acakOpsiBank(bank.id)
       if (!hasil.ok) {
         toast.error(hasil.message)
         return
@@ -119,6 +131,17 @@ export function QuestionBankRowActions({ bank, subjects, teachers, majors = [] }
         </DialogContent>
       </Dialog>
       <Button
+              variant="ghost"
+              size="icon-sm"
+              className="size-11 sm:size-6"
+              disabled={!bank.formId || isPending}
+              title={bank.formId ? "Acak urutan opsi soal" : "Buat form dulu"}
+              onClick={handleAcak}
+            >
+              {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Shuffle className="size-4" aria-hidden="true" />}
+              <span className="sr-only">Acak urutan opsi soal</span>
+            </Button>
+            <Button
               variant="ghost"
               size="icon-sm"
               className="size-11 sm:size-6"

@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { getExamBrowserSettings } from "@/lib/exam-browser"
-import { ambilForm, daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
+import { acakOpsiForm, ambilForm, daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
 import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
@@ -258,6 +258,31 @@ function jumlahSoalBerpoin(items: unknown[]) {
 }
 
 /** Tarik ulang butir form dari Google: hitung jumlah soal + simpan snapshot formItems. */
+/** Acak urutan opsi tiap soal berpoin di Google Form bank ini (idempoten). */
+export async function acakOpsiBank(bankId: string): Promise<{ ok: boolean; message: string }> {
+  const [bank] = await db
+    .select({ formId: questionBanks.formId, title: questionBanks.title })
+    .from(questionBanks)
+    .where(eq(questionBanks.id, bankId))
+    .limit(1)
+  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+  if (!bank.formId) return { ok: false, message: "Bank soal belum punya form." }
+
+  try {
+    const { pilihanGanda, diubah } = await acakOpsiForm(bank.formId, true)
+    try {
+      revalidatePath("/dashboard/bank-soal")
+    } catch {
+      // di luar konteks request (mis. skrip uji) revalidate tidak tersedia
+    }
+    if (!pilihanGanda) return { ok: false, message: "Belum ada soal pilihan ganda di form ini." }
+    if (!diubah) return { ok: true, message: `Semua ${pilihanGanda} soal berpoin sudah teracak opsinya.` }
+    return { ok: true, message: `${diubah} soal diacak opsinya${pilihanGanda - diubah ? `, ${pilihanGanda - diubah} sudah teracak sebelumnya` : ""}.` }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal mengacak opsi." }
+  }
+}
+
 export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; message: string; jumlah?: number }> {
   const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
   if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
