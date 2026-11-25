@@ -119,11 +119,14 @@ function pisahkanPerkiraan(teks: string): {
 
 /**
  * Sidik kata teks soal, untuk memastikan AI tidak mengubah isi.
- * Yang dibuang sebelum membandingkan: nomor soal, huruf opsi, label kunci,
- * dan seluruh baris "Kunci:" (kunci boleh ditambah AI).
+ * Yang dibuang sebelum membandingkan: nomor soal, huruf opsi, dan segala label
+ * kunci ("Jawaban: B" menempel di baris soal pun dipotong) — karena AI selalu
+ * memindahkan kunci ke baris "Kunci:" sendiri, potongan itu bukan isi soal.
  */
-function sidikKata(teks: string): Map<string, number> {
-  const peta = new Map<string, number>()
+const KATA_LABEL = new Set(["kunci", "jawaban", "answer", "ans", "key", "perkiraan"])
+
+function sidikKata(teks: string): Set<string> {
+  const kata = new Set<string>()
 
   for (const b of teks.split("\n")) {
     const t = b
@@ -131,14 +134,14 @@ function sidikKata(teks: string): Map<string, number> {
       .replace(/^\s*[a-eA-E]\s*[.)]\s+/, "")
       .trim()
 
-    if (!t || /^kunci\s*:/i.test(t)) continue
-
-    for (const kata of t.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []) {
-      peta.set(kata, (peta.get(kata) ?? 0) + 1)
+    for (const k of t.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []) {
+      // label kunci & huruf penanda opsi ("a".."e") bukan isi soal
+      if (KATA_LABEL.has(k) || /^[a-e]$/.test(k)) continue
+      kata.add(k)
     }
   }
 
-  return peta
+  return kata
 }
 
 const seragam = (t: string) =>
@@ -147,6 +150,10 @@ const seragam = (t: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
 
+/** Buang label kunci yang menempel di akhir pertanyaan ("... Jawaban: Bandung"). */
+const tanpaLabel = (t: string) =>
+  t.split(/\b(?:kunci jawaban|kunci|jawaban benar|jawaban|answer|ans)\s*[:=]/i)[0]
+
 /**
  * True bila AI hanya menata letak, tidak mengubah soal:
  * 1. kata (dan jumlah kemunculannya) sama persis;
@@ -154,10 +161,13 @@ const seragam = (t: string) =>
  *    kunci yang sudah ada di masukan tidak boleh hilang.
  */
 export function isiSoalSama(asli: string, hasil: string): boolean {
+  // Dibandingkan sebagai himpunan kata, bukan jumlah kemunculan: AI boleh
+  // memindahkan jawaban yang tadinya menempel di baris soal, tapi tidak boleh
+  // menambah/menghilangkan kata.
   const a = sidikKata(rapikanSoal(asli))
   const b = sidikKata(rapikanSoal(hasil))
   if (a.size !== b.size) return false
-  for (const [kata, n] of a) if (b.get(kata) !== n) return false
+  for (const kata of a) if (!b.has(kata)) return false
 
   const asliSoal = parseSoalTeks(rapikanSoal(asli)).soal
   const hasilSoal = parseSoalTeks(rapikanSoal(hasil)).soal
@@ -165,7 +175,10 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
 
   return asliSoal.every((s, i) => {
     const h = hasilSoal[i]
-    if (seragam(s.pertanyaan) !== seragam(h.pertanyaan)) return false
+    // Masukan yang opsinya menempel di baris soal tidak bisa diurai jadi soal+opsi;
+    // di kasus itu penjaga kata di atas yang berlaku (memisah opsi memang tugas AI).
+    if (s.opsi.length === 0) return true
+    if (seragam(tanpaLabel(s.pertanyaan)) !== seragam(tanpaLabel(h.pertanyaan))) return false
     if (s.opsi.length !== h.opsi.length) return false
     if (!s.opsi.every((o, j) => seragam(o) === seragam(h.opsi[j]))) return false
     // kunci yang sudah ada di teks asli tidak boleh hilang
@@ -278,6 +291,17 @@ function periksaKeluaran(teks: string, out: string): { teks: string; perkiraan: 
   const rapi = pisahkanPerkiraan(out)
   // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
   if (isiSoalSama(teks, rapi.teks)) return rapi
+
+  // Catat bedanya supaya penyebab penolakan bisa dilihat di log pm2.
+  const a = sidikKata(rapikanSoal(teks))
+  const b = sidikKata(rapikanSoal(rapi.teks))
+  const hilang = [...a].filter((k) => !b.has(k)).slice(0, 10)
+  const tambah = [...b].filter((k) => !a.has(k)).slice(0, 10)
+  console.error(
+    `[rapikan-soal] tolak AI | kata asli ${a.size} vs hasil ${b.size}` +
+      ` | hilang: ${hilang.join(",") || "-"} | tambah: ${tambah.join(",") || "-"}`
+  )
+
   return "AI mengubah isi soal (ditolak)."
 }
 
