@@ -319,6 +319,49 @@ export async function hapusSoalForm(formId: string, qid: string): Promise<unknow
   return items
 }
 
+/**
+ * Acak urutan opsi pilihan ganda/centang per responden (ChoiceQuestion.shuffle).
+ * Objek pertanyaan diambil apa adanya dari API lalu hanya `shuffle` yang diubah,
+ * supaya kunci jawaban, poin, dan umpan balik tidak ikut tersentuh.
+ * Butir tanpa poin (butir identitas, header, opsi kelas) dilewati.
+ */
+export async function acakOpsiForm(
+  formId: string,
+  aktif = true,
+): Promise<{ pilihanGanda: number; diubah: number }> {
+  const { items } = await ambilForm(formId)
+  const requests: unknown[] = []
+  let pilihanGanda = 0
+
+  items.forEach((butir, index) => {
+    const item = butir as {
+      itemId?: string
+      questionItem?: { question?: { choiceQuestion?: { shuffle?: boolean }; grading?: { pointValue?: number } } }
+    }
+    const pertanyaan = item.questionItem?.question
+    const cq = pertanyaan?.choiceQuestion
+    if (!pertanyaan || !cq) return
+
+    pilihanGanda += 1
+    if (pertanyaan.grading?.pointValue === undefined || pertanyaan.grading.pointValue <= 0) return
+    if (Boolean(cq.shuffle) === aktif) return
+
+    requests.push({
+      updateItem: {
+        location: { index },
+        item: { itemId: item.itemId, questionItem: { question: { ...pertanyaan, choiceQuestion: { ...cq, shuffle: aktif } } } },
+        updateMask: "questionItem.question",
+      },
+    })
+  })
+
+  if (requests.length) {
+    await gpost(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:batchUpdate`, { requests })
+  }
+
+  return { pilihanGanda, diubah: requests.length }
+}
+
 export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[] }> {
   const data = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
   return { title: data.info?.title ?? data.title ?? "", items: data.items ?? [] }
