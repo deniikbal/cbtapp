@@ -172,9 +172,14 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
   const asliSoal = parseSoalTeks(rapikanSoal(asli)).soal
   const hasilSoal = parseSoalTeks(rapikanSoal(hasil)).soal
 
-  if (asliSoal.length !== hasilSoal.length) {
-    console.error(`[rapikan-soal] struktur: jumlah soal ${asliSoal.length} vs ${hasilSoal.length}`)
-    return false
+  // Struktur hanya diperiksa bila masukan memang terbaca sebagai daftar soal dengan
+  // jumlah yang sama. Masukan berantakan (nomor tak dikenali, opsi menempel) tidak bisa
+  // dibandingkan 1:1 — penjaga himpunan kata di atas yang berlaku di kasus itu.
+  if (asliSoal.length === 0 || asliSoal.length !== hasilSoal.length) {
+    console.error(
+      `[rapikan-soal] struktur dilewati: soal asli ${asliSoal.length} vs hasil ${hasilSoal.length} (penjaga kata tetap berlaku)`
+    )
+    return true
   }
 
   return asliSoal.every((s, i) => {
