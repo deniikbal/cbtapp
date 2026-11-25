@@ -13,7 +13,7 @@ export function StudentLogoutButton() {
     <Button
       variant="outline"
       size="sm"
-      className="h-11 shrink-0 gap-1.5 border-brand-foreground/60 bg-transparent text-xs text-brand-foreground hover:bg-brand-foreground/15 hover:text-brand-foreground sm:h-8"
+      className="m3-btn m3-btn--garis shrink-0 gap-1.5"
       onClick={async () => {
         await logoutStudent()
         router.replace("/")

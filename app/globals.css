@@ -372,6 +372,8 @@
 .m3-bar-text { min-width: 0; flex: 1; }
 .m3-bar-title { font-size: 16px; line-height: 22px; font-weight: 500; }
 .m3-bar-sub { font-size: 12px; line-height: 16px; color: var(--m3-on-surface-variant); }
+/* tombol di app bar dibuat ringkas; warna ikut token M3 supaya tetap terlihat */
+.m3-bar .m3-btn, .m3-navbawah .m3-btn { min-height: 40px; padding: 0 14px; font-size: 13px; }
 
 .m3-nav { background: var(--m3-surface); border-bottom: 1px solid var(--m3-outline-variant); }
 .m3-nav-inner { margin-inline: auto; display: flex; gap: 8px; width: 100%; max-width: 48rem; padding: 0 16px; }

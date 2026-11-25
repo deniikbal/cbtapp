@@ -38,7 +38,7 @@ export function StudentDashboardNav({ active }: { active: MenuSiswa }) {
             {label}
           </Link>
         ))}
-        <div className="flex-1 py-1">
+        <div className="flex flex-1 items-center justify-center">
           <StudentLogoutButton />
         </div>
       </nav>
