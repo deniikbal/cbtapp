@@ -222,7 +222,9 @@ export async function rapikanSoalTeks(
       ok: true,
       teks: rapikanSoal(mentah),
       cara: "aturan",
-      catatan: `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.`,
+      catatan: /mengubah isi soal/i.test(pesan)
+        ? "AI mencoba menulis ulang soal — ditolak. Isi soal tidak diubah, hanya formatnya yang dirapikan."
+        : `AI gagal (${pesan.slice(0, 80)}) — dirapikan dengan aturan otomatis.`,
       perkiraan: [],
     }
   }

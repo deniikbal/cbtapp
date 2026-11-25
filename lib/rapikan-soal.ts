@@ -9,6 +9,8 @@
  * satu baris pertanyaan, satu opsi per baris, lalu "Kunci: <huruf/teks opsi>".
  */
 
+import { parseSoalTeks } from "@/lib/impor-docx"
+
 export function rapikanSoal(teks: string): string {
   const baris = teks
     .replace(/\r\n?/g, "\n")
@@ -54,7 +56,14 @@ export function rapikanSoal(teks: string): string {
     .trim()
 }
 
-const PROMPT = `Kamu pengubah format soal pilihan ganda. Ubah teks berikut menjadi format baku, tanpa menambah atau mengurangi isi soal.
+const PROMPT = `Kamu HANYA mengubah tata letak soal pilihan ganda. Kamu BUKAN penulis soal.
+
+LARANGAN KERAS:
+- JANGAN menulis ulang, meringkas, memotong, menyambung, membetulkan ejaan/tanda baca, atau menambah kata pada pertanyaan maupun opsi. Salin apa adanya, kata per kata.
+- JANGAN membuat soal baru, opsi baru, atau menghapus soal/opsi yang ada. Jumlah soal dan jumlah opsi tiap soal harus sama persis dengan masukan.
+- Kalau sebuah baris ragu, salin baris itu apa adanya.
+
+Yang BOLEH kamu lakukan hanya: memindah baris, memberi nomor soal, memisahkan opsi jadi baris sendiri, membuang huruf opsi di depan opsi, dan menambah baris "Kunci:".
 
 Aturan keluaran (WAJIB):
 - Satu soal ditulis: baris nomor + pertanyaan, contoh "1. Hasil dari 12 x 2 adalah ..."
@@ -89,6 +98,58 @@ function pisahkanPerkiraan(teks: string): { teks: string; perkiraan: number[] } 
   return { teks: baris.join("\n").trim(), perkiraan }
 }
 
+/**
+ * Sidik kata teks soal, untuk memastikan AI tidak mengubah isi.
+ * Yang dibuang sebelum membandingkan: nomor soal, huruf opsi, label kunci,
+ * dan seluruh baris "Kunci:" (kunci boleh ditambah AI).
+ */
+function sidikKata(teks: string): Map<string, number> {
+  const peta = new Map<string, number>()
+
+  for (const b of teks.split("\n")) {
+    const t = b
+      .replace(/^\s*(soal|pertanyaan)?\s*\d{1,3}\s*[.):\-]\s*/i, "")
+      .replace(/^\s*[a-eA-E]\s*[.)]\s+/, "")
+      .trim()
+
+    if (!t || /^kunci\s*:/i.test(t)) continue
+
+    for (const kata of t.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []) {
+      peta.set(kata, (peta.get(kata) ?? 0) + 1)
+    }
+  }
+
+  return peta
+}
+
+const seragam = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()
+
+/**
+ * True bila AI hanya menata letak, tidak mengubah soal:
+ * 1. kata (dan jumlah kemunculannya) sama persis;
+ * 2. hasil baca ulang tiap soal sama: teks pertanyaan, jumlah & isi opsi, dan
+ *    kunci yang sudah ada di masukan tidak boleh hilang.
+ */
+export function isiSoalSama(asli: string, hasil: string): boolean {
+  const a = sidikKata(rapikanSoal(asli))
+  const b = sidikKata(rapikanSoal(hasil))
+  if (a.size !== b.size) return false
+  for (const [kata, n] of a) if (b.get(kata) !== n) return false
+
+  const asliSoal = parseSoalTeks(rapikanSoal(asli)).soal
+  const hasilSoal = parseSoalTeks(rapikanSoal(hasil)).soal
+  if (asliSoal.length !== hasilSoal.length) return false
+
+  return asliSoal.every((s, i) => {
+    const h = hasilSoal[i]
+    if (seragam(s.pertanyaan) !== seragam(h.pertanyaan)) return false
+    if (s.opsi.length !== h.opsi.length) return false
+    if (!s.opsi.every((o, j) => seragam(o) === seragam(h.opsi[j]))) return false
+    // kunci yang sudah ada di teks asli tidak boleh hilang
+    return !s.kunci.trim() || Boolean(h.kunci.trim())
+  })
+}
+
 export async function rapikanSoalAI(teks: string, apiKey: string): Promise<{ teks: string; perkiraan: number[] }> {
   let pesanTerakhir = "AI tidak menjawab."
   for (const model of KANDIDAT_MODEL) {
@@ -112,7 +173,13 @@ export async function rapikanSoalAI(teks: string, apiKey: string): Promise<{ tek
         .join("")
         .replace(/^```[a-z]*\n?|```$/g, "")
         .trim()
-      if (out) return pisahkanPerkiraan(out)
+      if (out) {
+        const rapi = pisahkanPerkiraan(out)
+        // AI kerap mengarang/menulis ulang soal. Keluaran yang isinya berubah ditolak.
+        if (isiSoalSama(teks, rapi.teks)) return rapi
+        pesanTerakhir = "AI mengubah isi soal (ditolak)."
+        continue
+      }
       pesanTerakhir = "Gemini mengembalikan teks kosong."
     } catch (err) {
       pesanTerakhir = err instanceof Error ? err.message : "Gagal menghubungi Gemini."
