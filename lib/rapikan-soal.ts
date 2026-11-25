@@ -171,18 +171,43 @@ export function isiSoalSama(asli: string, hasil: string): boolean {
 
   const asliSoal = parseSoalTeks(rapikanSoal(asli)).soal
   const hasilSoal = parseSoalTeks(rapikanSoal(hasil)).soal
-  if (asliSoal.length !== hasilSoal.length) return false
+
+  if (asliSoal.length !== hasilSoal.length) {
+    console.error(`[rapikan-soal] struktur: jumlah soal ${asliSoal.length} vs ${hasilSoal.length}`)
+    return false
+  }
 
   return asliSoal.every((s, i) => {
     const h = hasilSoal[i]
     // Masukan yang opsinya menempel di baris soal tidak bisa diurai jadi soal+opsi;
     // di kasus itu penjaga kata di atas yang berlaku (memisah opsi memang tugas AI).
     if (s.opsi.length === 0) return true
-    if (seragam(tanpaLabel(s.pertanyaan)) !== seragam(tanpaLabel(h.pertanyaan))) return false
-    if (s.opsi.length !== h.opsi.length) return false
-    if (!s.opsi.every((o, j) => seragam(o) === seragam(h.opsi[j]))) return false
+    if (seragam(tanpaLabel(s.pertanyaan)) !== seragam(tanpaLabel(h.pertanyaan))) {
+      console.error(
+        `[rapikan-soal] struktur soal#${i + 1} pertanyaan beda\n  asli : ${s.pertanyaan.slice(0, 160)}\n  hasil: ${h.pertanyaan.slice(0, 160)}`
+      )
+      return false
+    }
+    if (s.opsi.length !== h.opsi.length) {
+      console.error(
+        `[rapikan-soal] struktur soal#${i + 1} jumlah opsi ${s.opsi.length} vs ${h.opsi.length}` +
+          ` | asli: ${s.opsi.join(" / ").slice(0, 160)} | hasil: ${h.opsi.join(" / ").slice(0, 160)}`
+      )
+      return false
+    }
+    const beda = s.opsi.findIndex((o, j) => seragam(o) !== seragam(h.opsi[j]))
+    if (beda >= 0) {
+      console.error(
+        `[rapikan-soal] struktur soal#${i + 1} isi opsi beda: "${s.opsi[beda].slice(0, 80)}" vs "${h.opsi[beda].slice(0, 80)}"`
+      )
+      return false
+    }
     // kunci yang sudah ada di teks asli tidak boleh hilang
-    return !s.kunci.trim() || Boolean(h.kunci.trim())
+    if (s.kunci.trim() && !h.kunci.trim()) {
+      console.error(`[rapikan-soal] struktur soal#${i + 1} kunci hilang (asli "${s.kunci.slice(0, 40)}")`)
+      return false
+    }
+    return true
   })
 }
 
