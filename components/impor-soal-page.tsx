@@ -436,7 +436,17 @@ function PanelTeks({
 
   function rapikan() {
     startMerapikan(async () => {
-      const hasil = await rapikanSoalTeks(teks)
+      // Batas waktu: kalau server tak menjawab (mis. halaman lama setelah deploy baru),
+      // spinner harus berhenti, bukan berputar selamanya.
+      const hasil = await Promise.race([
+        rapikanSoalTeks(teks),
+        new Promise<null>((selesai) => setTimeout(() => selesai(null), 90_000)),
+      ]).catch(() => null)
+
+      if (!hasil) {
+        toast.error("Server tidak menjawab. Muat ulang halaman (Ctrl+Shift+R) lalu coba lagi.")
+        return
+      }
       if (!hasil.ok) {
         toast.error(hasil.message)
         return

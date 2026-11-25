@@ -195,9 +195,13 @@ async function panggilRouter(teks: string): Promise<string> {
     throw new Error(`9router ${res.status}: ${(await res.text()).slice(0, 120)}`)
   }
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] }
-  return (json.choices?.[0]?.message?.content ?? "")
+  const isi = (json.choices?.[0]?.message?.content ?? "")
     .replace(/^```[a-z]*\n?|```$/g, "")
     .trim()
+
+  // Balasan kosong dari router biasanya sesaat; lempar supaya cobaUlang() mengulang.
+  if (!isi) throw new Error("9router mengembalikan teks kosong (timeout sesaat).")
+  return isi
 }
 
 /** Satu panggilan Gemini; model dicoba berurutan sampai ada yang menjawab. */
