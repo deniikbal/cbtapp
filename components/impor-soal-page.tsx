@@ -553,7 +553,7 @@ function PanelTeks({
                 {soal.length} soal terbaca · {siap} siap
               </Badge>
             </div>
-            <div className="max-h-64 overflow-y-auto overscroll-contain rounded-sm border border-border">
+            <div className="max-h-64 overflow-y-auto rounded-sm border border-border">
               <ul className="divide-y divide-border">
                 {soal.map((s) => {
                   const duplikat = tersimpan.some((t) => kunciTeks(t.pertanyaan) === kunciTeks(s.pertanyaan))
@@ -644,7 +644,7 @@ function DaftarSoal({
   const [buka, setBuka] = useState<number>(BUKA_AWAL)
 
   return (
-    <Card className="flex min-h-64 flex-col gap-0 rounded-sm py-0 lg:max-h-[calc(100dvh-13rem)]">
+    <Card className="flex flex-col gap-0 rounded-sm py-0">
       <CardHeader className="gap-1 border-b px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm">Soal di topik ini</CardTitle>
@@ -654,7 +654,7 @@ function DaftarSoal({
         </div>
         <CardDescription className="text-[11px]">Klik satu soal untuk lihat opsi &amp; kunci.</CardDescription>
       </CardHeader>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div>
         {soal.length === 0 ? (
           <p className="px-4 py-10 text-center text-xs text-muted-foreground">
             Belum ada soal. Tambah lewat editor atau tempel teks.
