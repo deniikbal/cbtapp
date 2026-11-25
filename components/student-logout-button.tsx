@@ -13,15 +13,16 @@ export function StudentLogoutButton() {
     <Button
       variant="outline"
       size="sm"
-      className="m3-btn m3-btn--garis shrink-0 gap-1.5"
+      aria-label="Keluar"
+      title="Keluar"
+      className="m3-btn m3-btn--keluar shrink-0"
       onClick={async () => {
         await logoutStudent()
         router.replace("/")
         router.refresh()
       }}
     >
-      <LogOut className="size-4" aria-hidden="true" />
-      <span>Keluar</span>
+      <LogOut className="size-5" aria-hidden="true" />
     </Button>
   )
 }
