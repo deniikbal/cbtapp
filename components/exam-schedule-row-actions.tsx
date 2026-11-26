@@ -149,9 +149,9 @@ export function ExamScheduleRowActions({
         }}
       >
         <DialogTrigger render={<Button variant="ghost" size="icon-sm" className="size-11 rounded-sm sm:size-6" />}><Edit className="size-4" aria-hidden="true" /><span className="sr-only">Edit jadwal</span></DialogTrigger>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-h-[86dvh] sm:max-w-2xl sm:gap-2 sm:overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Jadwal</DialogTitle><DialogDescription>Ubah satu jadwal ini untuk beberapa kelas sekaligus.</DialogDescription></DialogHeader>
-          <form action={handleUpdate} className="space-y-4">
+          <form action={handleUpdate} className="space-y-4 sm:space-y-2.5">
             <div className="space-y-2">
               <Label>Bank Soal</Label>
               <Select name="questionBankId" value={selectedBankId} onValueChange={(value: string | null) => setSelectedBankId(value ?? "")} required>
@@ -167,13 +167,13 @@ export function ExamScheduleRowActions({
                   {allSelected ? "Hapus pilihan" : "Pilih semua"}
                 </Button>
               </div>
-              <div className="max-h-56 overflow-y-auto rounded-lg border p-2">
-                <div className="grid gap-2 sm:grid-cols-2">
+              <div className="max-h-56 overflow-y-auto rounded-lg border p-2 sm:max-h-40">
+                <div className="grid gap-2 sm:grid-cols-3">
                   {classrooms.map((classroom) => {
                     const checked = selectedClassroomIds.includes(classroom.id)
 
                     return (
-                      <label key={classroom.id} className={cn("flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition-colors hover:bg-muted/60", checked && "border-primary bg-primary/10")}>
+                      <label key={classroom.id} className={cn("flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition-colors hover:bg-muted/60 sm:gap-2 sm:p-1.5", checked && "border-primary bg-primary/10")}>
                         <input type="checkbox" name="classroomIds" value={classroom.id} checked={checked} onChange={() => toggleClassroom(classroom.id)} className="size-4 accent-primary" />
                         <span className="min-w-0"><span className="block font-medium">{classroom.name}</span><span className="block text-xs text-muted-foreground">{classroom.majorCode}</span></span>
                       </label>
@@ -185,8 +185,8 @@ export function ExamScheduleRowActions({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Tanggal</Label><Input name="examDate" type="date" defaultValue={schedule.examDate} required /></div><div className="space-y-2"><Label>Jam Mulai</Label><Input name="startTime" type="time" defaultValue={schedule.startTime.slice(0, 5)} required /></div><div className="space-y-2"><Label>Durasi</Label><Input name="durationMinutes" type="number" min="1" defaultValue={schedule.durationMinutes} required /></div></div>
-            <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
-              <div className="flex items-center gap-3 rounded-lg border px-3 py-2 sm:col-span-2">
+            <div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Sesi</Label><Select name="session" defaultValue={String(schedule.session ?? 1)}><SelectTrigger className="w-full"><SelectValue>{`Sesi ${schedule.session ?? 1}`}</SelectValue></SelectTrigger><SelectContent><SelectItem value="1">Sesi 1</SelectItem><SelectItem value="2">Sesi 2</SelectItem><SelectItem value="3">Sesi 3</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Status</Label><Select name="active" defaultValue={String(schedule.active)}><SelectTrigger className="w-full"><SelectValue>{schedule.active ? "Aktif" : "Tidak aktif"}</SelectValue></SelectTrigger><SelectContent><SelectItem value="true">Aktif</SelectItem><SelectItem value="false">Tidak aktif</SelectItem></SelectContent></Select></div>
+              <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
                 <Checkbox id={`showScore-${schedule.id}`} name="showScore" value="true" defaultChecked={schedule.showScore !== false} className="after:-inset-x-3.5 after:-inset-y-3.5" />
                 <Label htmlFor={`showScore-${schedule.id}`} className="text-sm font-normal">Tampilkan nilai ke siswa</Label>
               </div>
