@@ -247,19 +247,18 @@ export async function GET(request: NextRequest) {
     )
 
     // ── Statistik ringkas skor & nilai
-    judulBagian(doc, "STATISTIK SKOR DAN NILAI")
+    judulBagian(doc, "STATISTIK NILAI")
     gambarTabel(
       doc,
       [
         { lebar: 110, judul: "Ukuran", rata: "left" },
-        { judul: "Jumlah" },
+        { judul: "Total" },
         { judul: "Terkecil" },
         { judul: "Terbesar" },
         { judul: "Rata-rata" },
         { judul: "Simpangan Baku" },
       ],
       [
-        ["SKOR", angka(statistik.skor.jumlah, 2), angka(statistik.skor.terkecil, 2), angka(statistik.skor.terbesar, 2), angka(statistik.skor.rataRata, 2), angka(statistik.skor.simpanganBaku, 2)],
         ["NILAI", angka(statistik.nilai.jumlah, 2), angka(statistik.nilai.terkecil, 2), angka(statistik.nilai.terbesar, 2), angka(statistik.nilai.rataRata, 2), angka(statistik.nilai.simpanganBaku, 2)],
       ],
     )

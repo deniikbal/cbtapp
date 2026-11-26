@@ -145,9 +145,9 @@ export function AnalisisButirDialog({
 
             {/* ── Statistik skor & nilai */}
             <section className="space-y-1">
-              <Judul>Statistik skor dan nilai</Judul>
+              <Judul>Statistik nilai</Judul>
               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                SKOR = jumlah soal benar (0–{data.statistik.skor.terbesar || 10}). NILAI = skor × 10 pada skala 0–100.
+                NILAI = skor × 10 pada skala 0–100 (skor = jumlah soal benar, maksimal {data.statistik.skor.terbesar || 10}).
                 Kolom Total = penjumlahan semua siswa (n = {data.siswa.length}), bukan banyaknya siswa.
               </p>
               <table className="w-full rounded-lg border text-[11px] [&>tbody>tr>td]:px-2 [&>tbody>tr>td]:py-1 [&>tbody>tr>th]:px-2 [&>tbody>tr>th]:py-1">
@@ -162,14 +162,6 @@ export function AnalisisButirDialog({
                   </tr>
                 </thead>
                 <tbody className="[&>td]:tabular-nums">
-                  <tr className="border-t">
-                    <td className="font-medium">SKOR</td>
-                    <td className="text-right tabular-nums">{n(data.statistik.skor.jumlah, 2)}</td>
-                    <td className="text-right tabular-nums">{n(data.statistik.skor.terkecil, 2)}</td>
-                    <td className="text-right tabular-nums">{n(data.statistik.skor.terbesar, 2)}</td>
-                    <td className="text-right tabular-nums">{n(data.statistik.skor.rataRata, 2)}</td>
-                    <td className="text-right tabular-nums">{n(data.statistik.skor.simpanganBaku, 2)}</td>
-                  </tr>
                   <tr className="border-t">
                     <td className="font-medium">NILAI</td>
                     <td className="text-right tabular-nums">{n(data.statistik.nilai.jumlah, 2)}</td>
