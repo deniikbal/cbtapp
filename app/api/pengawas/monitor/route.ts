@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { classrooms, examAnswers, examAttempts, examEvents, examRooms, examSchedules, questionBanks, students } from "@/lib/db/schema"
+import { classrooms, examAnswers, examAttempts, examEvents, examResults, examRooms, examSchedules, questionBanks, students } from "@/lib/db/schema"
 import { daftarSoalDariItems, normNis } from "@/lib/google-forms"
 import { aktorPengawas, jendelaJadwal, tanggalWib } from "@/lib/pengawas-auth"
 import { responsPerNis, type RingkasRespons } from "@/lib/respons-form-cache"
@@ -92,6 +92,26 @@ export async function GET(request: NextRequest) {
     jadwal.filter((j) => j.formId).map((j) => [j.id, responsPerNis(j.formId)])
   )
 
+  // Sumber utama status SELESAI: hasil yang sudah tersinkron dan tersambung ke siswa.
+  // Respons dengan NIS salah ketik hanya cocok lewat nama (matchVia "nama"/"manual"),
+  // jadi pencocokan lewat NIS mentah dari form akan melewatkannya.
+  const hasilSiswa =
+    jadwalIds.length === 0
+      ? []
+      : await db
+          .select({
+            scheduleId: examResults.scheduleId,
+            studentId: examResults.studentId,
+            terjawab: examResults.total,
+            skor: examResults.score,
+            submittedAt: examResults.submittedAt,
+          })
+          .from(examResults)
+          .where(inArray(examResults.scheduleId, jadwalIds))
+  const hasilPerSiswa = new Map(
+    hasilSiswa.filter((h) => h.studentId).map((h) => [`${h.scheduleId}|${h.studentId}`, h])
+  )
+
   const kejadian =
     jadwalIds.length === 0
       ? []
@@ -130,13 +150,15 @@ export async function GET(request: NextRequest) {
     const total = jadwalSiswa ? jumlahSoal.get(jadwalSiswa.id) ?? 0 : 0
     const sudah = a ? petaTerjawab.get(a.id) ?? 0 : 0
     const form = jadwalSiswa ? responsPerJadwal.get(jadwalSiswa.id)?.get(normNis(s.nis)) : undefined
-    const status = a?.submittedAt || form ? "SELESAI" : a ? "MENGERJAKAN" : "BELUM"
-    if (form?.waktu) {
+    const hasil = jadwalSiswa ? hasilPerSiswa.get(`${jadwalSiswa.id}|${s.id}`) : undefined
+    const status = a?.submittedAt || form || hasil ? "SELESAI" : a ? "MENGERJAKAN" : "BELUM"
+    const waktuSelesai = form?.waktu ?? hasil?.submittedAt?.toISOString() ?? ""
+    if (waktuSelesai) {
       formKejadian.push({
         id: 0,
         jenis: "SELESAI",
-        pesan: `${s.name} submit · ${form.terjawab}/${total || form.total} terjawab`,
-        waktu: form.waktu,
+        pesan: `${s.name} submit · ${Math.max(form?.terjawab ?? 0, hasil?.terjawab ?? 0)}/${total || form?.total || hasil?.terjawab || 0} terjawab`,
+        waktu: waktuSelesai,
         studentId: s.id,
       })
     }
@@ -146,7 +168,7 @@ export async function GET(request: NextRequest) {
       nis: s.nis,
       kelas: s.className,
       totalSoal: total,
-      terjawab: Math.max(sudah, form?.terjawab ?? 0),
+      terjawab: Math.max(sudah, form?.terjawab ?? 0, hasil?.terjawab ?? 0),
       status,
       mulai: a?.startedAt ?? null,
       terakhir: form?.waktu || a?.lastSeenAt || null,
