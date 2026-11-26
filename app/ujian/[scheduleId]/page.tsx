@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 
 import { UjianHeartbeat } from "@/components/ujian-heartbeat"
 import { db } from "@/lib/db"
-import { examSchedules, questionBanks, students } from "@/lib/db/schema"
+import { examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +42,7 @@ export default async function UjianPage({ params }: { params: Promise<{ schedule
       bankActive: questionBanks.active,
       title: questionBanks.title,
       session: examSchedules.session,
+      questionBankId: examSchedules.questionBankId,
     })
     .from(examSchedules)
     .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
@@ -51,11 +52,23 @@ export default async function UjianPage({ params }: { params: Promise<{ schedule
 
   const s = rows[0]
   let blocked: string | null = null
+  let sudah: { score: string; submittedAt: Date | null } | undefined
+  if (s) {
+    const [hasil] = await db
+      .select({ score: examResults.score, submittedAt: examResults.submittedAt })
+      .from(examResults)
+      .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
+      .where(and(eq(examResults.studentId, studentId), eq(examSchedules.questionBankId, s.questionBankId)))
+      .orderBy(examResults.submittedAt)
+      .limit(1)
+    sudah = hasil
+  }
   if (!s) blocked = "Jadwal ini bukan untuk sesi Anda. Hubungi guru bila keliru."
   else if (!s.scheduleActive || !s.bankActive) blocked = "Jadwal ujian tidak aktif."
   else if (statusNow(s.examDate, s.startTime, s.durationMinutes) === "UPCOMING") blocked = `Belum dimulai. Sesi ${s.session} dibuka pukul ${s.startTime.slice(0, 5)} WIB.`
   else if (statusNow(s.examDate, s.startTime, s.durationMinutes) === "FINISHED") blocked = "Waktu ujian sesi ini sudah berakhir."
   else if (!s.googleFormUrl) blocked = "Form ujian belum tersedia. Hubungi guru."
+  else if (sudah) blocked = `Anda sudah mengerjakan ujian ini dengan nilai ${Number(sudah.score).toFixed(0)}. Formulir tidak bisa dibuka lagi.`
 
   if (blocked) {
     return (
