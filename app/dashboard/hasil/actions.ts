@@ -2,6 +2,7 @@
 
 import { asc, eq, inArray } from "drizzle-orm"
 import { headers } from "next/headers"
+import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { classrooms, examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
@@ -67,6 +68,10 @@ export async function hubungkanRespons(resultId: string, studentId: string): Pro
       .update(examResults)
       .set({ studentId, matchVia: "manual", ...(target ? { scheduleId: target.id } : {}) })
       .where(eq(examResults.id, resultId))
+
+    // Tanpa ini baris "belum terhubung" tetap tampil setelah dihubungkan.
+    revalidatePath("/dashboard/hasil")
+    revalidatePath("/dashboard/pengerjaan")
 
     return { ok: true, message: "Respons berhasil dihubungkan ke siswa." }
   } catch (error) {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 
 import { hubungkanRespons } from "@/app/dashboard/hasil/actions"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +44,7 @@ export function ResponsTakTerhubungCard({
   const [kelasId, setKelasId] = useState("")
   const [siswaId, setSiswaId] = useState("")
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
 
   if (!rows.length) return null
 
@@ -64,6 +66,8 @@ export function ResponsTakTerhubungCard({
       if (hasil.ok) {
         toast.success(hasil.message)
         setTerpilih(null)
+        setSiswaId("")
+        router.refresh()
       } else {
         toast.error(hasil.message)
       }
