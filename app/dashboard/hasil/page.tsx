@@ -17,6 +17,7 @@ import { classrooms, examResults, examSchedules, questionBanks, students, subjec
 import { soalDariItems } from "@/lib/google-forms"
 import { cn } from "@/lib/utils"
 import { StatCard } from "@/components/stat-card"
+import { LabelHint } from "@/components/label-hint"
 
 export default async function HasilPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -142,8 +143,10 @@ export default async function HasilPage() {
         <DashboardNavbar title="Hasil Ujian" description="Rekap nilai dari Google Form" userName={session.user.name} userEmail={session.user.email} />
         <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 lg:px-8">
           <section className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Hasil Ujian</h1>
-            <p className="text-sm text-muted-foreground">Respons Google Form ditarik lewat Forms API, dicocokkan dengan NIS peserta, lalu dinilai dari kunci jawaban form.</p>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Hasil Ujian</h1>
+              <LabelHint text="Respons Google Form ditarik lewat Forms API, dicocokkan dengan NIS peserta, lalu dinilai dari kunci jawaban form." />
+            </div>
           </section>
 
           <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">

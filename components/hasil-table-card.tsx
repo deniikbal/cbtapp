@@ -6,6 +6,7 @@ import { ChartColumn, FileSearch, Loader2, RefreshCw, TriangleAlert } from "luci
 
 import { getAnalisisButir, getHasilDetail, syncHasil, type HasilDetail } from "@/app/dashboard/hasil/actions"
 import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
+import { KelasTooltip } from "@/components/kelas-tooltip"
 import type { AnalisisBank } from "@/lib/analisis-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -122,8 +123,8 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-col">
-                    <span className="text-sm">{row.kelas}</span>
+                  <div className="flex flex-col items-start gap-1">
+                    <KelasTooltip kelas={row.kelas.split(", ").filter(Boolean)} />
                     <span className="text-xs text-muted-foreground">{row.jumlahJadwal} jadwal</span>
                   </div>
                 </TableCell>
@@ -176,7 +177,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                   <p className="truncate font-medium">{row.code}</p>
                   <p className="text-xs text-muted-foreground">{row.title}</p>
                 </div>
-                <Badge variant="outline" className="shrink-0 font-normal">{row.kelas}</Badge>
+                <span className="shrink-0"><KelasTooltip kelas={row.kelas.split(", ").filter(Boolean)} /></span>
               </div>
 
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
