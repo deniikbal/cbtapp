@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
  * - Belum mulai: sisa waktu menuju jam mulai.
  * - Sedang berjalan: sisa waktu sampai durasi habis.
  * Jam dihitung dengan offset WIB (+07:00) supaya tidak bergantung zona waktu perangkat.
+ * Tampil sebagai chip solid (latar warna, teks kontras) di baris atas kartu.
  */
 export function HitungMundur({
   examDate,
@@ -28,9 +29,30 @@ export function HitungMundur({
     return () => clearInterval(timer)
   }, [examDate, startTime, durationMinutes])
 
-  // Angka baru muncul setelah komponen hidup di browser (server tidak tahu jam perangkat).
-  if (sisa === null) return <span className="m3-sub">menghitung…</span>
-  if (sisa <= 0) return <span className="m3-sub">waktu habis</span>
+  const dasar = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "5px 10px",
+    borderRadius: 999,
+    fontSize: 13,
+    lineHeight: "16px",
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+  } as const
+
+  if (sisa === null) {
+    return (
+      <span style={{ ...dasar, background: "var(--m3-surface-container-high)", color: "var(--m3-on-surface-variant)" }}>
+        menghitung…
+      </span>
+    )
+  }
+  if (sisa <= 0) {
+    return (
+      <span style={{ ...dasar, background: "var(--m3-error-container)", color: "var(--m3-on-error-container)" }}>waktu habis</span>
+    )
+  }
 
   const total = Math.floor(sisa / 1000)
   const jam = Math.floor(total / 3600)
@@ -43,8 +65,15 @@ export function HitungMundur({
   const mendesak = sisa < 5 * 60_000
 
   return (
-    <p className={mendesak ? "m3-sub" : "m3-sub"} style={mendesak ? { color: "var(--m3-error, #b3261e)", fontWeight: 600 } : undefined}>
-      {berjalan ? "Sisa waktu" : "Mulai dalam"} <span className="tabular-nums font-semibold">{teks}</span>
-    </p>
+    <span
+      style={
+        mendesak
+          ? { ...dasar, background: "var(--m3-error)", color: "oklch(0.99 0 0)" }
+          : { ...dasar, background: "var(--m3-primary)", color: "var(--m3-on-primary)" }
+      }
+    >
+      {berjalan ? "Sisa" : "Mulai dalam"}
+      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 800 }}>{teks}</span>
+    </span>
   )
 }

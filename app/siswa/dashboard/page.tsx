@@ -422,7 +422,16 @@ export default async function SiswaDashboardPage({
                         <h3 className="m3-seksi leading-snug">{schedule.title}</h3>
                         <p className="m3-sub">{schedule.subjectName} ({schedule.subjectCode})</p>
                       </div>
-                      <GraduationCap className="size-6 shrink-0 opacity-60" aria-hidden="true" />
+                      <div className="flex shrink-0 items-center gap-2">
+                        {!sudahSelesai && examStatus !== "FINISHED" && (
+                          <HitungMundur
+                            examDate={schedule.examDate}
+                            startTime={schedule.startTime}
+                            durationMinutes={schedule.durationMinutes}
+                          />
+                        )}
+                        <GraduationCap className="size-6 shrink-0 opacity-60" aria-hidden="true" />
+                      </div>
                     </div>
 
                     <div className="m3-info">
@@ -434,16 +443,6 @@ export default async function SiswaDashboardPage({
                         value={calculateEndTime(schedule.startTime, schedule.durationMinutes)}
                       />
                     </div>
-
-                    {!sudahSelesai && examStatus !== "FINISHED" && (
-                      <div className="m3-info" style={{ display: "block", marginBottom: 8 }}>
-                        <HitungMundur
-                          examDate={schedule.examDate}
-                          startTime={schedule.startTime}
-                          durationMinutes={schedule.durationMinutes}
-                        />
-                      </div>
-                    )}
 
                     {attemptStatus === "SUBMITTED" ? (
                       <div className="m3-btn m3-btn--mati">
