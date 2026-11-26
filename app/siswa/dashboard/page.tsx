@@ -79,6 +79,7 @@ export default async function SiswaDashboardPage({
       googleFormUrl: questionBanks.googleFormUrl,
       subjectName: subjects.name,
       subjectCode: subjects.code,
+      questionBankId: questionBanks.id,
     })
     .from(examSchedules)
     .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
@@ -113,6 +114,7 @@ export default async function SiswaDashboardPage({
       total: examResults.total,
       submittedAt: examResults.submittedAt,
       syncedAt: examResults.syncedAt,
+      questionBankId: questionBanks.id,
       title: questionBanks.title,
       code: questionBanks.code,
       subjectName: subjects.name,
@@ -160,6 +162,9 @@ export default async function SiswaDashboardPage({
     : []
   const completedBySchedule = new Map(completedAttempts.map((attempt) => [attempt.scheduleId, attempt]))
   const hasilBySchedule = new Map(hasilRows.map((hasil) => [hasil.scheduleId, hasil]))
+  // Hasil bisa menempel di jadwal sesi lain; bank soal yang sudah dinilai tetap
+  // menutup tombol supaya siswa tidak bisa membuka formulir yang sama dua kali.
+  const bankSudahDinilai = new Set(hasilRows.map((hasil) => hasil.questionBankId))
   const hasilTerlihat = hasilRows.filter((hasil) =>
     completedExamRows.some((schedule) => schedule.id === hasil.scheduleId && schedule.showScore)
   )
@@ -396,7 +401,8 @@ export default async function SiswaDashboardPage({
                   schedule.durationMinutes
                 )
                 const attempt = attemptBySchedule.get(schedule.id)
-                const sudahSelesai = Boolean(attempt?.submittedAt) || hasilBySchedule.has(schedule.id)
+                const sudahSelesai =
+                  Boolean(attempt?.submittedAt) || hasilBySchedule.has(schedule.id) || bankSudahDinilai.has(schedule.questionBankId)
                 const attemptStatus = sudahSelesai
                   ? "SUBMITTED"
                   : attempt?.startedAt

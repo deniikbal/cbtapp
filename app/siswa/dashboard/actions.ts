@@ -8,7 +8,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { db } from "@/lib/db"
-import { classrooms, examAttempts, examSchedules, questionBanks, students } from "@/lib/db/schema"
+import { classrooms, examAttempts, examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
 
 async function getStudentId() {
   const cookieStore = await cookies()
@@ -40,6 +40,7 @@ async function findScheduleForStudent(scheduleId: string, studentId: string) {
       bankActive: questionBanks.active,
       scheduleSession: examSchedules.session,
       studentSession: students.session,
+      questionBankId: examSchedules.questionBankId,
     })
     .from(examSchedules)
     .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
@@ -64,6 +65,16 @@ export async function startExam(scheduleId: string) {
   if (getExamStatus(schedule.examDate, schedule.startTime, schedule.durationMinutes) !== "ACTIVE") {
     throw new Error("Ujian hanya bisa dibuka sesuai tanggal dan jam yang diatur admin.")
   }
+
+  // Satu siswa satu hasil: begitu hasilnya ada, pintu ujian ditutup walau tombol
+  // di layar belum sempat berubah (sync Google Form berjalan di belakang).
+  const [sudah] = await db
+    .select({ id: examResults.id })
+    .from(examResults)
+    .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
+    .where(and(eq(examResults.studentId, studentId), eq(examSchedules.questionBankId, schedule.questionBankId)))
+    .limit(1)
+  if (sudah) throw new Error("Ujian ini sudah Anda kerjakan. Formulir tidak bisa dibuka lagi.")
 
   const attempt = await findAttempt(scheduleId, studentId)
   const now = new Date()
