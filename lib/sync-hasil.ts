@@ -14,6 +14,7 @@ export type HasilSyncInfo = {
   tidakCocok: number
   /** Respons yang sudah dihubungkan manual dan sengaja tidak disentuh sync. */
   dilindungi: number
+  dobel: number
   totalSoal: number
 }
 export type HasilSyncResult = { ok: true; info: HasilSyncInfo } | { ok: false; message: string }
@@ -78,37 +79,64 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
   // yang diketik siswa tetap tidak cocok, jadi tanpa perlindungan ini sambungannya
   // hilang lagi tiap sync (cron ±5 menit) dan barisnya muncul kembali.
   const responseIds = respons.map((r) => r.responseId).filter(Boolean)
-  const terjaga = new Set(
-    responseIds.length
-      ? (
-          await db
-            .select({ responseId: examResults.responseId })
-            .from(examResults)
-            .where(and(inArray(examResults.responseId, responseIds), eq(examResults.matchVia, "manual")))
-        ).map((row) => row.responseId)
-      : []
-  )
+  const terjagaBaris = responseIds.length
+    ? await db
+        .select({ responseId: examResults.responseId, studentId: examResults.studentId, submittedAt: examResults.submittedAt })
+        .from(examResults)
+        .where(and(inArray(examResults.responseId, responseIds), eq(examResults.matchVia, "manual")))
+    : []
+  const terjaga = new Set(terjagaBaris.map((row) => row.responseId))
+  const waktuTerjaga = new Map(terjagaBaris.map((row) => [row.responseId, row.submittedAt?.getTime() ?? 0]))
+  const siswaTerjaga = new Map(terjagaBaris.map((row) => [row.responseId, row.studentId]))
 
   let cocok = 0
   let viaNama = 0
   let tidakCocok = 0
   let dilindungi = 0
+  let dobel = 0
 
-  for (const r of respons) {
+  // Satu siswa hanya boleh punya satu hasil per bank soal. Google Form menerima
+  // kiriman tanpa batas, jadi kiriman pertama yang dipakai dan sisanya dibuang.
+  const petaById = new Map(peserta.map((s) => [s.id, s]))
+  const dinilai = respons
+    .map((r) => {
+      // Baris yang dihubungkan manual ikut dihitung supaya kiriman berikutnya dari
+      // siswa yang sama tetap dianggap dobel, walau NIS yang dia ketik tidak cocok.
+      if (terjaga.has(r.responseId)) {
+        const siswa = petaById.get(siswaTerjaga.get(r.responseId) ?? "") ?? null
+        return { r, nisKetik: "", namaKetik: "", siswa, matchVia: "manual", waktu: waktuTerjaga.get(r.responseId) ?? 0 }
+      }
+      const nisKetik = cariNis(soal, r)
+      const namaKetik = cariNama(soal, r)
+      let siswa = peta.get(normNis(nisKetik)) ?? null
+      let matchVia = siswa ? "nis" : "belum"
+      if (!siswa && namaKetik) {
+        const kandidat = petaNama.get(normNama(namaKetik)) ?? []
+        if (kandidat.length === 1) {
+          siswa = kandidat[0]
+          matchVia = "nama"
+        }
+      }
+      const waktu = r.createTime ? new Date(r.createTime).getTime() : 0
+      return { r, nisKetik, namaKetik, siswa, matchVia, waktu }
+    })
+    .sort((a, b) => a.waktu - b.waktu)
+
+  const sudahDipakai = new Set<string>()
+  const dipakai = dinilai.filter((baris) => {
+    if (!baris.siswa) return true
+    if (sudahDipakai.has(baris.siswa.id)) {
+      dobel++
+      return false
+    }
+    sudahDipakai.add(baris.siswa.id)
+    return true
+  })
+
+  for (const { r, nisKetik, namaKetik, siswa, matchVia } of dipakai) {
     if (terjaga.has(r.responseId)) {
       dilindungi++
       continue
-    }
-    const nisKetik = cariNis(soal, r)
-    const namaKetik = cariNama(soal, r)
-    let siswa = peta.get(normNis(nisKetik)) ?? null
-    let matchVia = siswa ? "nis" : "belum"
-    if (!siswa && namaKetik) {
-      const kandidat = petaNama.get(normNama(namaKetik)) ?? []
-      if (kandidat.length === 1) {
-        siswa = kandidat[0]
-        matchVia = "nama"
-      }
     }
     if (!siswa) tidakCocok++
     else if (matchVia === "nama") viaNama++
@@ -142,9 +170,15 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
       .onConflictDoUpdate({ target: examResults.responseId, set: nilai })
   }
 
+  // Baris lama milik kiriman yang dibuang ikut dibersihkan agar laporan tidak dobel.
+  const dibuang = dinilai.filter((baris) => !dipakai.includes(baris)).map((baris) => baris.r.responseId)
+  if (dibuang.length) {
+    await db.delete(examResults).where(inArray(examResults.responseId, dibuang))
+  }
+
   revalidatePath("/dashboard/hasil")
   return {
     ok: true,
-    info: { respons: respons.length, cocok, viaNama, tidakCocok, dilindungi, totalSoal: soal.filter((s) => s.kunci.length > 0).length },
+    info: { respons: respons.length, cocok, viaNama, tidakCocok, dilindungi, dobel, totalSoal: soal.filter((s) => s.kunci.length > 0).length },
   }
 }
