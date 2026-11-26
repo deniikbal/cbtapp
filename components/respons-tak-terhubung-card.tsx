@@ -1,16 +1,18 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { hubungkanRespons } from "@/app/dashboard/hasil/actions"
+import { skorMirip } from "@/lib/mirip-nama"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Link2 } from "lucide-react"
+import { Check, Loader2, Link2, Search } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 export type ResponsTakTerhubung = {
@@ -26,11 +28,6 @@ export type ResponsTakTerhubung = {
 export type KelasSiswa = { id: string; name: string }
 export type SiswaPilihan = { id: string; name: string; nis: string; classroomId: string }
 
-function urutNatural<T>(list: T[], ambil: (x: T) => string) {
-  const collator = new Intl.Collator("id", { numeric: true, sensitivity: "base" })
-  return [...list].sort((a, b) => collator.compare(ambil(a), ambil(b)))
-}
-
 export function ResponsTakTerhubungCard({
   rows,
   kelasList,
@@ -41,22 +38,40 @@ export function ResponsTakTerhubungCard({
   siswaList: SiswaPilihan[]
 }) {
   const [terpilih, setTerpilih] = useState<ResponsTakTerhubung | null>(null)
-  const [kelasId, setKelasId] = useState("")
   const [siswaId, setSiswaId] = useState("")
+  const [cari, setCari] = useState("")
   const [pending, startTransition] = useTransition()
   const router = useRouter()
 
   if (!rows.length) return null
 
-  const siswaKelas = urutNatural(
-    siswaList.filter((s) => s.classroomId === kelasId),
-    (s) => s.name
-  )
+  const namaKelas = new Map(kelasList.map((k) => [k.id, k.name]))
+  const siswaTerpilih = siswaList.find((s) => s.id === siswaId)
+
+  // Urutan awal dialog: siswa yang paling mirip dengan nama/NISN yang diketik di form.
+  const usulan = useMemo(() => {
+    if (!terpilih) return []
+    return siswaList
+      .map((s) => ({ siswa: s, skor: skorMirip({ nama: terpilih.nama, nis: terpilih.nis }, s) }))
+      .filter((x) => x.skor > 0)
+      .sort((a, b) => b.skor - a.skor || a.siswa.name.localeCompare(b.siswa.name))
+      .slice(0, 8)
+  }, [terpilih, siswaList])
+
+  // Ketik manual: cari seluruh siswa, abaikan urutan kemiripan.
+  const hasilCari = useMemo(() => {
+    const q = cari.trim().toUpperCase()
+    if (!q) return usulan
+    return siswaList
+      .filter((s) => s.name.toUpperCase().includes(q) || s.nis.includes(q))
+      .slice(0, 20)
+      .map((siswa) => ({ siswa, skor: 0 }))
+  }, [cari, siswaList, usulan])
 
   function buka(row: ResponsTakTerhubung) {
     setTerpilih(row)
-    setKelasId("")
     setSiswaId("")
+    setCari("")
   }
 
   function hubungkan() {
@@ -83,7 +98,7 @@ export function ResponsTakTerhubungCard({
               Respons tidak terhubung <Badge variant="destructive">{rows.length}</Badge>
             </CardTitle>
             <CardDescription>
-              Respons ini NIS-nya tidak cocok dengan peserta mana pun. Pilih siswa yang benar supaya nilainya masuk rekap.
+              Nama, NISN, atau kelas yang diketik di form bisa salah. Cari siswa yang benar lewat nama atau NISN — usulan paling mirip muncul lebih dulu.
             </CardDescription>
           </div>
         </div>
@@ -172,42 +187,51 @@ export function ResponsTakTerhubungCard({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Select
-              value={kelasId}
-              onValueChange={(v) => {
-                setKelasId(v ?? "")
-                setSiswaId("")
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih kelas">
-                  {kelasId ? kelasList.find((k) => k.id === kelasId)?.name : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {urutNatural(kelasList, (k) => k.name).map((k) => (
-                  <SelectItem key={k.id} value={k.id}>
-                    {k.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={siswaId} onValueChange={(v) => setSiswaId(v ?? "")} disabled={!kelasId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={kelasId ? "Pilih siswa" : "Pilih kelas dulu"}>
-                  {siswaId ? siswaKelas.find((s) => s.id === siswaId)?.name : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {siswaKelas.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} • {s.nis}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input
+                value={cari}
+                onChange={(e) => setCari(e.target.value)}
+                placeholder="Cari nama atau NISN siswa yang benar"
+                className="pl-8"
+                autoFocus
+              />
+            </div>
+
+            <div className="max-h-64 divide-y overflow-y-auto rounded-lg border">
+              {hasilCari.length === 0 ? (
+                <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                  Tidak ada siswa yang cocok. Coba kata lain dari namanya.
+                </p>
+              ) : (
+                hasilCari.map(({ siswa }) => (
+                  <button
+                    key={siswa.id}
+                    type="button"
+                    onClick={() => setSiswaId(siswa.id)}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/60",
+                      siswaId === siswa.id && "bg-muted"
+                    )}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{siswa.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {siswa.nis} • {namaKelas.get(siswa.classroomId) ?? "kelas tidak dikenal"}
+                      </span>
+                    </span>
+                    {siswaId === siswa.id && <Check className="size-4 shrink-0" aria-hidden="true" />}
+                  </button>
+                ))
+              )}
+            </div>
+
             <p className="text-xs text-muted-foreground">
-              Nilai respons ini akan dipindah ke jadwal kelas siswa yang dipilih.
+              {siswaTerpilih
+                ? `Dipilih: ${siswaTerpilih.name} (${namaKelas.get(siswaTerpilih.classroomId) ?? "-"}). Nilai dipindah ke jadwal bank soal ini untuk kelas tersebut.`
+                : cari.trim()
+                  ? "Hasil pencarian semua kelas."
+                  : "Urutan teratas = paling mirip dengan nama/NISN yang diketik di form. Nama, NISN, dan kelas di form boleh salah."}
             </p>
           </div>
           <DialogFooter>
