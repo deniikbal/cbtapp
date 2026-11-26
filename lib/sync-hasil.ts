@@ -83,7 +83,7 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
     ? await db
         .select({ responseId: examResults.responseId, studentId: examResults.studentId, submittedAt: examResults.submittedAt })
         .from(examResults)
-        .where(and(inArray(examResults.responseId, responseIds), eq(examResults.matchVia, "manual")))
+        .where(and(inArray(examResults.responseId, responseIds), inArray(examResults.matchVia, ["manual", "abaikan"])))
     : []
   const terjaga = new Set(terjagaBaris.map((row) => row.responseId))
   const waktuTerjaga = new Map(terjagaBaris.map((row) => [row.responseId, row.submittedAt?.getTime() ?? 0]))

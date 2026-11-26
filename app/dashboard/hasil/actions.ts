@@ -1,6 +1,6 @@
 "use server"
 
-import { asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, ne } from "drizzle-orm"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 
@@ -76,6 +76,27 @@ export async function hubungkanRespons(resultId: string, studentId: string): Pro
     return { ok: true, message: "Respons berhasil dihubungkan ke siswa." }
   } catch (error) {
     return { ok: false, message: pesanError(error, "Gagal menghubungkan respons.") }
+  }
+}
+
+/** Tandai respons sebagai diabaikan: hilang dari daftar dan tidak disentuh sync. */
+export async function abaikanRespons(resultId: string): Promise<{ ok: boolean; message: string }> {
+  const sesi = await wajibAdmin()
+  if (sesi) return sesi
+  if (!resultId) return { ok: false, message: "Respons tidak dipilih." }
+
+  try {
+    const diubah = await db
+      .update(examResults)
+      .set({ matchVia: "abaikan" })
+      .where(and(eq(examResults.id, resultId), isNull(examResults.studentId)))
+      .returning({ id: examResults.id })
+    if (!diubah.length) return { ok: false, message: "Respons tidak ditemukan atau sudah terhubung." }
+
+    revalidatePath("/dashboard/hasil")
+    return { ok: true, message: "Respons diabaikan dan tidak akan dihitung." }
+  } catch (error) {
+    return { ok: false, message: pesanError(error, "Gagal mengabaikan respons.") }
   }
 }
 

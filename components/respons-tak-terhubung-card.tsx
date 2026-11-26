@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
-import { hubungkanRespons } from "@/app/dashboard/hasil/actions"
+import { abaikanRespons, hubungkanRespons } from "@/app/dashboard/hasil/actions"
 import { skorMirip } from "@/lib/mirip-nama"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Check, Loader2, Link2, Search } from "lucide-react"
+import { Check, Loader2, Link2, Search, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -80,6 +80,18 @@ export function ResponsTakTerhubungCard({
     setCari("")
   }
 
+  function abaikan(row: ResponsTakTerhubung) {
+    startTransition(async () => {
+      const hasil = await abaikanRespons(row.id)
+      if (hasil.ok) {
+        toast.success(hasil.message)
+        router.refresh()
+      } else {
+        toast.error(hasil.message)
+      }
+    })
+  }
+
   function hubungkan() {
     if (!terpilih || !siswaId) return
     startTransition(async () => {
@@ -133,9 +145,21 @@ export function ResponsTakTerhubungCard({
                   <TableCell>{row.kelas}</TableCell>
                   <TableCell className="whitespace-nowrap">{row.submittedAt ?? "-"}</TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => buka(row)}>
-                      <Link2 className="size-3" aria-hidden="true" /> Hubungkan
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => buka(row)} disabled={pending}>
+                        <Link2 className="size-3" aria-hidden="true" /> Hubungkan
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-[11px] text-muted-foreground"
+                        onClick={() => abaikan(row)}
+                        disabled={pending}
+                        title="Abaikan respons ini (tidak dihitung)"
+                      >
+                        <X className="size-3" aria-hidden="true" /> Abaikan
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -173,8 +197,17 @@ export function ResponsTakTerhubungCard({
                     <dd className="text-muted-foreground">{row.submittedAt ?? "-"}</dd>
                   </div>
                 </dl>
-                <div className="mt-3 flex justify-end border-t pt-3">
-                  <Button size="sm" variant="outline" className="h-11 text-sm sm:h-8" onClick={() => buka(row)}>
+                <div className="mt-3 flex justify-end gap-2 border-t pt-3">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-11 text-sm text-muted-foreground sm:h-8"
+                    onClick={() => abaikan(row)}
+                    disabled={pending}
+                  >
+                    <X className="size-4" aria-hidden="true" /> Abaikan
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-11 text-sm sm:h-8" onClick={() => buka(row)} disabled={pending}>
                     <Link2 className="size-4" aria-hidden="true" /> Hubungkan
                   </Button>
                 </div>

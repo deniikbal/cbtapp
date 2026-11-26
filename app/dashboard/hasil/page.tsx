@@ -1,4 +1,4 @@
-import { asc, desc, eq, isNull } from "drizzle-orm"
+import { and, asc, desc, eq, isNull, ne } from "drizzle-orm"
 import { BarChart3, BookOpen, BookOpenCheck, Building2, CalendarDays, CheckCircle2, FileText, GraduationCap, Home, LayoutDashboard, Percent, Settings, UserCog, UserRound, Users } from "lucide-react"
 import Link from "next/link"
 import { headers } from "next/headers"
@@ -110,7 +110,7 @@ export default async function HasilPage() {
         .innerJoin(examSchedules, eq(examResults.scheduleId, examSchedules.id))
         .innerJoin(questionBanks, eq(examSchedules.questionBankId, questionBanks.id))
         .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
-        .where(isNull(examResults.studentId))
+        .where(and(isNull(examResults.studentId), ne(examResults.matchVia, "abaikan")))
         .orderBy(desc(examResults.submittedAt))
         .limit(100),
       db.select({ id: classrooms.id, name: classrooms.name }).from(classrooms),
