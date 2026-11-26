@@ -69,9 +69,13 @@ export function StudentLoginForm({ simulasi = false }: { simulasi?: boolean }) {
             </div>
           </div>
 
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+          {state.error && (
+            <p key={state.error} role="alert" className="goyang-galat text-sm text-destructive">
+              {state.error}
+            </p>
+          )}
 
-          <Button type="submit" className="h-11 w-full gap-2 sm:h-7" disabled={pending}>
+          <Button type="submit" className="pantul-tekan h-11 w-full gap-2 sm:h-7" disabled={pending}>
             {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <LogIn className="size-4" aria-hidden="true" />}
             {pending ? "Memproses..." : "Masuk"}
           </Button>
