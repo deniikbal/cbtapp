@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { ChartColumn, FileSearch, Loader2, RefreshCw, TriangleAlert } from "lucide-react"
+import { ChartColumn, FileSearch, Loader2, RefreshCw, Search, TriangleAlert } from "lucide-react"
 
 import { getAnalisisButir, getHasilDetail, syncHasil, type HasilDetail } from "@/app/dashboard/hasil/actions"
 import { AnalisisButirDialog } from "@/components/analisis-butir-dialog"
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export type HasilRow = {
@@ -40,7 +41,30 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
   const [butirJudul, setButirJudul] = useState("")
   const [butirBankId, setButirBankId] = useState("")
   const [butirOpen, setButirOpen] = useState(false)
+  const [cari, setCari] = useState("")
   const [, startTransition] = useTransition()
+
+  const statistik = useMemo(() => {
+    const siswa = detail?.siswa ?? []
+    if (!siswa.length) return null
+    const nilai = siswa.map((s) => s.skor)
+    const rata = nilai.reduce((a, b) => a + b, 0) / nilai.length
+    return {
+      jumlah: siswa.length,
+      rata,
+      tertinggi: Math.max(...nilai),
+      terendah: Math.min(...nilai),
+      semuaBenar: siswa.filter((s) => s.total > 0 && s.benar === s.total).length,
+      jumlahSoal: detail?.soal.length ?? 0,
+    }
+  }, [detail])
+
+  const siswaTampil = useMemo(() => {
+    const siswa = detail?.siswa ?? []
+    const q = cari.trim().toLowerCase()
+    if (!q) return siswa
+    return siswa.filter((s) => s.nama.toLowerCase().includes(q) || s.nis.toLowerCase().includes(q))
+  }, [detail, cari])
 
   function handleSync(row: HasilRow) {
     setPendingId(row.id)
@@ -228,7 +252,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
 
       <AnalisisButirDialog open={butirOpen} onOpenChange={setButirOpen} judul={butirJudul} data={butir} bankId={butirBankId} />
 
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+      <Dialog open={detailOpen} onOpenChange={(buka) => { setDetailOpen(buka); if (!buka) setCari("") }}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Rincian jawaban - {detail?.judul}</DialogTitle>
@@ -237,7 +261,40 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
           {detail && !detail.adaSoal && (
             <p className="text-sm text-muted-foreground">Form belum punya kunci jawaban. Aktifkan mode kuis di Google Form lalu sync ulang.</p>
           )}
-          {detail && detail.adaSoal && (
+          {detail && detail.adaSoal && statistik && (
+            <>
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 lg:grid-cols-6">
+                <Ringkas label="Siswa" nilai={statistik.jumlah} />
+                <Ringkas label="Soal" nilai={statistik.jumlahSoal} />
+                <Ringkas label="Rata-rata" nilai={statistik.rata.toFixed(2)} />
+                <Ringkas label="Tertinggi" nilai={statistik.tertinggi.toFixed(1)} />
+                <Ringkas label="Terendah" nilai={statistik.terendah.toFixed(1)} />
+                <Ringkas label="Semua benar" nilai={statistik.semuaBenar} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Input
+                    value={cari}
+                    onChange={(event) => setCari(event.target.value)}
+                    placeholder="Cari nama atau NIS siswa…"
+                    className="pl-8"
+                    aria-label="Cari siswa"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  Menampilkan {siswaTampil.length} dari {detail.siswa.length} siswa
+                </p>
+              </div>
+            </>
+          )}
+
+          {detail && detail.adaSoal && siswaTampil.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">Tidak ada siswa yang cocok dengan pencarian.</p>
+          )}
+
+          {detail && detail.adaSoal && siswaTampil.length > 0 && (
             <div className="max-h-[60vh] overflow-auto">
               <Table>
                 <TableHeader>
@@ -251,7 +308,7 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {detail.siswa.map((s) => (
+                  {siswaTampil.map((s) => (
                     <TableRow key={s.nis}>
                       <TableCell className="whitespace-nowrap font-medium">{s.nama}</TableCell>
                       <TableCell className="whitespace-nowrap text-xs tabular-nums">{s.nis}</TableCell>
@@ -275,5 +332,14 @@ export function HasilTableCard({ rows }: { rows: HasilRow[] }) {
         </DialogContent>
       </Dialog>
     </Card>
+  )
+}
+
+function Ringkas({ label, nilai }: { label: string; nilai: number | string }) {
+  return (
+    <div className="rounded-lg border bg-muted/40 px-2.5 py-1.5">
+      <p className="text-[10px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold tabular-nums">{typeof nilai === "number" ? nilai.toLocaleString("id-ID") : nilai}</p>
+    </div>
   )
 }
