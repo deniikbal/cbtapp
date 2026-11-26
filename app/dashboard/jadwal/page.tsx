@@ -79,11 +79,12 @@ export default async function JadwalPage() {
         .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
         .innerJoin(majors, eq(classrooms.majorId, majors.id))
         .orderBy(asc(examSchedules.examDate), asc(examSchedules.startTime)),
+      // Peserta dihitung per kelas + sesi: siswa sesi 2 tidak ikut dihitung pada jadwal sesi 1.
       db
-        .select({ classroomId: students.classroomId, jumlah: count() })
+        .select({ classroomId: students.classroomId, session: students.session, jumlah: count() })
         .from(students)
         .where(eq(students.active, true))
-        .groupBy(students.classroomId),
+        .groupBy(students.classroomId, students.session),
       db
         .select({
           scheduleId: examResults.scheduleId,
@@ -106,7 +107,9 @@ export default async function JadwalPage() {
         .orderBy(asc(classrooms.name)),
     ])
 
-    const pesertaPerKelas = new Map(pesertaAgg.map((p) => [p.classroomId, p.jumlah]))
+    const pesertaPerKelas = new Map(pesertaAgg.map((p) => [`${p.classroomId}|${p.session ?? 1}`, p.jumlah]))
+    const pesertaKelasSaja = new Map<string, number>()
+    for (const p of pesertaAgg) pesertaKelasSaja.set(p.classroomId, (pesertaKelasSaja.get(p.classroomId) ?? 0) + p.jumlah)
     const hasilPerJadwal = new Map(hasilAgg.map((h) => [h.scheduleId, h]))
     const bankSyncPerBank = new Map(scheduleRows.map((s) => [s.questionBankId, isoOrNull(s.bankSyncedAt)]))
 
@@ -127,7 +130,7 @@ export default async function JadwalPage() {
         className: row.className,
         majorCode: row.majorCode,
         subjectCode: row.subjectCode,
-        peserta: pesertaPerKelas.get(row.classroomId) ?? 0,
+        peserta: pesertaPerKelas.get(`${row.classroomId}|${row.session ?? 1}`) ?? pesertaKelasSaja.get(row.classroomId) ?? 0,
         respons: h?.jumlah ?? 0,
         syncedAt: h?.syncTerakhir ? isoOrNull(h.syncTerakhir) : (bankSyncPerBank.get(row.questionBankId) ?? null),
         status: statusJadwal(row.examDate, row.startTime, row.durationMinutes),

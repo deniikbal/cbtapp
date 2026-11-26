@@ -48,13 +48,17 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
   // Satu form dipakai semua kelas yang dijadwalkan untuk bank ini: peserta dicocokkan
   // lintas kelas, lalu hasilnya ditempel ke jadwal kelas siswa masing-masing.
   const jadwalBank = await db
-    .select({ id: examSchedules.id, classroomId: examSchedules.classroomId })
+    .select({ id: examSchedules.id, classroomId: examSchedules.classroomId, session: examSchedules.session })
     .from(examSchedules)
     .where(eq(examSchedules.questionBankId, jadwal[0].bankId))
-  const jadwalPerKelas = new Map(jadwalBank.map((j) => [j.classroomId, j.id]))
+  // Satu kelas bisa punya dua jadwal (sesi 1 & 2): kunci wajib memuat sesi, kalau tidak
+  // hasil semua siswa kelas itu menumpuk di jadwal sesi terakhir.
+  const jadwalPerKelas = new Map(jadwalBank.map((j) => [`${j.classroomId}|${j.session ?? 1}`, j.id]))
+  const jadwalKelasSaja = new Map<string, string>()
+  for (const j of jadwalBank) if (!jadwalKelasSaja.has(j.classroomId)) jadwalKelasSaja.set(j.classroomId, j.id)
 
   const peserta = await db
-    .select({ id: students.id, nis: students.nis, name: students.name, classroomId: students.classroomId })
+    .select({ id: students.id, nis: students.nis, name: students.name, classroomId: students.classroomId, session: students.session })
     .from(students)
     .where(inArray(students.classroomId, jadwalBank.map((j) => j.classroomId)))
   const peta = new Map(peserta.map((s) => [normNis(s.nis), s]))
@@ -112,7 +116,9 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
 
     const n = hitungNilai(soal, r)
     const nilai = {
-      scheduleId: siswa ? (jadwalPerKelas.get(siswa.classroomId) ?? scheduleId) : scheduleId,
+      scheduleId: siswa
+        ? (jadwalPerKelas.get(`${siswa.classroomId}|${siswa.session ?? 1}`) ?? jadwalKelasSaja.get(siswa.classroomId) ?? scheduleId)
+        : scheduleId,
       studentId: siswa?.id ?? null,
       nis: siswa ? siswa.nis : nisKetik,
       nama: siswa ? siswa.name : namaKetik,
