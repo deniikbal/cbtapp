@@ -128,7 +128,8 @@ export async function updateExamScheduleGroup(formData: FormData) {
         .where(eq(examSchedules.id, row.id))
       updated += 1
     } catch (error) {
-      throw new Error(getDatabaseErrorMessage(error))
+      // Dilempar dari server action, pesan aslinya disamarkan Next di produksi.
+      return { updated, created, deleted, skipped, error: getDatabaseErrorMessage(error) }
     }
   }
 

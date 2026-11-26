@@ -91,6 +91,11 @@ export function ExamScheduleRowActions({
     startTransition(async () => {
       try {
         const result = await updateExamScheduleGroup(formData)
+        if ("error" in result && result.error) {
+          setError(result.error)
+          toast.error(result.error)
+          return
+        }
         toast.success(
           result.created > 0 || result.deleted > 0 || result.skipped > 0
             ? `Jadwal diperbarui. ${result.created} ditambahkan, ${result.deleted} dihapus, ${result.skipped} duplikat dilewati.`
