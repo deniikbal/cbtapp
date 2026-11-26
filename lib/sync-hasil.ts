@@ -1,13 +1,21 @@
 import { randomUUID } from "node:crypto"
 
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/lib/db"
 import { examResults, examSchedules, questionBanks, students } from "@/lib/db/schema"
 import { ambilForm, ambilRespons, cariNama, cariNis, hitungNilai, normNis, soalDariItems } from "@/lib/google-forms"
 
-export type HasilSyncInfo = { respons: number; cocok: number; viaNama: number; tidakCocok: number; totalSoal: number }
+export type HasilSyncInfo = {
+  respons: number
+  cocok: number
+  viaNama: number
+  tidakCocok: number
+  /** Respons yang sudah dihubungkan manual dan sengaja tidak disentuh sync. */
+  dilindungi: number
+  totalSoal: number
+}
 export type HasilSyncResult = { ok: true; info: HasilSyncInfo } | { ok: false; message: string }
 
 function normNama(nama: string) {
@@ -62,11 +70,31 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
     petaNama.set(kunci, list)
   }
 
+  // Respons yang sudah dihubungkan manual jangan ditimpa sync berikutnya: NIS/nama
+  // yang diketik siswa tetap tidak cocok, jadi tanpa perlindungan ini sambungannya
+  // hilang lagi tiap sync (cron ±5 menit) dan barisnya muncul kembali.
+  const responseIds = respons.map((r) => r.responseId).filter(Boolean)
+  const terjaga = new Set(
+    responseIds.length
+      ? (
+          await db
+            .select({ responseId: examResults.responseId })
+            .from(examResults)
+            .where(and(inArray(examResults.responseId, responseIds), eq(examResults.matchVia, "manual")))
+        ).map((row) => row.responseId)
+      : []
+  )
+
   let cocok = 0
   let viaNama = 0
   let tidakCocok = 0
+  let dilindungi = 0
 
   for (const r of respons) {
+    if (terjaga.has(r.responseId)) {
+      dilindungi++
+      continue
+    }
     const nisKetik = cariNis(soal, r)
     const namaKetik = cariNama(soal, r)
     let siswa = peta.get(normNis(nisKetik)) ?? null
@@ -109,5 +137,8 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
   }
 
   revalidatePath("/dashboard/hasil")
-  return { ok: true, info: { respons: respons.length, cocok, viaNama, tidakCocok, totalSoal: soal.filter((s) => s.kunci.length > 0).length } }
+  return {
+    ok: true,
+    info: { respons: respons.length, cocok, viaNama, tidakCocok, dilindungi, totalSoal: soal.filter((s) => s.kunci.length > 0).length },
+  }
 }
