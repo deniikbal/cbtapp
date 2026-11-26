@@ -27,21 +27,21 @@ export function StudentLoginForm({ simulasi = false }: { simulasi?: boolean }) {
         <CardDescription className="text-[14px] sm:text-xs">Masuk menggunakan Username dan password dari Panitia.</CardDescription>
         {simulasi ? (
           <CardDescription className="rounded-sm border border-amber-300/70 bg-amber-50 px-2 py-1 text-[13px] text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 sm:text-xs">
-            Mode simulasi: password = Username (NIS).
+            Mode simulasi: password = Username (NISN).
           </CardDescription>
         ) : null}
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nis" className="text-[14px] sm:text-xs">Username</Label>
+            <Label htmlFor="nis" className="text-[14px] sm:text-xs">Username (NISN)</Label>
             <Input
               id="nis"
               name="nis"
-              placeholder="Masukkan Username"
+              placeholder="Masukkan NISN"
               className="h-11 text-[14px] placeholder:text-muted-foreground sm:h-7 sm:text-xs/relaxed"
               required
-              onInvalid={(event) => event.currentTarget.setCustomValidity("Username wajib diisi.")}
+              onInvalid={(event) => event.currentTarget.setCustomValidity("NISN wajib diisi.")}
               onInput={(event) => event.currentTarget.setCustomValidity("")}
             />
           </div>
