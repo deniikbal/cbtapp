@@ -15,7 +15,7 @@ import { db } from "@/lib/db"
 import { majors, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { cn } from "@/lib/utils"
 
-type BankRow = { id: string; code: string; title: string; teacherName: string; teacherId: string | null; teacherIds: string[]; grade: string; majorId: string | null; proctorIds: string[]; googleFormUrl: string; formId: string; syncedAt: Date | null; active: boolean; subjectId: string; subjectName: string; subjectCode: string; formItems: unknown | null }
+type BankRow = { id: string; code: string; title: string; teacherName: string; teacherId: string | null; teacherIds: string[]; grade: string; majorId: string | null; proctorIds: string[]; googleFormUrl: string; formId: string; syncedAt: Date | null; active: boolean; published: boolean | null; subjectId: string; subjectName: string; subjectCode: string; formItems: unknown | null }
 type SubjectOption = { id: string; name: string; code: string }
 type TeacherOption = { id: string; name: string }
 
@@ -31,7 +31,7 @@ export default async function BankSoalPage() {
 
   try {
     rows = await db
-      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds, grade: questionBanks.grade, majorId: questionBanks.majorId, proctorIds: questionBanks.proctorIds, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, syncedAt: questionBanks.syncedAt, formItems: questionBanks.formItems, active: questionBanks.active, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
+      .select({ id: questionBanks.id, code: questionBanks.code, title: questionBanks.title, teacherName: questionBanks.teacherName, teacherId: questionBanks.teacherId, teacherIds: questionBanks.teacherIds, grade: questionBanks.grade, majorId: questionBanks.majorId, proctorIds: questionBanks.proctorIds, googleFormUrl: questionBanks.googleFormUrl, formId: questionBanks.formId, syncedAt: questionBanks.syncedAt, formItems: questionBanks.formItems, active: questionBanks.active, published: questionBanks.published, subjectId: subjects.id, subjectName: subjects.name, subjectCode: subjects.code })
       .from(questionBanks)
       .innerJoin(subjects, eq(questionBanks.subjectId, subjects.id))
       .orderBy(asc(questionBanks.code))

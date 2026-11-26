@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/lib/db"
 import { getDatabaseErrorMessage } from "@/lib/db-error"
 import { getExamBrowserSettings } from "@/lib/exam-browser"
-import { acakOpsiForm, ambilForm, daftarEmailEditor, setFormAnyoneEditor, shareFormEditor } from "@/lib/google-forms"
+import { acakOpsiForm, ambilForm, daftarEmailEditor, setFormAnyoneEditor, setPublishForm, shareFormEditor } from "@/lib/google-forms"
 import { classrooms, examSchedules, questionBanks, subjects, teachers } from "@/lib/db/schema"
 import { buatFormKosong, formIdDari } from "@/lib/google-forms"
 
@@ -289,15 +289,32 @@ export async function sinkronFormItems(bankId: string): Promise<{ ok: boolean; m
   if (!bank.formId) return { ok: false, message: "Bank soal belum punya form." }
 
   try {
-    const { items } = await ambilForm(bank.formId)
+    const { items, published } = await ambilForm(bank.formId)
     const jumlah = jumlahSoalBerpoin(items)
-    await db.update(questionBanks).set({ formItems: items, syncedAt: new Date(), updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    await db.update(questionBanks).set({ formItems: items, syncedAt: new Date(), updatedAt: new Date(), ...(published === null ? {} : { published }) }).where(eq(questionBanks.id, bankId))
     revalidatePath("/dashboard/bank-soal")
     revalidatePath("/guru/dashboard")
     return { ok: true, message: `Sinkron selesai: ${jumlah} soal di form.`, jumlah }
   } catch (error) {
     console.error("Gagal sinkron form:", error)
     return { ok: false, message: error instanceof Error ? error.message : "Gagal sinkron form." }
+  }
+}
+
+/** Terbitkan form bank soal supaya bisa dibuka siswa (publishSettings di Google Form). */
+export async function terbitkanBank(bankId: string): Promise<{ ok: boolean; message: string }> {
+  const [bank] = await db.select({ formId: questionBanks.formId }).from(questionBanks).where(eq(questionBanks.id, bankId)).limit(1)
+  if (!bank) return { ok: false, message: "Bank soal tidak ditemukan." }
+  if (!bank.formId) return { ok: false, message: "Bank soal belum punya form." }
+
+  try {
+    const published = await setPublishForm(bank.formId, true)
+    await db.update(questionBanks).set({ published, updatedAt: new Date() }).where(eq(questionBanks.id, bankId))
+    revalidatePath("/dashboard/bank-soal")
+    revalidatePath("/guru/dashboard")
+    return { ok: true, message: published ? "Form sudah terbit." : "Google menolak menerbitkan form." }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Gagal menerbitkan form." }
   }
 }
 
@@ -313,8 +330,8 @@ export async function sinkronSemuaFormItems(): Promise<{ ok: boolean; message: s
     const hasil = await Promise.all(
       rows.slice(i, i + 6).map(async (row) => {
         try {
-          const { items } = await ambilForm(row.formId)
-          await db.update(questionBanks).set({ formItems: items, syncedAt: sekarang, updatedAt: sekarang }).where(eq(questionBanks.id, row.id))
+          const { items, published } = await ambilForm(row.formId)
+          await db.update(questionBanks).set({ formItems: items, syncedAt: sekarang, updatedAt: sekarang, ...(published === null ? {} : { published }) }).where(eq(questionBanks.id, row.id))
           return jumlahSoalBerpoin(items)
         } catch (error) {
           console.error(`Gagal sinkron ${row.formId}:`, error)

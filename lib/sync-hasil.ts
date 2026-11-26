@@ -40,7 +40,7 @@ export async function jalankanSync(scheduleId: string): Promise<HasilSyncResult>
 
   await db
     .update(questionBanks)
-    .set({ formItems: form.items, syncedAt: new Date(), updatedAt: new Date() })
+    .set({ formItems: form.items, syncedAt: new Date(), updatedAt: new Date(), ...(form.published === null ? {} : { published: form.published }) })
     .where(eq(questionBanks.id, jadwal[0].bankId))
 
   const respons = await ambilRespons(jadwal[0].formId)

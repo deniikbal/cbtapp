@@ -129,6 +129,8 @@ export const questionBanks = pgTable(
     // Kapan terakhir sync dari Google Form (null = belum pernah).
     syncedAt: timestamp("syncedAt", { withTimezone: true }),
     active: boolean("active").notNull().default(true),
+    // Status terbit di Google Form (publishSettings.publishState.isPublished). null = belum pernah dicek.
+    published: boolean("published"),
     subjectId: text("subjectId")
       .notNull()
       .references(() => subjects.id, { onDelete: "restrict" }),

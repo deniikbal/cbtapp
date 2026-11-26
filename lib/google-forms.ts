@@ -366,9 +366,24 @@ export async function acakOpsiForm(
   return { pilihanGanda, dilewati, diubah: requests.length }
 }
 
-export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[] }> {
+export async function ambilForm(formId: string): Promise<{ title: string; items: unknown[]; published: boolean | null }> {
   const data = await gget(`https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}`)
-  return { title: data.info?.title ?? data.title ?? "", items: data.items ?? [] }
+  return {
+    title: data.info?.title ?? data.title ?? "",
+    items: data.items ?? [],
+    // Hanya terisi bila akun pemilik token punya izin forms.body.
+    published: data.publishSettings?.publishState?.isPublished ?? null,
+  }
+}
+
+/** Terbitkan atau tarik form dari publik (butuh scope forms.body). */
+export async function setPublishForm(formId: string, isPublished: boolean): Promise<boolean> {
+  const data = await gpost(
+    `https://forms.googleapis.com/v1/forms/${encodeURIComponent(formId)}:setPublishSettings`,
+    // API menolak pembaruan sebagian: isPublished dan isAcceptingResponses harus dikirim bersama.
+    { publishSettings: { publishState: { isPublished, isAcceptingResponses: isPublished } }, updateMask: "publishState" },
+  )
+  return Boolean(data.publishSettings?.publishState?.isPublished ?? isPublished)
 }
 
 export async function ambilRespons(formId: string): Promise<Respons[]> {
