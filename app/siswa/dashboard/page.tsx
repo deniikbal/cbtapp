@@ -17,6 +17,7 @@ import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { startExam, submitExam } from "@/app/siswa/dashboard/actions"
+import { HitungMundur } from "@/components/hitung-mundur"
 import { StudentDashboardNav } from "@/components/student-dashboard-nav"
 import { StudentLogoutButton } from "@/components/student-logout-button"
 import { db } from "@/lib/db"
@@ -433,6 +434,16 @@ export default async function SiswaDashboardPage({
                         value={calculateEndTime(schedule.startTime, schedule.durationMinutes)}
                       />
                     </div>
+
+                    {!sudahSelesai && examStatus !== "FINISHED" && (
+                      <div className="m3-info" style={{ display: "block", marginBottom: 8 }}>
+                        <HitungMundur
+                          examDate={schedule.examDate}
+                          startTime={schedule.startTime}
+                          durationMinutes={schedule.durationMinutes}
+                        />
+                      </div>
+                    )}
 
                     {attemptStatus === "SUBMITTED" ? (
                       <div className="m3-btn m3-btn--mati">
