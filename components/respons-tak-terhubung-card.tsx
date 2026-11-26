@@ -58,14 +58,20 @@ export function ResponsTakTerhubungCard({
       .slice(0, 8)
   }, [terpilih, siswaList])
 
-  // Ketik manual: cari seluruh siswa, abaikan urutan kemiripan.
-  const hasilCari = useMemo(() => {
+  // Ketik manual: cari seluruh siswa, abaikan urutan kemiripan. Kalau tidak ada
+  // nama yang persis mengandung ketikan (nama di form sering salah ketik),
+  // tampilkan yang paling mirip supaya siswa tetap ketemu.
+  const [hasilCari, cariPersis] = useMemo(() => {
     const q = cari.trim().toUpperCase()
-    if (!q) return usulan
-    return siswaList
-      .filter((s) => s.name.toUpperCase().includes(q) || s.nis.includes(q))
+    if (!q) return [usulan, true] as const
+    const persis = siswaList.filter((s) => s.name.toUpperCase().includes(q) || s.nis.includes(q))
+    if (persis.length) return [persis.slice(0, 20).map((siswa) => ({ siswa, skor: 0 })), true] as const
+    const mirip = siswaList
+      .map((siswa) => ({ siswa, skor: skorMirip({ nama: cari.trim(), nis: cari.trim() }, siswa) }))
+      .filter((x) => x.skor >= 0.3)
+      .sort((a, b) => b.skor - a.skor)
       .slice(0, 20)
-      .map((siswa) => ({ siswa, skor: 0 }))
+    return [mirip, false] as const
   }, [cari, siswaList, usulan])
 
   function buka(row: ResponsTakTerhubung) {
@@ -230,7 +236,9 @@ export function ResponsTakTerhubungCard({
               {siswaTerpilih
                 ? `Dipilih: ${siswaTerpilih.name} (${namaKelas.get(siswaTerpilih.classroomId) ?? "-"}). Nilai dipindah ke jadwal bank soal ini untuk kelas tersebut.`
                 : cari.trim()
-                  ? "Hasil pencarian semua kelas."
+                  ? cariPersis
+                    ? "Hasil pencarian semua kelas."
+                    : "Tidak ada nama yang persis sama. Yang tampil adalah siswa paling mirip — periksa NISN dan kelasnya sebelum menghubungkan."
                   : "Urutan teratas = paling mirip dengan nama/NISN yang diketik di form. Nama, NISN, dan kelas di form boleh salah."}
             </p>
           </div>
