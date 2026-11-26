@@ -47,6 +47,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
   const [lastSync, setLastSync] = useState<Date | null>(null)
   const [search, setSearch] = useState("")
   const [todayOnly, setTodayOnly] = useState(false)
+  const [kelas, setKelas] = useState("semua")
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10)
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -72,10 +73,16 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
     }
   }, [refresh])
 
+  const daftarKelas = useMemo(
+    () => [...new Set(rows.map((row) => row.className))].sort(naturalClassroomCollator.compare),
+    [rows]
+  )
+
   const filteredRows = useMemo(() => {
     const keyword = search.toLowerCase().trim()
 
     const result = rows.filter((row) => {
+      if (kelas !== "semua" && row.className !== kelas) return false
       if (todayOnly && row.examDate !== getTodayDateValue()) return false
       if (!keyword) return true
 
@@ -96,7 +103,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
 
       return naturalClassroomCollator.compare(a.title, b.title)
     })
-  }, [rows, search, todayOnly])
+  }, [rows, search, todayOnly, kelas])
 
   const total = filteredRows.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -105,7 +112,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
   const to = Math.min(activePage * pageSize, total)
   const pageRange = buildPageRange(activePage, totalPages)
   const paginatedRows = filteredRows.slice((activePage - 1) * pageSize, activePage * pageSize)
-  const hasActiveFilter = search.trim() !== "" || todayOnly
+  const hasActiveFilter = search.trim() !== "" || todayOnly || kelas !== "semua"
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -123,9 +130,15 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
     setCurrentPage(1)
   }
 
+  function handleKelasChange(value: string | null) {
+    setKelas(value ?? "semua")
+    setCurrentPage(1)
+  }
+
   function resetFilters() {
     setSearch("")
     setTodayOnly(false)
+    setKelas("semua")
     setCurrentPage(1)
   }
 
@@ -165,12 +178,26 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-12">
-          <div className="relative md:col-span-6">
+          <div className="relative md:col-span-4">
             <Label htmlFor="search-progress" className="sr-only">Cari pengerjaan</Label>
             <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="search-progress" value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Cari bank soal, kode, atau kelas..." className="pl-8" />
           </div>
           <div className="md:col-span-3">
+            <Label htmlFor="filter-kelas" className="sr-only">Filter kelas</Label>
+            <Select value={kelas} onValueChange={handleKelasChange}>
+              <SelectTrigger id="filter-kelas" className="h-9 w-full">
+                <span className="truncate">{kelas === "semua" ? "Semua kelas" : kelas}</span>
+              </SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="semua">Semua kelas</SelectItem>
+                {daftarKelas.map((nama) => (
+                  <SelectItem key={nama} value={nama}>{nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="md:col-span-2">
             <Button variant={todayOnly ? "default" : "outline"} className="w-full gap-2" onClick={handleTodayFilterClick}>
               <CalendarDays className="size-4" aria-hidden="true" />
               Hari ini
