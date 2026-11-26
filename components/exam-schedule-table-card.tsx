@@ -202,7 +202,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
           </div>
           <div className="md:col-span-2">
             <Select value={classroomFilter} onValueChange={handleClassroomFilterChange}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Semua kelas" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Semua kelas">{classroomFilter !== "ALL" ? sortedClassrooms.find((c) => c.id === classroomFilter)?.name : undefined}</SelectValue></SelectTrigger>
               <SelectContent align="start">
                 <SelectItem value="ALL">Semua kelas</SelectItem>
                 {sortedClassrooms.map((classroom) => <SelectItem key={classroom.id} value={classroom.id}>{classroom.name}</SelectItem>)}
@@ -211,7 +211,7 @@ export function ExamScheduleTableCard({ rows, banks, classrooms, teachers = [] }
           </div>
           <div className="md:col-span-2">
             <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Status">{statusFilter === "ACTIVE" ? "Aktif" : statusFilter === "INACTIVE" ? "Tidak aktif" : "Semua"}</SelectValue></SelectTrigger>
               <SelectContent align="start"><SelectItem value="ALL">Semua</SelectItem><SelectItem value="ACTIVE">Aktif</SelectItem><SelectItem value="INACTIVE">Tidak aktif</SelectItem></SelectContent>
             </Select>
           </div>

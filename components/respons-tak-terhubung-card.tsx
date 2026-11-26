@@ -180,7 +180,9 @@ export function ResponsTakTerhubungCard({
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih kelas" />
+                <SelectValue placeholder="Pilih kelas">
+                  {kelasId ? kelasList.find((k) => k.id === kelasId)?.name : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {urutNatural(kelasList, (k) => k.name).map((k) => (
@@ -192,7 +194,9 @@ export function ResponsTakTerhubungCard({
             </Select>
             <Select value={siswaId} onValueChange={(v) => setSiswaId(v ?? "")} disabled={!kelasId}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={kelasId ? "Pilih siswa" : "Pilih kelas dulu"} />
+                <SelectValue placeholder={kelasId ? "Pilih siswa" : "Pilih kelas dulu"}>
+                  {siswaId ? siswaKelas.find((s) => s.id === siswaId)?.name : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {siswaKelas.map((s) => (
