@@ -4,6 +4,7 @@ import Link from "next/link"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
+import { BelumMengerjakanCard } from "@/components/belum-mengerjakan-card"
 import { HasilTableCard, type HasilRow } from "@/components/hasil-table-card"
 import { ResponsTakTerhubungCard, type ResponsTakTerhubung, type SiswaPilihan } from "@/components/respons-tak-terhubung-card"
 import { UserNav } from "@/components/user-nav"
@@ -159,6 +160,8 @@ export default async function HasilPage() {
           {databaseError && <Alert variant="destructive"><AlertTitle>Database belum siap</AlertTitle><AlertDescription>{databaseError}</AlertDescription></Alert>}
 
           <ResponsTakTerhubungCard rows={takTerhubung} kelasList={kelasList} siswaList={siswaList} />
+
+          <BelumMengerjakanCard banks={rows.map((row) => ({ bankId: row.bankId, code: row.code, title: row.title }))} defaultBankId={rows[0]?.bankId ?? ""} />
 
           <HasilTableCard rows={rows} />
         </main>
