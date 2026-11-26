@@ -546,19 +546,41 @@
 
 
 /* ── Pantulan tekan (versi ringan ide sakuga-vfx: squash lalu overshoot) ──
-   Sengaja tanpa canvas/JS: cukup transisi transform, hemat ±46 KB per halaman. */
+   Sengaja tanpa canvas/JS: cukup transisi transform, hemat ±46 KB per halaman.
+   Amplitudo dibuat tegas karena tombol di layar kecil hanya 44 px — 0,96 tidak terlihat. */
 .pantul-tekan {
+  position: relative;
+  overflow: hidden;
   transition:
-    transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    filter 150ms ease-out;
+    transform 180ms cubic-bezier(0.34, 1.7, 0.5, 1),
+    filter 180ms ease-out;
   will-change: transform;
 }
 .pantul-tekan:active:not(:disabled) {
-  transform: scale(0.96, 0.93);
-  filter: brightness(0.96);
+  transform: scale(0.93, 0.86);
+  filter: brightness(0.9);
 }
 .pantul-tekan:disabled {
   transition: none;
+}
+/* Kilau singkat di dalam tombol saat ditekan: pengganti "impact frame". */
+.pantul-tekan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, oklch(1 0 0 / 0.35), transparent 70%);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+.pantul-tekan:active:not(:disabled)::after { opacity: 1; }
+
+/* Kartu masuk muncul naik sedikit supaya perubahan terasa sejak halaman dibuka. */
+.muncul-masuk { animation: muncul-masuk 240ms cubic-bezier(0.22, 1, 0.36, 1) 1 both; }
+@keyframes muncul-masuk {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Getaran halus saat login ditolak — pengganti burst anime, cukup 2 ayunan 3px. */

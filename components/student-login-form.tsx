@@ -17,7 +17,7 @@ export function StudentLoginForm({ simulasi = false }: { simulasi?: boolean }) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="muncul-masuk w-full max-w-md">
       <CardHeader className="text-center">
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <BookOpenCheck className="size-6" aria-hidden="true" />
