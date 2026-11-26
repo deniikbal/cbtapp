@@ -146,11 +146,15 @@ export function AnalisisButirDialog({
             {/* ── Statistik skor & nilai */}
             <section className="space-y-1">
               <Judul>Statistik skor dan nilai</Judul>
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                SKOR = jumlah soal benar (0–{data.statistik.skor.terbesar || 10}). NILAI = skor × 10 pada skala 0–100.
+                Kolom Total = penjumlahan semua siswa (n = {data.siswa.length}), bukan banyaknya siswa.
+              </p>
               <table className="w-full rounded-lg border text-[11px] [&>tbody>tr>td]:px-2 [&>tbody>tr>td]:py-1 [&>tbody>tr>th]:px-2 [&>tbody>tr>th]:py-1">
                 <thead className="bg-muted/60">
                   <tr className="[&>th]:text-right [&>th]:font-medium">
                     <th className="text-left">Ukuran</th>
-                    <th>Jumlah</th>
+                    <th>Total</th>
                     <th>Terkecil</th>
                     <th>Terbesar</th>
                     <th>Rata-rata</th>
