@@ -23,6 +23,7 @@ type ScheduleRow = {
   startTime: string
   durationMinutes: number
   active: boolean
+  session: number
   title: string
   code: string
   subjectCode: string
@@ -31,7 +32,11 @@ type ScheduleRow = {
   majorCode: string
 }
 
-type ProgressRow = ScheduleRow & {
+type ProgressRow = Omit<ScheduleRow, "id" | "session" | "startTime"> & {
+  /** Satu baris = satu kelas untuk satu mapel/tanggal; sesi 1 & 2 digabung. */
+  id: string
+  startTime: string
+  sessions: number[]
   totalStudents: number
   notStarted: number
   started: number
@@ -57,6 +62,7 @@ export default async function PengerjaanPage() {
           startTime: examSchedules.startTime,
           durationMinutes: examSchedules.durationMinutes,
           active: examSchedules.active,
+          session: examSchedules.session,
           title: questionBanks.title,
           code: questionBanks.code,
           subjectCode: subjects.code,
@@ -70,7 +76,11 @@ export default async function PengerjaanPage() {
         .innerJoin(classrooms, eq(examSchedules.classroomId, classrooms.id))
         .innerJoin(majors, eq(classrooms.majorId, majors.id))
         .orderBy(asc(examSchedules.examDate), asc(examSchedules.startTime)),
-      db.select({ id: students.id, name: students.name, nis: students.nis, classroomId: students.classroomId }).from(students).orderBy(asc(students.name)),
+      db
+        .select({ id: students.id, name: students.name, nis: students.nis, classroomId: students.classroomId, active: students.active })
+        .from(students)
+        .where(eq(students.active, true))
+        .orderBy(asc(students.name)),
       db
         .select({ scheduleId: examAttempts.scheduleId, studentId: examAttempts.studentId, startedAt: examAttempts.startedAt, submittedAt: examAttempts.submittedAt })
         .from(examAttempts),
@@ -105,9 +115,30 @@ export default async function PengerjaanPage() {
       attemptsBySchedule.set(attempt.scheduleId, perStudent)
     }
 
-    rows = scheduleRows.map((schedule) => {
-      const classStudents = studentsByClassroom.get(schedule.classroomId) ?? []
-      const attemptByStudent = attemptsBySchedule.get(schedule.id) ?? new Map<string, { studentId: string; startedAt: Date | null; submittedAt: Date | null }>()
+    // Kelas yang punya dua sesi tetap tampil sebagai SATU baris: sesi digabung,
+    // dan status tiap siswa diambil dari jadwal sesinya sendiri.
+    const perKelas = new Map<string, ScheduleRow[]>()
+    for (const schedule of scheduleRows) {
+      const kunci = `${schedule.classroomId}|${schedule.code}|${schedule.examDate}`
+      perKelas.set(kunci, [...(perKelas.get(kunci) ?? []), schedule])
+    }
+
+    rows = [...perKelas.values()].map((jadwal) => {
+      const pertama = jadwal[0]
+      const sessions = [...new Set(jadwal.map((item) => item.session ?? 1))].sort((a, b) => a - b)
+      const idJadwal = jadwal.map((item) => item.id)
+      const classStudents = studentsByClassroom.get(pertama.classroomId) ?? []
+      const attemptByStudent = new Map<string, { studentId: string; startedAt: Date | null; submittedAt: Date | null }>()
+      for (const id of idJadwal) {
+        for (const [studentId, attempt] of attemptsBySchedule.get(id) ?? []) {
+          const lama = attemptByStudent.get(studentId)
+          attemptByStudent.set(studentId, {
+            studentId,
+            startedAt: pilihAwal(lama?.startedAt ?? null, attempt.startedAt),
+            submittedAt: lama?.submittedAt ?? attempt.submittedAt,
+          })
+        }
+      }
       const studentDetails: ProgressStudent[] = classStudents.map((student) => {
         const attempt = attemptByStudent.get(student.id)
         const status = attempt?.submittedAt ? "SUBMITTED" : attempt?.startedAt ? "STARTED" : "NOT_STARTED"
@@ -127,7 +158,18 @@ export default async function PengerjaanPage() {
       const notStarted = Math.max(totalStudents - submitted - startedOnly, 0)
       const percent = totalStudents ? Math.round((submitted / totalStudents) * 100) : 0
 
-      return { ...schedule, totalStudents, notStarted, started: startedOnly, submitted, percent, students: studentDetails }
+      return {
+        ...pertama,
+        id: jadwal.map((item) => item.id).join(","),
+        startTime: [...jadwal].map((item) => item.startTime).sort()[0],
+        sessions,
+        totalStudents,
+        notStarted,
+        started: startedOnly,
+        submitted,
+        percent,
+        students: studentDetails,
+      }
     })
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data pengerjaan."

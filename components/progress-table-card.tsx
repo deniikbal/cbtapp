@@ -23,6 +23,7 @@ type ProgressRow = {
   id: string
   examDate: string
   startTime: string
+  sessions: number[]
   durationMinutes: number
   active: boolean
   title: string
@@ -191,7 +192,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
               {filteredRows.length === 0 ? (
                 <TableRow className="hover:bg-transparent"><TableCell colSpan={10} className="h-48 text-center"><div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground"><div className="rounded-full bg-muted p-4"><BookOpenCheck className="size-7" aria-hidden="true" /></div><div className="space-y-1"><div className="font-medium text-foreground">{hasActiveFilter ? "Tidak ada hasil yang cocok" : "Belum ada data pengerjaan"}</div><p className="text-sm">{hasActiveFilter ? "Coba ubah kata kunci atau atur ulang filter." : "Data akan muncul setelah jadwal dibuat dan siswa mulai mengerjakan."}</p></div>{hasActiveFilter && <Button size="sm" variant="outline" onClick={resetFilters}><RotateCcw className="size-4" aria-hidden="true" />Reset filter</Button>}</div></TableCell></TableRow>
               ) : paginatedRows.map((row, index) => (
-                <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell className="whitespace-normal min-w-44"><div className="flex flex-col"><span className="font-medium">{row.title}</span><span className="font-mono text-xs text-muted-foreground">{row.code} • {row.subjectCode}</span></div></TableCell><TableCell><Badge variant="outline" className="font-normal">{row.className}</Badge><p className="text-xs text-muted-foreground">{row.majorCode}</p></TableCell><TableCell><div className="flex flex-col"><span>{formatDate(row.examDate)}</span><span className="text-xs text-muted-foreground">{row.startTime.slice(0, 5)} • {row.durationMinutes} mnt</span></div></TableCell><TableCell className="text-center tabular-nums">{row.totalStudents}</TableCell><TableCell className="text-center tabular-nums">{row.notStarted}</TableCell><TableCell className="text-center tabular-nums">{row.started}</TableCell><TableCell className="text-center tabular-nums">{row.submitted}</TableCell><TableCell><div className="flex items-center gap-2"><div className="h-2 w-24 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${row.percent}%` }} /></div><span className="text-xs tabular-nums text-muted-foreground">{row.percent}%</span></div></TableCell><TableCell className="text-right"><ProgressDetailDialog title={row.title} className={row.className} students={row.students} /></TableCell></TableRow>
+                <TableRow key={row.id} className="transition-colors hover:bg-muted/40"><TableCell className="text-center text-sm text-muted-foreground tabular-nums">{(activePage - 1) * pageSize + index + 1}</TableCell><TableCell className="whitespace-normal min-w-44"><div className="flex flex-col"><span className="font-medium">{row.title}</span><span className="font-mono text-xs text-muted-foreground">{row.code} • {row.subjectCode}</span></div></TableCell><TableCell><Badge variant="outline" className="font-normal">{row.className}</Badge><p className="text-xs text-muted-foreground">{row.majorCode}</p></TableCell><TableCell><div className="flex flex-col"><span>{formatDate(row.examDate)}</span><span className="text-xs text-muted-foreground">{row.startTime.slice(0, 5)} • sesi {row.sessions.join(" & ")} • {row.durationMinutes} mnt</span></div></TableCell><TableCell className="text-center tabular-nums">{row.totalStudents}</TableCell><TableCell className="text-center tabular-nums">{row.notStarted}</TableCell><TableCell className="text-center tabular-nums">{row.started}</TableCell><TableCell className="text-center tabular-nums">{row.submitted}</TableCell><TableCell><div className="flex items-center gap-2"><div className="h-2 w-24 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${row.percent}%` }} /></div><span className="text-xs tabular-nums text-muted-foreground">{row.percent}%</span></div></TableCell><TableCell className="text-right"><ProgressDetailDialog title={row.title} className={row.className} students={row.students} /></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>
@@ -221,7 +222,7 @@ export function ProgressTableCard({ rows }: { rows: ProgressRow[] }) {
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground">Jadwal</dt>
-                  <dd>{formatDate(row.examDate)} · {row.startTime.slice(0, 5)}</dd>
+                  <dd>{formatDate(row.examDate)} · {row.startTime.slice(0, 5)} · sesi {row.sessions.join(" & ")}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Durasi</dt>

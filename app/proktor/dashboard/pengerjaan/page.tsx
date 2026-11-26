@@ -27,6 +27,7 @@ export default async function ProktorPengerjaanPage() {
     id: string
     examDate: string
     startTime: string
+    sessions: number[]
     durationMinutes: number
     active: boolean
     title: string
@@ -60,6 +61,7 @@ export default async function ProktorPengerjaanPage() {
               startTime: examSchedules.startTime,
               durationMinutes: examSchedules.durationMinutes,
               active: examSchedules.active,
+              session: examSchedules.session,
               title: questionBanks.title,
               code: questionBanks.code,
               subjectCode: subjects.code,
@@ -129,7 +131,7 @@ export default async function ProktorPengerjaanPage() {
       const notStarted = Math.max(totalStudents - submitted - startedOnly, 0)
       const percent = totalStudents ? Math.round((submitted / totalStudents) * 100) : 0
 
-      return { ...schedule, totalStudents, notStarted, started: startedOnly, submitted, percent, students: studentDetails }
+      return { ...schedule, sessions: [schedule.session], totalStudents, notStarted, started: startedOnly, submitted, percent, students: studentDetails }
     })
   } catch (error) {
     databaseError = error instanceof Error ? error.message : "Gagal mengambil data pengerjaan."
