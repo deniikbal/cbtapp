@@ -111,6 +111,14 @@ export async function GET(request: NextRequest) {
   const hasilPerSiswa = new Map(
     hasilSiswa.filter((h) => h.studentId).map((h) => [`${h.scheduleId}|${h.studentId}`, h])
   )
+  // Hasil bisa menempel di jadwal sesi lain (data sync lama) — simpan cadangan per siswa
+  // supaya status Selesai tidak hilang hanya karena jadwalnya beda sesi.
+  const hasilSiswaSaja = new Map<string, (typeof hasilSiswa)[number]>()
+  for (const h of hasilSiswa) {
+    if (!h.studentId) continue
+    const lama = hasilSiswaSaja.get(h.studentId)
+    if (!lama || (h.submittedAt ?? 0) > (lama.submittedAt ?? 0)) hasilSiswaSaja.set(h.studentId, h)
+  }
 
   const kejadian =
     jadwalIds.length === 0
@@ -150,7 +158,7 @@ export async function GET(request: NextRequest) {
     const total = jadwalSiswa ? jumlahSoal.get(jadwalSiswa.id) ?? 0 : 0
     const sudah = a ? petaTerjawab.get(a.id) ?? 0 : 0
     const form = jadwalSiswa ? responsPerJadwal.get(jadwalSiswa.id)?.get(normNis(s.nis)) : undefined
-    const hasil = jadwalSiswa ? hasilPerSiswa.get(`${jadwalSiswa.id}|${s.id}`) : undefined
+    const hasil = (jadwalSiswa ? hasilPerSiswa.get(`${jadwalSiswa.id}|${s.id}`) : undefined) ?? hasilSiswaSaja.get(s.id)
     const status = a?.submittedAt || form || hasil ? "SELESAI" : a ? "MENGERJAKAN" : "BELUM"
     const waktuSelesai = form?.waktu ?? hasil?.submittedAt?.toISOString() ?? ""
     if (waktuSelesai) {
