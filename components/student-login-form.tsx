@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 
 const initialState: StudentLoginState = {}
 
-export function StudentLoginForm({ simulasi = false }: { simulasi?: boolean }) {
+export function StudentLoginForm() {
   const [state, formAction, pending] = useActionState(loginStudent, initialState)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -25,11 +25,6 @@ export function StudentLoginForm({ simulasi = false }: { simulasi?: boolean }) {
         <CardTitle className="text-xl">{APP_NAME}</CardTitle>
         <CardDescription className="text-[14px] sm:text-xs">{APP_TAGLINE}</CardDescription>
         <CardDescription className="text-[14px] sm:text-xs">Masuk menggunakan Username dan password dari Panitia.</CardDescription>
-        {simulasi ? (
-          <CardDescription className="rounded-sm border border-amber-300/70 bg-amber-50 px-2 py-1 text-[13px] text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 sm:text-xs">
-            Mode simulasi: password = Username (NISN).
-          </CardDescription>
-        ) : null}
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-4">
